@@ -19,4 +19,7 @@ app.use("/api",taskRoutes);
 app.use("/api",solCitaRoutes)
 
 app.use("/api", citasRoutes)*/
+
+app.use('/api', authRoutes);
+app.use('/api', citasRoutes);
 export default app;
