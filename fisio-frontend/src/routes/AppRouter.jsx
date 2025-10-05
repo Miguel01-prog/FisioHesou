@@ -17,6 +17,7 @@ export default function AppRouter() {
 
       {/* Rutas privadas */}
       <Route path="/admin/*" element={<PrivateRoutes />} />
+      <Route path="/fisioterapeuta/*" element={<PrivateRoutes />} />
 
       {/* Redirige rutas no encontradas */}
       <Route path="*" element={<Navigate to="/" />} />

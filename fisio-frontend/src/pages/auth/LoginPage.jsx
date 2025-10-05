@@ -15,7 +15,7 @@ export default function LoginPage() {
       const res = await axios.post('http://localhost:5000/api/login', { email, password });
       login(res.data.token, { role: res.data.role });
       if (res.data.role === 'fisioterapeuta') {
-      navigate('/fisioterapeuta-dashboard');
+      navigate('/fisioterapeuta');
     } else if (res.data.role === 'nutriologa') {
       navigate('/nutriologa-dashboard');
     } else if (res.data.role === 'superadmin') {
