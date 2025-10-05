@@ -1,0 +1,2 @@
+- Correr el backend(mongo db): npm run dev
+- Correr el frontend (react js)
