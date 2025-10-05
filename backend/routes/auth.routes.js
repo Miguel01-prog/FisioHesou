@@ -1,29 +1,38 @@
 import { Router } from 'express';
 import User from '../models/user.model.js';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs'; // ✅ CORRECTO
 import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
+
+
+console.log('[auth.routes.js] cargado correctamente');
+
 
 const router = Router();
 const SECRET = process.env.JWT_SECRET || 'mi_secreto_superseguro'; // Usa variable de entorno
 
-// Registro
+router.get('/test', (req, res) => {
+  res.json({ message: 'Ruta /api/test funcionando' });
+});
+
+
 router.post('/register', async (req, res) => {
+  console.log('➡️ POST /api/register recibido', req.body);  // <--- agrega esto para depurar
+
   try {
     const { name, email, password, role } = req.body;
 
-    // Validación básica
     if (!name || !email || !password || !role) {
       return res.status(400).json({ message: 'Todos los campos son obligatorios' });
     }
 
-    // Verifica si el usuario ya existe
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(409).json({ message: 'El correo ya está registrado' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ name, email, password: hashedPassword, role });
+    const user = new User({ name, email, password: hashedPassword, role,  idUsuario: uuidv4()});
     await user.save();
 
     res.status(201).json({ message: 'Usuario creado correctamente' });
@@ -31,6 +40,7 @@ router.post('/register', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // Login
 router.post('/login', async (req, res) => {
@@ -54,6 +64,7 @@ router.post('/login', async (req, res) => {
     );
 
     res.json({ token, role: user.role, name: user.name });
+    console.log("Usuario logueado exitosamente:", user.email);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
