@@ -1,0 +1,2 @@
+- Correr el backend
+- Correr el frontend
