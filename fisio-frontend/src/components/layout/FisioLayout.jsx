@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import Sidebar from './Sidebar.jsx';
+import Sidebar from './Sidebar.jsx'; // O el sidebar correspondiente a fisioterapeuta
 import { Outlet } from 'react-router-dom';
 
-
-export default function AdminLayout({ children }) {
+export default function FisioLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (

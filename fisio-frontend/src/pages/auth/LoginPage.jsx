@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useNavigate } from 'react-router-dom';
+import '../../styles/login.css';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -13,13 +14,16 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       const res = await axios.post('http://localhost:5000/api/login', { email, password });
-      login(res.data.token, { role: res.data.role });
+      login(res.data.token, { role: res.data.role, name: res.data.name });  
       if (res.data.role === 'fisioterapeuta') {
       navigate('/fisioterapeuta');
+      console.log("este es el rol: ",res.data.role);
+      console.log("este es el name: ",res.data.name);
     } else if (res.data.role === 'nutriologa') {
-      navigate('/nutriologa-dashboard');
+      navigate('/nutriologa');
     } else if (res.data.role === 'superadmin') {
       navigate('/admin');
+      console.log("este es el rol: ",res.data.role);
     } else {
       navigate('/'); // default o página pública
     }

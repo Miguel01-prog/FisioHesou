@@ -1,26 +1,55 @@
-import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import PublicRoutes from './PublicRoutes.jsx';
-import PrivateRoutes from './PrivateRoutes.jsx';
-import LoginPage from '../pages/auth/LoginPage.jsx';
-import RegisterPage from '../pages/auth/RegisterPage.jsx';
+import LoginPage from '../pages/auth/LoginPage';
+import RegisterPage from '../pages/auth/RegisterPage';
+import PrivateRoute from './PrivateRoutes.jsx';
+
+// Layouts
+import AdminLayout from '../components/layout/AdminLayout';
+import FisioLayout from '../components/layout/FisioLayout';
+import NutriologaLayout from '../components/layout/NutriologaLayout';
+
+// Páginas
+import Dashboard from '../pages/admin/Dashboard';
 
 export default function AppRouter() {
   return (
     <Routes>
-      {/* Páginas de login y registro */}
+      {/* Públicas */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      {/* Rutas públicas */}
-      <Route path="/*" element={<PublicRoutes />} />
+      {/* Superadmin */}
+      <Route
+        path="/admin/*"
+        element={
+          <PrivateRoute allowedRoles={['superadmin']}>
+            <AdminLayout />
+          </PrivateRoute>
+        }
+      />
 
-      {/* Rutas privadas */}
-      <Route path="/admin/*" element={<PrivateRoutes />} />
-      <Route path="/fisioterapeuta/*" element={<PrivateRoutes />} />
+      {/* Fisioterapeuta */}
+      <Route
+        path="/fisioterapeuta/*"
+        element={
+          <PrivateRoute allowedRoles={['fisioterapeuta']}>
+            <FisioLayout />
+          </PrivateRoute>
+        }
+      />
 
-      {/* Redirige rutas no encontradas */}
-      <Route path="*" element={<Navigate to="/" />} />
+      {/* Nutrióloga */}
+      <Route
+        path="/nutriologa/*"
+        element={
+          <PrivateRoute allowedRoles={['nutriologa']}>
+            <NutriologaLayout />
+          </PrivateRoute>
+        }
+      />
+
+      {/* Ruta no encontrada */}
+      <Route path="*" element={<Navigate to="/login" />} />
     </Routes>
   );
 }

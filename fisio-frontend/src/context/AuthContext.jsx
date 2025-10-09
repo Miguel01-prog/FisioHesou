@@ -9,9 +9,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Aquí podrías cargar token de localStorage para mantener sesión
     const savedToken = localStorage.getItem('token');
-    if (savedToken) {
+    const savedUser = localStorage.getItem('user'); 
+    if (savedToken && savedUser) {
       setToken(savedToken);
-      // Aquí también podrías cargar info de usuario si quieres
+      setUser(JSON.parse(savedUser));
     }
   }, []);
 
@@ -19,6 +20,7 @@ export const AuthProvider = ({ children }) => {
     setToken(token);
     setUser(userData);
     localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(userData)); // Guarda role y name
   };
 
   const logout = () => {

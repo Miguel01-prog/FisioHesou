@@ -1,23 +1,19 @@
+// src/routes/PrivateRoute.jsx
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext.jsx';
-import AdminLayout from '../components/layout/AdminLayout.jsx';
-import Dashboard from '../pages/admin/Dashboard.jsx';
-import UsersPage from '../pages/admin/UsersPage.jsx';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-export default function PrivateRoutes() {
-  const { token } = useAuth();
+export default function PrivateRoute({ children, allowedRoles = [] }) {
+  const { token, user } = useAuth();
 
   if (!token) {
     return <Navigate to="/login" />;
   }
 
-  return (
-    <AdminLayout>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="users" element={<UsersPage />} />
-      </Routes>
-    </AdminLayout>
-  );
+  // Si hay restricción de roles, la validamos
+  if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
+    return <Navigate to="/" />; // O a una página de "no autorizado"
+  }
+
+  return children;
 }
