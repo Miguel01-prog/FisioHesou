@@ -3,7 +3,7 @@ import '../../styles/globalStyles.css';
 
 export default function AppointmentForm() {
   return (
-    <div className="auth-wrapper">
+    <div className="auth-wrapper-public">
       <div className="auth-card card" style={{ maxWidth: '600px', width: '100%' }}>
         <h2 className="logo-agendar mb-2">Agendar Cita</h2>
         <p className="text-muted text-center mb-2">Llena el formulario para agendar tu cita</p>
