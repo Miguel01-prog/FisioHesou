@@ -10,6 +10,7 @@ import NutriologaLayout from '../components/layout/NutriologaLayout';
 
 // Páginas
 import Dashboard from '../pages/admin/Dashboard';
+import AppointmentForm from '../pages/public/AppointmentForm.jsx';
 
 export default function AppRouter() {
   return (
@@ -17,6 +18,7 @@ export default function AppRouter() {
       {/* Públicas */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/citas" element={<AppointmentForm />} />
 
       {/* Superadmin */}
       <Route

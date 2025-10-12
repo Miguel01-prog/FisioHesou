@@ -1,7 +1,7 @@
 /* src/styles/global.css - Base ligero inspirado en Kaiadmin + Dark Mode */
 :root{
-  --primary-color: #4b7bec;
-  --primary-600: #3867d6;
+  --primary-color: #6460aa;
+  --primary-600: #8c8bc2;
   --muted: #6c757d;
   --bg: #f4f6f9;
   --card: #ffffff;
@@ -183,4 +183,51 @@ body{
 @media (max-width:640px){
   .auth-card{padding:1rem;margin:0 8px}
   .container{padding:.6rem}
+}
+
+/* fila que contiene columnas */
+.form-row {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  flex-wrap: wrap; /* para que se adapten en móvil */
+}
+
+/* columnas */
+.col {
+  flex: 1;
+  min-width: 260px;
+  box-sizing: border-box;
+}
+
+/* opcional: inputs ocupando todo el ancho de la columna */
+.col .input {
+  width: 100%;
+  display: block;
+}
+
+.input {
+  color: #686868; /* 💜 texto del usuario */
+} 
+.input::placeholder {
+  color: #bbb8f7; /* tono más claro opcional */
+  opacity: 1;     /* para evitar que algunos navegadores lo hagan gris */
+} 
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkbox input[type="radio"] {
+  accent-color: #6f42c1; /* morado elegante */
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+.checkbox-morado span {
+  color: #6c757d; /* gris suave */
+  font-weight: 500;
 }
