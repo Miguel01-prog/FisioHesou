@@ -1,0 +1,186 @@
+/* src/styles/global.css - Base ligero inspirado en Kaiadmin + Dark Mode */
+:root{
+  --primary-color: #4b7bec;
+  --primary-600: #3867d6;
+  --muted: #6c757d;
+  --bg: #f4f6f9;
+  --card: #ffffff;
+  --text: #222;
+  --radius: 10px;
+  --shadow: 0 2px 12px rgba(20,30,60,0.06);
+  --transition: 180ms ease;
+}
+
+/* Dark theme variables (switch by adding data-theme="dark" to <html> or <body>) */
+:root[data-theme="dark"], body[data-theme="dark"] {
+  --primary-color: #66a1ff;
+  --primary-600: #4a86f2;
+  --muted: #bfc6d6;
+  --bg: #0f1724;
+  --card: #0b1220;
+  --text: #e6eef8;
+  --shadow: 0 6px 18px rgba(2,6,23,0.6);
+}
+
+/* Reset + base */
+*{box-sizing:border-box}
+html,body,#root{height:100%}
+body{
+  margin:0;
+  font-family: Inter, "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background:var(--bg);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  line-height:1.5;
+  transition:background var(--transition), color var(--transition);
+}
+
+/* Layout helpers */
+.container{
+  max-width:1200px;
+  margin:0 auto;
+  padding:1rem;
+}
+.section{padding:2rem 1rem}
+
+/* Cards / surface */
+.card{
+  background:var(--card);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:1.25rem;
+  transition:transform var(--transition), box-shadow var(--transition), background var(--transition);
+}
+
+
+/* Grid */
+.row{display:flex;flex-wrap:wrap;gap:1rem}
+.col{flex:1;min-width:260px}
+
+/* Header */
+.header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  padding:0.8rem 1rem;
+  background:var(--card);
+  box-shadow:var(--shadow);
+}
+
+/* Buttons */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:.5rem;
+  padding:.6rem 1rem;
+  border-radius:8px;
+  border:0;
+  cursor:pointer;
+  transition:filter var(--transition), transform var(--transition);
+}
+.btn-cerrar{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:.5rem;
+  padding:.6rem 1rem;
+  border-radius:8px;
+  border:0;
+  cursor:pointer;
+  transition:filter var(--transition), transform var(--transition);
+  background-color: white;
+}
+.btn-cerrar:hover{color: slateblue};
+
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--primary-color);color:#fff}
+.btn-primary:hover{filter:brightness(.95)}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid rgba(0,0,0,0.06)}
+
+.toggle-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  transition: all 0.2s;
+}
+
+.toggle-btn.collapsed {
+  color: #333; /* color cuando está colapsado */
+}
+
+.toggle-btn.expanded {
+  color: #000; /* color cuando está expandido */
+  /* Puedes añadir animaciones, rotación del icono, etc. */
+}
+
+
+/* Form components */
+.form {
+  display:flex;
+  flex-direction:column;
+  gap:0.75rem;
+}
+.form-label{font-weight:600;font-size:0.9rem;color:var(--muted)}
+.input, .textarea {
+  width:100%;
+  padding:.6rem .8rem;
+  border-radius:8px;
+  border:1px solid rgba(0,0,0,0.08);
+  background:transparent;
+  color:var(--text);
+  outline:none;
+  transition:box-shadow var(--transition), border-color var(--transition);
+}
+.input:focus{box-shadow:0 4px 14px rgba(0,0,0,0.06);border-color:var(--primary-600)}
+.text-muted{color:var(--muted);font-size:0.9rem}
+
+/* Utility */
+.text-center{text-align:center}
+.w-100{width:100%}
+.mb-1{margin-bottom:0.5rem}
+.mb-2{margin-bottom:1rem}
+
+/* Login specific layout */
+.auth-wrapper{
+   min-height: 100vh;           /* ocupa toda la pantalla */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: url('../../public/hesou.png'); /* ruta en /public/images/bg.jpg */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.auth-wrapper::before{
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  pointer-events: none;
+}
+.auth-card{
+  position: relative; /* para que quede sobre el overlay */
+  z-index: 1;
+  width: 360px;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  background: rgba(255,255,255,0.95);
+}
+
+/* Small helpers for error / success */
+.alert{padding:.6rem .8rem;border-radius:8px;font-size:.95rem}
+.alert-error{background:rgba(243,100,120,0.08);color:#b02a37;border:1px solid rgba(176,42,55,0.12)}
+.alert-success{background:rgba(45,206,137,0.08);color:#0b6b3a;border:1px solid rgba(11,107,58,0.12)}
+
+/* Responsive tweaks */
+@media (max-width:640px){
+  .auth-card{padding:1rem;margin:0 8px}
+  .container{padding:.6rem}
+}

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import '../../styles/sidebar.css';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { IoMdClose } from 'react-icons/io';
+import { FaArrowLeftLong } from "react-icons/fa6";
 
 const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const [collapsed, setCollapsed] = useState(isCollapsed);
@@ -14,7 +16,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       const mobile = window.innerWidth <= 768;
       setIsMobile(mobile);
 
-      if (window.innerWidth <= 1024 && window.innerWidth > 768) {
+      if (window.innerWidth <= 1020 && window.innerWidth > 768) {
         setCollapsed(true);
         setIsCollapsed(true);
         localStorage.setItem('sidebarState', 'collapsed');
@@ -41,7 +43,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     }
   };
 
-  // 👉 Muestra las opciones del sidebar según el rol del usuario
   const getNavItemsByRole = (role) => {
     switch (role) {
       case 'superadmin':
@@ -78,42 +79,25 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     isMobile && sidebarOpen ? 'open' : ''
   ].filter(Boolean).join(' ');
 
-  const getRoleLabel = (role) => {
-    switch (role) {
-      case 'superadmin': return 'Administrador';
-      case 'fisioterapeuta': return 'Fisioterapeuta';
-      case 'nutriologa': return 'Nutrióloga';
-      default: return 'Usuario';
-    }
-  };
-
   return (
-    <>
+    <> 
       {isMobile && sidebarOpen && (
-        <div 
-          className="sidebar-overlay" 
-          onClick={() => setSidebarOpen(false)}
-        ></div>
+        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}></div>
       )}
 
       <aside className={sidebarClasses}>
-        <div className="sidebar-header">
-          <h2 className="logo">{collapsed ? 'H' : 'Hesou'}</h2>
-          <button className="sidebar-toggle" onClick={toggleSidebar}>
-            {collapsed ? '→' : '←'}
-          </button>
-        </div>
-
-        <div className="user-profile-sidebar">
-          <div className="avatar-sidebar">
-            <span className="avatar-icon">👤</span>
-          </div>
-          <div className="user-info-sidebar">
-            <span className="user-name-sidebar">{user?.name}</span>
-            <span className="user-role-sidebar">{getRoleLabel(user?.role)}</span>
-          </div>
-        </div>
-
+      <div className="sidebar-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h2 className="logo">{collapsed ? '' : 'Hesou'}</h2>
+        <button className={`btn toggle-btn ${collapsed ? 'collapsed' : 'expanded'}`} onClick={toggleSidebar}
+          aria-label="Toggle sidebar">
+          {isMobile ? (sidebarOpen ? <IoMdClose size={20}/> : <FaArrowLeftLong size={20} color="#3e3a8e"/>)
+            : (collapsed ? <h3 className="logo" style={{ marginRight: '7px', 
+                                                        fontSize: '24px',   // tamaño de la H
+                                                        color: '#3e3a8e',  // color morado
+                                                        fontWeight: 'bold', // opcional, más gruesa
+                                                        lineHeight: 1,}}>H</h3> : <FaArrowLeftLong size={20}
+                                                          color="#3e3a8e"/>) }</button>
+      </div>
         <nav className="sidebar-nav">
           <ul>
             {navItems.map((item, index) => (
@@ -127,15 +111,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           </ul>
         </nav>
       </aside>
-
-      {isMobile && !sidebarOpen && (
-        <button 
-          className="mobile-menu-toggle" 
-          onClick={() => setSidebarOpen(true)}
-        >
-          ☰
-        </button>
-      )}
     </>
   );
 };
