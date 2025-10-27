@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import User from '../models/user.model.js';
-import bcrypt from 'bcryptjs'; // ✅ CORRECTO
+import bcrypt from 'bcryptjs'; 
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -17,7 +17,7 @@ router.get('/test', (req, res) => {
 
 
 router.post('/register', async (req, res) => {
-  console.log('➡️ POST /api/register recibido', req.body);  // <--- agrega esto para depurar
+  console.log(' POST /api/register recibido', req.body);  // <--- agrega esto para depurar
 
   try {
     const { name, email, password, role } = req.body;
