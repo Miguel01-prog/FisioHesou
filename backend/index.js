@@ -1,5 +1,15 @@
 import app from './app.js';
 import { connectDB } from './db.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 connectDB();
-app.listen(5000);
-console.log('Servidor en el puerto: ', 5000);
+
+
+const PORT = process.env.PORT || 5000;
+
+// Iniciamos el servidor
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en el puerto: ${PORT}`);
+});
