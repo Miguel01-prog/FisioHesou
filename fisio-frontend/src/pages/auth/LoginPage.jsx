@@ -33,8 +33,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="auth-wrapper">
-      <div className="auth-card card" style={{ maxWidth: '400px', width: '100%' }}>
+    <div className="  auth-wrapper-public">
+      <div className="auth-card" style={{ maxWidth: '400px', width: '100%' }}>
         <h2 className="text-center mb-2">Iniciar sesión</h2>
         <p className="text-muted text-center mb-2">Accede con tu cuenta</p>
 

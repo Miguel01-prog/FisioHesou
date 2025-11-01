@@ -7,31 +7,66 @@ import api from "../../api.js";
 export default function AppointmentForm() {
   const [tipoConsulta, setTipoConsulta] = useState("");
   const [blockedDates, setBlockedDates] = useState([]);
+  const [blockedHours, setBlockedHours] = useState({});
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [availableHours, setAvailableHours] = useState([]);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showHours, setShowHours] = useState(false);
 
+  const allHours = [
+    "08:00", "09:00", "10:00", "11:00", "12:00",
+    "13:00", "14:00", "15:00", "16:00", "17:00", "18:00",
+  ];
+
+  // Obtener bloqueos por tipo de consulta
   useEffect(() => {
     if (!tipoConsulta) return;
 
     const fetchBlockedDates = async () => {
       try {
         const { data } = await api.get(`/horarios/${tipoConsulta}`);
-        const fechas = data.map(
-          (item) => new Date(item.fecha).toISOString().split("T")[0]
-        );
-        setBlockedDates(fechas);
+        setBlockedDates(data.blockedDates || []);
+        setBlockedHours(data.blockedHours || {});
       } catch (err) {
         console.error("Error al obtener bloqueos:", err);
       }
     };
 
-    fetchBlockedDates(); 
-    const interval = setInterval(fetchBlockedDates, 5000); 
-    return () => clearInterval(interval);
+    fetchBlockedDates();
   }, [tipoConsulta]);
 
   const handleTipoChange = (e) => {
     setTipoConsulta(e.target.value);
     setShowCalendar(false);
+    setShowHours(false);
+    setSelectedDate(null);
+  };
+
+  // Al seleccionar fecha
+  const handleDateSelect = (date) => {
+    const iso = date.toISOString().split("T")[0];
+    setSelectedDate(iso);
+    setShowHours(true);
+
+    const bloqueadas = blockedHours[iso] || [];
+    const ahora = new Date();
+    const esHoy = iso === ahora.toISOString().split("T")[0];
+
+    const disponibles = allHours.filter((h) => {
+      if (bloqueadas.includes(h)) return false; // hora bloqueada
+
+      if (esHoy) {
+        const [hNum, mNum] = h.split(":").map(Number);
+        const horaCita = new Date(ahora);
+        horaCita.setHours(hNum, mNum, 0, 0);
+        const diffHoras = (horaCita - ahora) / (1000 * 60 * 60);
+        if (diffHoras < 2) return false; // menos de 2h de margen
+      }
+
+      return true;
+    });
+
+    setAvailableHours(disponibles);
   };
 
   return (
@@ -42,33 +77,26 @@ export default function AppointmentForm() {
           Llena el formulario para agendar tu cita
         </p>
 
+        {/* Datos personales */}
         <form className="form">
           <div className="form-row">
             <div className="col">
-              <label htmlFor="name" className="form-label">
-                Nombre(s)
-              </label>
+              <label htmlFor="name" className="form-label">Nombre(s)</label>
               <input id="name" type="text" className="input" placeholder="Nombre(s)" required />
             </div>
             <div className="col">
-              <label htmlFor="last-name" className="form-label">
-                Apellido(s)
-              </label>
+              <label htmlFor="last-name" className="form-label">Apellido(s)</label>
               <input id="last-name" type="text" className="input" placeholder="Apellido(s)" required />
             </div>
           </div>
 
           <div className="form-row">
             <div className="col">
-              <label htmlFor="age" className="form-label">
-                Edad
-              </label>
+              <label htmlFor="age" className="form-label">Edad</label>
               <input id="age" type="text" className="input" placeholder="Edad" required />
             </div>
             <div className="col">
-              <label htmlFor="phone" className="form-label">
-                Teléfono
-              </label>
+              <label htmlFor="phone" className="form-label">Teléfono</label>
               <input id="phone" type="text" className="input" placeholder="Teléfono" required />
             </div>
           </div>
@@ -106,11 +134,15 @@ export default function AppointmentForm() {
           </div>
         </form>
 
+        {/* Botón para abrir calendario */}
         {tipoConsulta && (
           <div style={{ marginTop: "20px", textAlign: "center" }}>
             <button
               type="button"
-              onClick={() => setShowCalendar(true)}
+              onClick={() => {
+                setShowCalendar(true);
+                setShowHours(false);
+              }}
               className="btn btn-primary w-100"
             >
               Seleccionar Fecha
@@ -118,23 +150,41 @@ export default function AppointmentForm() {
           </div>
         )}
 
+        {/* Calendario */}
         {showCalendar && (
           <div className="modal-backdrop">
             <div className="modal-content">
-              <button className="close-btn" onClick={() => setShowCalendar(false)}>
-                X
-              </button>
+              <button className="close-btn" onClick={() => setShowCalendar(false)}>X</button>
               <h4 style={{ marginBottom: "10px" }}>Selecciona una fecha</h4>
               <Calendar
-                tileDisabled={({ date }) =>
-                  blockedDates.includes(date.toISOString().split("T")[0])
-                }
-                tileClassName={({ date }) =>
-                  blockedDates.includes(date.toISOString().split("T")[0])
-                    ? "bg-red-500 text-white rounded-full"
-                    : ""
-                }
+                onClickDay={handleDateSelect}
+                tileClassName={({ date }) => {
+                  const iso = date.toISOString().split("T")[0];
+                  if (blockedDates.includes(iso)) return "blocked-day"; // clase personalizada
+                  return null;
+                }}
               />
+
+              {showHours && selectedDate && (
+                <div style={{ marginTop: "20px", textAlign: "center" }}>
+                  <h4>Horas disponibles para {selectedDate}</h4>
+                  {availableHours.length > 0 ? (
+                    <div className="grid grid-cols-3 gap-2 mt-3">
+                      {availableHours.map((hour) => (
+                        <button
+                          key={hour}
+                          className="btn btn-outline-primary"
+                          onClick={() => alert(`Seleccionaste ${hour}`)}
+                        >
+                          {hour}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ color: "#888" }}>No hay horas disponibles para esta fecha.</p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}

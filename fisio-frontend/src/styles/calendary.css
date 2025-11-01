@@ -27,14 +27,38 @@
   text-align: center;
 }
 
+/* Hover */
 .react-calendar__tile:hover {
   background: #e0e7ff;
   color: #1e3a8a;
 }
 
+/* Día bloqueado */
 .blocked {
-  background: #ef44449d !important;
+  background: #fd8989 !important;
   color: white !important;
   font-weight: bold;
-  border-radius: 10%;
+  border-radius: 10px;
+
+  /* Separación entre tiles */
+  margin: 4px;             /* 4px es suficiente para separar visualmente */
+  box-shadow: 0 0 0 1px white; /* halo blanco alrededor */
+}
+
+.blocked:hover {
+  background: #ff4f4f !important;
+  color: white !important;
+}
+
+
+/* Día seleccionado */
+.react-calendar__tile--active {
+  background: #8c8bc252 !important; /* tu primary-600 */
+  color: white !important;
+  font-weight: bold;
+  border-radius: 10px;
+}
+.react-calendar__tile--active:hover {
+  background: #5a59b149 !important;
+  color: white !important;
 }
