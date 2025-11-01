@@ -52,19 +52,21 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           { icon: '📅', text: 'Citas', path: '/calendarioCitas' },
           { icon: '🏋️‍♂️', text: 'Ejercicios', path: '#' },
           { icon: '📄', text: 'Informes', path: '#' },
-          { icon: '⚙️', text: 'Configuración', path: '#' },
+          { icon: '⚙️', text: 'Configuración', path: 'bloquear' },
         ];
       case 'fisioterapeuta':
         return [
           { icon: '📊', text: 'Dashboard', path: '/fisioterapeuta', active: true },
           { icon: '📅', text: 'Citas', path: '/calendarioCitas' },
           { icon: '🏋️‍♂️', text: 'Ejercicios', path: '/ejercicios' },
+          { icon: '🔒', text: 'Bloquear horarios', path: '/fisioterapeuta/bloquear' }
         ];
       case 'nutriologa':
         return [
           { icon: '📊', text: 'Dashboard', path: '/nutriologa', active: true },
           { icon: '📅', text: 'Citas', path: '/calendarioCitas' },
           { icon: '🥗', text: 'Planes alimenticios', path: '/nutriologa/planes' },
+          { icon: '🔒', text: 'Bloquear horarios', path: '/nutriologa/bloquear' }
         ];
       default:
         return [];
@@ -92,8 +94,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           aria-label="Toggle sidebar">
           {isMobile ? (sidebarOpen ? <IoMdClose size={20}/> : <FaArrowLeftLong size={20} color="#3e3a8e"/>)
             : (collapsed ? <h3 className="logo" style={{ marginRight: '7px', 
-                                                        fontSize: '24px',   // tamaño de la H
-                                                        color: '#3e3a8e',  // color morado
+                                                        fontSize: '24px',  
+                                                        color: '#3e3a8e',  
                                                         fontWeight: 'bold', // opcional, más gruesa
                                                         lineHeight: 1,}}>H</h3> : <FaArrowLeftLong size={20}
                                                           color="#3e3a8e"/>) }</button>

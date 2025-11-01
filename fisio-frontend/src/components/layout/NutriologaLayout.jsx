@@ -13,7 +13,14 @@ export default function NutriologaLayout() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Header isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
 
-        <main className={`main-content ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
+        <main
+          className="main-content"
+          style={{marginLeft: isCollapsed ? 'var(--sidebar-width-collapsed)'
+              : 'var(--sidebar-width-expanded)',
+            transition: 'var(--transition)',
+            minHeight: 'calc(100vh - var(--header-height))',
+          }}
+        >
           <Outlet />
         </main>
       </div>

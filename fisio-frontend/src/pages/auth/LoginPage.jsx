@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useNavigate } from 'react-router-dom';
 import '../../styles/globalStyles.css';
+import api from '../../api.js';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -13,7 +13,7 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', { email, password });
+      const res = await api.post('/auth/login', { email, password });
       login(res.data.token, { role: res.data.role, name: res.data.name });  
       if (res.data.role === 'fisioterapeuta') {
       navigate('/fisioterapeuta');
