@@ -11,6 +11,9 @@ import NutriologaLayout from '../components/layout/NutriologaLayout';
 // Páginas
 import Dashboard from '../pages/admin/Dashboard';
 import AppointmentForm from '../pages/public/AppointmentForm.jsx';
+import BloquearHorarioFisio from '../pages/fisioterapeuta/BloquearHorario.jsx';
+import BloquearHorarioNutri from '../pages/nutriologa/BloquearHorario.jsx';
+
 
 export default function AppRouter() {
   return (
@@ -38,7 +41,9 @@ export default function AppRouter() {
             <FisioLayout />
           </PrivateRoute>
         }
-      />
+      >
+        <Route path="bloquear" element={<BloquearHorarioFisio />} />
+      </Route>
 
       {/* Nutrióloga */}
       <Route
@@ -48,7 +53,9 @@ export default function AppRouter() {
             <NutriologaLayout />
           </PrivateRoute>
         }
-      />
+      >
+        <Route path="bloquear" element={<BloquearHorarioNutri />} />
+      </Route>
 
       {/* Ruta no encontrada */}
       <Route path="*" element={<Navigate to="/login" />} />

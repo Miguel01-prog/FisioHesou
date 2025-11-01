@@ -9,6 +9,23 @@
   --radius: 10px;
   --shadow: 0 2px 12px rgba(20,30,60,0.06);
   --transition: 180ms ease;
+  --primary-dark: #3e3a8e;
+  --secondary-color: #a5a9d5;
+  --accent-color: #7f7a92;
+  --danger-color: #e45c75;
+  --success-color: #5caea1;
+  --warning-color: #f1c06a;
+  --info-color: #6c8da7;
+  --text-color: #33384d;
+  --text-light: #b5b9d4;
+  --background-color: #f4f6fc;
+  --card-color: #ffffff;
+  --border-color: #d1d4e3;
+  --sidebar-width-expanded: 250px;
+  --sidebar-width-collapsed: 70px;
+  --header-height: 70px;
+  --border-radius: 8px;
+  
 }
 
 /* Dark theme variables (switch by adding data-theme="dark" to <html> or <body>) */
@@ -147,17 +164,17 @@ body{
 .mb-1{margin-bottom:0.5rem}
 .mb-2{margin-bottom:1rem}
 
-/* Login specific layout */
-.auth-wrapper{
-   min-height: 100vh;           /* ocupa toda la pantalla */
+.auth-wrapper-content {
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-image: url('../../public/hesou.png'); /* ruta en /public/images/bg.jpg */
+  background-image: url('/hesou-fondo-content.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
+
 .auth-wrapper::before{
   content: "";
   position: absolute;
@@ -165,14 +182,22 @@ body{
   background: rgba(0,0,0,0.35);
   pointer-events: none;
 }
-.auth-card{
-  position: relative; /* para que quede sobre el overlay */
+
+.auth-card {
+  position: relative; 
   z-index: 1;
-  width: 360px;
+  width: 100%;          /* ocupa todo el ancho posible */
+  max-width: 700px;     /* límite máximo */
   padding: 2rem;
   border-radius: 0.5rem;
   background: rgba(255,255,255,0.95);
+  display: flex;             /* activa flex */
+  flex-direction: column;    /* organiza verticalmente */
+  align-items: center;       /* centra horizontal */
+  justify-content: center;   /* centra vertical */
+  margin: 2rem auto;         /* centra la tarjeta en la página */
 }
+
 
 .auth-wrapper-public{
    min-height: 100vh;           /* ocupa toda la pantalla */
@@ -229,7 +254,7 @@ body{
   color: #686868; 
 } 
 .input::placeholder {
-  color: #bbb8f7; /* tono más claro opcional */
+  color: #c2c2c2; /* tono más claro opcional */
   opacity: 1;     /* para evitar que algunos navegadores lo hagan gris */
 } 
 .checkbox {
@@ -249,4 +274,46 @@ body{
 .checkbox-morado span {
   color: #6c757d; /* gris suave */
   font-weight: 500;
+}
+html, body, #root, .auth-wrapper, .auth-wrapper::before {
+  background: var(--secondary-color) !important;
+  background-image: none !important;
+  color: #000000 !important;
+}
+
+:root {
+  --bg: #ffffff !important;
+  --card: #ffffff !important;
+}
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 700px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-weight: bold;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
 }

@@ -245,15 +245,18 @@
    📦 Contenido principal
 ==================== */
 .main-content {
-  margin-left: var(--sidebar-width-expanded);
-  padding: 20px;
-  transition: margin-left 0.3s ease;
+  position: relative;
+  margin-left: 260px; /* evita superposición */
+  z-index: 1; /* debajo del sidebar */
+  min-height: 100vh;
+  background-color: #ffffff !important; /* fuerza blanco */
 }
 
-.main-content.sidebar-collapsed {
-  margin-left: var(--sidebar-width-collapsed);
+/* Si tienes algún fondo o capa oscura que tapa todo */
+.auth-wrapper::before,
+.overlay {
+  z-index: 0 !important;
 }
-
 /* ====================
    📱 Responsive - Móviles
 ==================== */
@@ -307,4 +310,34 @@
     cursor: pointer;
     box-shadow: var(--shadow);
   }
+}
+/* === Prioridad visual === */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000; /* más alto que todo */
+}
+
+.main-content {
+  margin-left: var(--sidebar-width-expanded);
+  position: relative;
+  z-index: 1;
+}
+
+/* Evita que algo lo tape */
+.auth-wrapper,
+.login-container,
+.page-wrapper {
+  position: relative;
+  z-index: 0 !important;
+}
+/* Ajuste automático del contenido al colapsar */
+.main-content {
+  margin-left: var(--sidebar-width-expanded);
+  transition: var(--transition);
+}
+
+.sidebar.collapsed ~ .main-content {
+  margin-left: var(--sidebar-width-collapsed);
 }
