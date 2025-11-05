@@ -1,52 +1,70 @@
-import citaModel from "../models/cita.model.js";
-import solicitarCitaModel from "../models/solicitarCita.model.js"; // ✅ ESTA LÍNEA ES CLAVE
+import Cita from "../models/cita.model.js";
 
-export const obtenerCitas = async (req, res) => {
+// Crear nueva cita
+export const crearCita = async (req, res) => {
   try {
-    const citas = await citaModel.find();
-    res.json(citas);
-  } catch (error) {
-    res.status(500).json({ message: "Error al obtener citas", error });
+    const { nombres, apellidos, fechaCitaStr, horaCita, area } = req.body;
+
+    if (!nombres || !apellidos || !fechaCitaStr || !horaCita || !area) {
+      return res.status(400).json({ message: "Todos los campos son obligatorios" });
+    }
+
+    // Convertir fechaCitaStr a objeto Date
+    const fechaCita = new Date(fechaCitaStr);
+
+    const nuevaCita = new Cita({
+      nombres,
+      apellidos,
+      fechaCita,
+      fechaCitaStr,
+      horaCita,
+      area
+    });
+
+    await nuevaCita.save();
+
+    res.status(201).json({ message: "Cita creada correctamente", cita: nuevaCita });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error al crear la cita" });
   }
 };
 
-export const ObtenerHorasDisponibles = async (req, res) => {
+// Obtener todas las citas (opcional filtrar por área)
+export const obtenerCitas = async (req, res) => {
   try {
-    const { fecha } = req.query;
-    if (!fecha) {
-      return res.status(400).json({ message: "La fecha es requerida" });
-    }
+    const { area } = req.query; // ejemplo: /api/citas?area=nutricion
+    const filtro = area ? { area } : {};
+    const citas = await Cita.find(filtro).sort({ fechaCita: 1 });
+    res.json(citas);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error al obtener citas" });
+  }
+};
 
-    // Horas laborables
-    const todasLasHoras = [
-      "08:00", "08:30", "09:00", "09:30",
-      "10:00", "10:30", "11:00", "11:30",
-      "12:00", "12:30", "13:00", "13:30",
-      "14:00", "14:30", "15:00", "15:30",
-      "16:00", "16:30", "17:00", "17:30",
-    ];
+// Obtener cita por ID (opcional)
+export const obtenerCitaPorId = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const cita = await Cita.findById(id);
+    if (!cita) return res.status(404).json({ message: "Cita no encontrada" });
+    res.json(cita);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error al obtener cita" });
+  }
+};
 
-   
-    const fechaStart = new Date(fecha);
-    fechaStart.setHours(0, 0, 0, 0);  
-
-    const fechaEnd = new Date(fecha);
-    fechaEnd.setHours(23, 59, 59, 999);  
-
-    const citas = await citaModel.find({ fecha: { $gte: fechaStart, $lte: fechaEnd } });
-    const solicitudes = await solicitarCitaModel.find({ fecha: { $gte: fechaStart, $lte: fechaEnd } });
-
-    const horasOcupadas = [
-      ...citas.map(c => c.hora),
-      ...solicitudes.map(s => s.hora)
-    ];
-    const horasDisponibles = todasLasHoras.filter(hora => !horasOcupadas.includes(hora));
-    if (horasDisponibles.length === 0) {
-      return res.status(404).json({ message: "No hay horas disponibles para esta fecha" });
-    }
-    res.json(horasDisponibles);
-  } catch (error) {
-    console.error('Error al obtener horas disponibles:', error.message);
-    res.status(500).json({ message: 'Error interno del servidor', error: error.message });
+// Eliminar cita (opcional)
+export const eliminarCita = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const citaEliminada = await Cita.findByIdAndDelete(id);
+    if (!citaEliminada) return res.status(404).json({ message: "Cita no encontrada" });
+    res.json({ message: "Cita eliminada correctamente" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error al eliminar cita" });
   }
 };

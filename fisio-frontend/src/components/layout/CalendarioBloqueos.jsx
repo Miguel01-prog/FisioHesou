@@ -11,63 +11,81 @@ const WORK_HOURS = [
 ];
 
 const CalendarioBloqueo = ({ role }) => {
-  const [blockedDates, setBlockedDates] = useState([]); // ["2025-11-12", ...]
-  const [blockedHours, setBlockedHours] = useState({}); // { "2025-11-12": ["08:00"] }
-
-  const [selectedDay, setSelectedDay] = useState(null); 
+  const [blockedDatesAdmin, setBlockedDatesAdmin] = useState([]);
+  const [blockedHoursAdmin, setBlockedHoursAdmin] = useState({});
+  const [blockedDatesPaciente, setBlockedDatesPaciente] = useState([]);
+  const [blockedHoursCitas, setBlockedHoursCitas] = useState({});
+  const [selectedDay, setSelectedDay] = useState(null);
   const [selectedHours, setSelectedHours] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Obtener bloqueos desde backend
+  // Obtener bloqueos del backend
   useEffect(() => {
-    const fetchBlockedDates = async () => {
+    const fetchBlockedData = async () => {
       try {
+        setLoading(true);
         const { data } = await api.get(`/horarios/${role}`);
-        setBlockedDates(data.blockedDates || []);
-        setBlockedHours(data.blockedHours || {});
+        setBlockedDatesAdmin(data.blockedDatesAdmin || []);
+        setBlockedHoursAdmin(data.blockedHoursAdmin || {});
+        setBlockedDatesPaciente(data.blockedDatesPaciente || []);
+        setBlockedHoursCitas(data.blockedHoursCitas || {});
       } catch (err) {
         console.error("Error al obtener bloqueos:", err);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchBlockedDates();
+    fetchBlockedData();
   }, [role]);
 
-  // Click en un día
-  const handleDayClick = (date) => {
-    const fechaStr = date.toISOString().split("T")[0];
-    setSelectedDay(fechaStr);
-    setSelectedHours(blockedHours[fechaStr] || []);
+  // --- Determinar si un día está completamente lleno ---
+  const isDayFullyBlocked = (fechaStr) => {
+    const bloqueadas = blockedHoursAdmin[fechaStr] || [];
+    const citas = blockedHoursCitas[fechaStr] || [];
+    const totalOcupadas = new Set([...bloqueadas, ...citas]);
+    return totalOcupadas.size >= WORK_HOURS.length;
   };
 
-  // Toggle hora
+  // --- Al hacer clic en un día ---
+  const handleDayClick = (date) => {
+    const fechaStr = date.toISOString().split("T")[0];
+    const hoyStr = new Date().toISOString().split("T")[0];
+
+    if (fechaStr < hoyStr) return; // no fechas pasadas
+    if (isDayFullyBlocked(fechaStr)) return; // no días llenos
+
+    setSelectedDay(fechaStr);
+    setSelectedHours(blockedHoursAdmin[fechaStr] || []);
+  };
+
+  // --- Alternar hora bloqueada ---
   const toggleHour = (hour) => {
     let updated;
     if (selectedHours.includes(hour)) {
-      updated = selectedHours.filter(h => h !== hour);
+      updated = selectedHours.filter((h) => h !== hour);
     } else {
       updated = [...selectedHours, hour];
     }
     setSelectedHours(updated);
   };
 
-  // Guardar cambios en backend
+  // --- Guardar cambios del admin ---
   const saveHours = async () => {
     if (!selectedDay) return;
 
-    const newBlockedHours = { ...blockedHours, [selectedDay]: selectedHours };
-
-    // Si se desmarcaron todas las horas, eliminamos el día
+    const newBlockedHours = { ...blockedHoursAdmin, [selectedDay]: selectedHours };
     const newBlockedDates = Object.entries(newBlockedHours)
-      .filter(([day, hours]) => hours.length > 0)
+      .filter(([_, hours]) => hours.length > 0)
       .map(([day]) => day);
 
     try {
       await api.post(`/horarios/${role}`, {
         blockedDates: newBlockedDates,
-        blockedHours: newBlockedHours
+        blockedHours: newBlockedHours,
       });
 
-      setBlockedDates(newBlockedDates);
-      setBlockedHours(newBlockedHours);
+      setBlockedDatesAdmin(newBlockedDates);
+      setBlockedHoursAdmin(newBlockedHours);
       setSelectedDay(null);
       setSelectedHours([]);
     } catch (err) {
@@ -75,30 +93,63 @@ const CalendarioBloqueo = ({ role }) => {
     }
   };
 
+  // --- Mostrar calendario ---
   return (
     <div className="auth-wrapper-content">
       <div className="auth-card card flex flex-col items-center justify-center p-6">
-        <h2 className="logo-agendar mb-2">Control horarios</h2>
-        <Calendar onClickDay={handleDayClick} tileClassName={({ date }) => {
+        <h2 className="logo-agendar mb-2">Control de horarios</h2>
+
+        <Calendar
+          onClickDay={handleDayClick}
+          tileDisabled={({ date }) => {
             const fechaStr = date.toISOString().split("T")[0];
-            return blockedDates.includes(fechaStr) ? "blocked" : "";
+            const hoyStr = new Date().toISOString().split("T")[0];
+            return fechaStr < hoyStr || isDayFullyBlocked(fechaStr);
+          }}
+          tileClassName={({ date }) => {
+            const fechaStr = date.toISOString().split("T")[0];
+            if (isDayFullyBlocked(fechaStr)) return "blocked-admin-full";
+            if (blockedDatesAdmin.includes(fechaStr)) return "blocked-admin-partial";
+            return "";
           }}
         />
+
         {selectedDay && (
-          <div className="card ">
-            <h4 className="text-muted text-center mb-2">Bloquear horas para {selectedDay}</h4>
+          <div className="card mt-3">
+            <h4 className="text-muted text-center mb-2">
+              Bloquear horas para {selectedDay}
+            </h4>
             <div className="hours-grid">
-              {WORK_HOURS.map(hour => (
-                <button
-                  key={hour}
-                  className={`hour-btn ${selectedHours.includes(hour) ? 'selected' : ''}`}
-                  onClick={() => toggleHour(hour)}
-                >
-                  {hour}
-                </button>
-              ))}
+              {WORK_HOURS.map((hour) => {
+                const bloqueadasPorPaciente =
+                  blockedHoursCitas[selectedDay]?.includes(hour);
+                const bloqueadasPorAdmin = selectedHours.includes(hour);
+
+                return (
+                  <button
+                    key={hour}
+                    className={`hour-btn ${
+                      bloqueadasPorAdmin ? "selected" : ""
+                    } ${bloqueadasPorPaciente ? "blocked-paciente" : ""}`}
+                    onClick={() =>
+                      !bloqueadasPorPaciente && toggleHour(hour)
+                    }
+                    disabled={bloqueadasPorPaciente}
+                  >
+                    {hour}
+                  </button>
+                );
+              })}
             </div>
-            <button className="save-btn" onClick={saveHours}>Guardar horas</button>
+            <button className="save-btn mt-3" onClick={saveHours}>
+              Guardar horas
+            </button>
+          </div>
+        )}
+
+        {loading && (
+          <div className="loading-overlay">
+            <div className="spinner">Cargando...</div>
           </div>
         )}
       </div>

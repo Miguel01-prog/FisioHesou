@@ -1,6 +1,6 @@
 .react-calendar {
   width: 100%;
-  max-width: 700px;
+  max-width: 600px;
   margin: 20px auto;
   background: #f7f7f7;
   border-radius: 10px;
@@ -62,3 +62,43 @@
   background: #5a59b149 !important;
   color: white !important;
 }
+
+/* Día bloqueado por el administrador */
+.react-calendar__tile.blocked-admin {
+  background-color: #f8d7da !important;
+  color: #721c24 !important;
+  border-radius: 6px;
+}
+
+/* Día con citas de pacientes */
+.react-calendar__tile.blocked-paciente {
+  
+  background-color: #fff3cd !important;
+  color: #856404 !important;
+  border-radius: 6px;
+}
+.blocked-admin {
+  background-color: rgba(255, 99, 71, 0.3);
+  border-radius: 50%;
+}
+
+.blocked-paciente {
+  background-color: rgba(255, 193, 7, 0.3);
+  border-radius: 50%;
+}
+
+.hour-btn.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.blocked-admin-hour {
+  background-color: rgba(255, 99, 71, 0.3);
+  color: #a33;
+}
+
+.blocked-paciente-hour {
+  background-color: rgba(255, 193, 7, 0.3);
+  color: #665200;
+}
+

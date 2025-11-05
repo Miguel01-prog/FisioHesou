@@ -2,11 +2,13 @@ import mongoose from "mongoose";
 
 
 const citaSchema = new mongoose.Schema({
-    nombreCompleto: String,
-    numeroTelefono: String,
-    fecha: Date,
-    hora: String,
-    creado: { type: Date, default: Date.now }
+    nombres: { type: String, required: true },
+    apellidos: {type: String, required: true },
+    fechaCita: {type: Date, required: true },
+    fechaCitaStr: {type: String, required: true}, 
+    horaCita: {type: String, required: true},
+    area: {type: String, required: true},
+    fechaCreado: { type: Date, default: Date.now }
 
 });
 
