@@ -3,18 +3,18 @@ import Cita from "../models/cita.model.js";
 // Crear nueva cita
 export const crearCita = async (req, res) => {
   try {
-    const { nombres, apellidos, fechaCitaStr, horaCita, area } = req.body;
+    const { nombres, apellidos, edad, fechaCitaStr, horaCita, area } = req.body;
 
-    if (!nombres || !apellidos || !fechaCitaStr || !horaCita || !area) {
+    if (!nombres || !apellidos || !edad || !fechaCitaStr || !horaCita || !area) {
       return res.status(400).json({ message: "Todos los campos son obligatorios" });
     }
 
-    // Convertir fechaCitaStr a objeto Date
     const fechaCita = new Date(fechaCitaStr);
 
     const nuevaCita = new Cita({
       nombres,
       apellidos,
+      edad,
       fechaCita,
       fechaCitaStr,
       horaCita,
@@ -22,6 +22,7 @@ export const crearCita = async (req, res) => {
     });
 
     await nuevaCita.save();
+    console.log("Cita creada correctamente");
 
     res.status(201).json({ message: "Cita creada correctamente", cita: nuevaCita });
   } catch (err) {
@@ -33,7 +34,7 @@ export const crearCita = async (req, res) => {
 // Obtener todas las citas (opcional filtrar por área)
 export const obtenerCitas = async (req, res) => {
   try {
-    const { area } = req.query; // ejemplo: /api/citas?area=nutricion
+    const { area } = req.query;
     const filtro = area ? { area } : {};
     const citas = await Cita.find(filtro).sort({ fechaCita: 1 });
     res.json(citas);
@@ -43,7 +44,7 @@ export const obtenerCitas = async (req, res) => {
   }
 };
 
-// Obtener cita por ID (opcional)
+// Obtener cita por ID
 export const obtenerCitaPorId = async (req, res) => {
   try {
     const { id } = req.params;
@@ -56,7 +57,7 @@ export const obtenerCitaPorId = async (req, res) => {
   }
 };
 
-// Eliminar cita (opcional)
+// Eliminar cita
 export const eliminarCita = async (req, res) => {
   try {
     const { id } = req.params;
@@ -66,5 +67,27 @@ export const eliminarCita = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Error al eliminar cita" });
+  }
+};
+
+// Obtener citas por rol (área)
+export const obtenerCitasPorRol = async (req, res) => {
+  try {
+    const { rol } = req.params;
+
+    if (!rol) {
+      return res.status(400).json({ message: "Debe especificar un rol o área" });
+    }
+
+    const citas = await Cita.find({ area: rol }).sort({ fechaCita: 1 });
+
+    if (!citas.length) {
+      return res.status(404).json({ message: "No hay citas para este rol" });
+    }
+
+    res.json(citas);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error al obtener citas por rol" });
   }
 };

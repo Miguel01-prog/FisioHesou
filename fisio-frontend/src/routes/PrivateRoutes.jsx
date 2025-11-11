@@ -4,15 +4,16 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function PrivateRoute({ children, allowedRoles = [] }) {
-  const { token, user } = useAuth();
+  const { token, user, loading } = useAuth();
+
+  if (loading) return <div>Cargando...</div>; // Espera que se restaure el usuario
 
   if (!token) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
 
-  // Si hay restricción de roles, la validamos
   if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
-    return <Navigate to="/" />; // O a una página de "no autorizado"
+    return <Navigate to="/" replace />;
   }
 
   return children;

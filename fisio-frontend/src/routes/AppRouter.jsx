@@ -13,6 +13,7 @@ import Dashboard from '../pages/admin/Dashboard';
 import AppointmentForm from '../pages/public/AppointmentForm.jsx';
 import BloquearHorarioFisio from '../pages/fisioterapeuta/BloquearHorario.jsx';
 import BloquearHorarioNutri from '../pages/nutriologa/BloquearHorario.jsx';
+import AgendaCitas from '../components/layout/AgendarCitas.jsx';
 
 
 export default function AppRouter() {
@@ -42,8 +43,8 @@ export default function AppRouter() {
           </PrivateRoute>
         }
       >
-        <Route path="bloquear" element={<BloquearHorarioFisio />} />
-      </Route>
+        <Route path="agenda" element={<AgendaCitas/>} />
+        <Route path="bloquear" element={<BloquearHorarioFisio />} /></Route>
 
       {/* Nutrióloga */}
       <Route
@@ -54,6 +55,7 @@ export default function AppRouter() {
           </PrivateRoute>
         }
       >
+        <Route path="agenda" element={<AgendaCitas />} />
         <Route path="bloquear" element={<BloquearHorarioNutri />} />
       </Route>
 

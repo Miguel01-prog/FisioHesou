@@ -19,7 +19,7 @@ const CalendarioBloqueo = ({ role }) => {
   const [selectedHours, setSelectedHours] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Obtener bloqueos del backend
+  // Obtener bloqueos
   useEffect(() => {
     const fetchBlockedData = async () => {
       try {
@@ -38,7 +38,7 @@ const CalendarioBloqueo = ({ role }) => {
     fetchBlockedData();
   }, [role]);
 
-  // --- Determinar si un día está completamente lleno ---
+  // Día lleno
   const isDayFullyBlocked = (fechaStr) => {
     const bloqueadas = blockedHoursAdmin[fechaStr] || [];
     const citas = blockedHoursCitas[fechaStr] || [];
@@ -46,19 +46,18 @@ const CalendarioBloqueo = ({ role }) => {
     return totalOcupadas.size >= WORK_HOURS.length;
   };
 
-  // --- Al hacer clic en un día ---
+  // Clic en día
   const handleDayClick = (date) => {
     const fechaStr = date.toISOString().split("T")[0];
     const hoyStr = new Date().toISOString().split("T")[0];
-
-    if (fechaStr < hoyStr) return; // no fechas pasadas
-    if (isDayFullyBlocked(fechaStr)) return; // no días llenos
+    if (fechaStr < hoyStr) return; // no días pasados
+    if (isDayFullyBlocked(fechaStr)) return; // día lleno
 
     setSelectedDay(fechaStr);
     setSelectedHours(blockedHoursAdmin[fechaStr] || []);
   };
 
-  // --- Alternar hora bloqueada ---
+  // Alternar hora
   const toggleHour = (hour) => {
     let updated;
     if (selectedHours.includes(hour)) {
@@ -69,7 +68,7 @@ const CalendarioBloqueo = ({ role }) => {
     setSelectedHours(updated);
   };
 
-  // --- Guardar cambios del admin ---
+  // Guardar cambios
   const saveHours = async () => {
     if (!selectedDay) return;
 
@@ -93,7 +92,26 @@ const CalendarioBloqueo = ({ role }) => {
     }
   };
 
-  // --- Mostrar calendario ---
+  // ---- Clases visuales del calendario ----
+  const tileClassName = ({ date }) => {
+    const fechaStr = date.toISOString().split("T")[0];
+    const hoyStr = new Date().toISOString().split("T")[0];
+
+    // Días pasados → gris
+    if (fechaStr < hoyStr) return "past-day";
+
+    if (isDayFullyBlocked(fechaStr)) return "blocked-admin";
+    if (blockedDatesAdmin.includes(fechaStr)) return "blocked-admin";
+    if (blockedDatesPaciente.includes(fechaStr)) return "blocked-paciente";
+    return "";
+  };
+
+  const tileDisabled = ({ date }) => {
+    const fechaStr = date.toISOString().split("T")[0];
+    const hoyStr = new Date().toISOString().split("T")[0];
+    return fechaStr < hoyStr || isDayFullyBlocked(fechaStr);
+  };
+
   return (
     <div className="auth-wrapper-content">
       <div className="auth-card card flex flex-col items-center justify-center p-6">
@@ -101,17 +119,8 @@ const CalendarioBloqueo = ({ role }) => {
 
         <Calendar
           onClickDay={handleDayClick}
-          tileDisabled={({ date }) => {
-            const fechaStr = date.toISOString().split("T")[0];
-            const hoyStr = new Date().toISOString().split("T")[0];
-            return fechaStr < hoyStr || isDayFullyBlocked(fechaStr);
-          }}
-          tileClassName={({ date }) => {
-            const fechaStr = date.toISOString().split("T")[0];
-            if (isDayFullyBlocked(fechaStr)) return "blocked-admin-full";
-            if (blockedDatesAdmin.includes(fechaStr)) return "blocked-admin-partial";
-            return "";
-          }}
+          tileDisabled={tileDisabled}
+          tileClassName={tileClassName}
         />
 
         {selectedDay && (
@@ -123,14 +132,17 @@ const CalendarioBloqueo = ({ role }) => {
               {WORK_HOURS.map((hour) => {
                 const bloqueadasPorPaciente =
                   blockedHoursCitas[selectedDay]?.includes(hour);
-                const bloqueadasPorAdmin = selectedHours.includes(hour);
+                const bloqueadasPorAdmin =
+                  selectedHours.includes(hour);
 
                 return (
                   <button
                     key={hour}
                     className={`hour-btn ${
-                      bloqueadasPorAdmin ? "selected" : ""
-                    } ${bloqueadasPorPaciente ? "blocked-paciente" : ""}`}
+                      bloqueadasPorAdmin ? "blocked-admin-hour" : ""
+                    } ${
+                      bloqueadasPorPaciente ? "blocked-paciente-hour" : ""
+                    }`}
                     onClick={() =>
                       !bloqueadasPorPaciente && toggleHour(hour)
                     }
@@ -141,6 +153,7 @@ const CalendarioBloqueo = ({ role }) => {
                 );
               })}
             </div>
+
             <button className="save-btn mt-3" onClick={saveHours}>
               Guardar horas
             </button>

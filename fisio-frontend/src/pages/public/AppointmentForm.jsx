@@ -173,7 +173,7 @@ export default function AppointmentForm() {
     <div className="auth-wrapper-public">
       <div className="auth-card card" style={{ maxWidth: "600px", width: "100%" }}>
         <h2 className="logo-agendar mb-2">Agendar Cita</h2>
-        <p className="text-muted text-center mb-2">
+        <p className="text-muted text-center">
           Llena el formulario para agendar tu cita
         </p>
 
@@ -289,11 +289,15 @@ export default function AppointmentForm() {
                 }}
                 tileClassName={({ date }) => {
                   const iso = toLocalISODate(date);
+                  const hoy = toLocalISODate(new Date());
+                  if (iso < hoy) return "past-day";
+
                   if (blockedDatesAdmin.includes(iso)) return "blocked-admin";
                   if (blockedDatesPaciente.includes(iso)) return "blocked-paciente";
                   return null;
                 }}
               />
+
 
               {showHours && selectedDate && (
                 <div style={{ marginTop: "20px", textAlign: "center" }}>
