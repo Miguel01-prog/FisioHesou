@@ -365,3 +365,27 @@ html, body, #root, .auth-wrapper, .auth-wrapper::before {
   filter: brightness(0.95);
 }
 
+.nuevo-paciente {
+  background: #e0f7e9;
+  color: #0a8754;
+  font-size: 0.8rem;
+  padding: 2px 6px;
+  border-radius: 6px;
+  margin-left: 6px;
+  font-weight: 500;
+}
+
+.past-day {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.blocked-admin {
+  background-color: #ffe0e0 !important;
+  border-radius: 8px;
+}
+
+.blocked-paciente {
+  background-color: #e0f0ff !important;
+  border-radius: 8px;
+}
