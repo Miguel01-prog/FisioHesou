@@ -18,8 +18,28 @@ export const crearCita = async (req, res) => {
       return res.status(400).json({ message: "Todos los campos son obligatorios" });
     }
 
-    const fechaCita = new Date(fechaCitaStr);
     const identificadorPaciente = generarIdentificadorPaciente(nombres, apellidos, telefono);
+
+    // 1. Verificar si el paciente ya existe
+    const pacienteExiste = await Paciente.findOne({ identificadorPaciente });
+
+    // 2. Si no existe → crear paciente
+    if (!pacienteExiste) {
+      await Paciente.create({
+        nombres,
+        apellidos,
+        edad,
+        telefono,
+        identificadorPaciente,
+        area,
+        esNuevo: true,
+        fechaRegistro: new Date(),
+      });
+      console.log("Paciente creado automáticamente");
+    }
+
+    // 3. Registrar la cita
+    const fechaCita = new Date(fechaCitaStr);
 
     const nuevaCita = new Cita({
       nombres,
@@ -30,17 +50,18 @@ export const crearCita = async (req, res) => {
       fechaCitaStr,
       horaCita,
       area,
-      identificadorPaciente
+      identificadorPaciente,
     });
 
     await nuevaCita.save();
-    console.log("Cita creada correctamente");
+
     res.status(201).json({ message: "Cita creada correctamente", cita: nuevaCita });
   } catch (err) {
     console.error(" Error al crear cita:", err);
     res.status(500).json({ message: "Error al crear la cita", error: err.message });
   }
 };
+
 
 
 export const obtenerCitas = async (req, res) => {

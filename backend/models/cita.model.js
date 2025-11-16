@@ -11,7 +11,7 @@ const citaSchema = new mongoose.Schema({
     horaCita: {type: String, required: true},
     area: {type: String, required: true},
     fechaCreado: { type: Date, default: Date.now },
-    identificadorPaciente: { type: String, required: true, unique: true },
+    identificadorPaciente: { type: String, required: true},
 
 
 });
