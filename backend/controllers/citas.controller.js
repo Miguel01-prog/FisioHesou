@@ -2,14 +2,15 @@ import Cita from "../models/cita.model.js";
 import Paciente from "../models/pacientes.model.js";
 import crypto from "crypto";
 
-// 🔹 Generar identificador único de paciente
+
 function generarIdentificadorPaciente(nombres, apellidos, telefono) {
   const base = `${nombres.trim().toLowerCase()}-${apellidos.trim().toLowerCase()}-${telefono}`;
   return crypto.createHash("sha256").update(base).digest("hex").slice(0, 10);
 }
 
-// 🔹 Crear nueva cita
+
 export const crearCita = async (req, res) => {
+  console.log("- Crear cita: Creando una nueva cita...");
   try {
     const { nombres, apellidos, edad, telefono, fechaCitaStr, horaCita, area } = req.body;
 
@@ -34,7 +35,6 @@ export const crearCita = async (req, res) => {
 
     await nuevaCita.save();
     console.log("Cita creada correctamente");
-
     res.status(201).json({ message: "Cita creada correctamente", cita: nuevaCita });
   } catch (err) {
     console.error(" Error al crear cita:", err);
@@ -42,8 +42,9 @@ export const crearCita = async (req, res) => {
   }
 };
 
-// 🔹 Obtener todas las citas (con filtro opcional por área)
+
 export const obtenerCitas = async (req, res) => {
+  console.log("- Obtener Citas: Obteniendo todas las citas por area...");
   try {
     const { area } = req.query;
     const filtro = area ? { area } : {};
@@ -55,8 +56,9 @@ export const obtenerCitas = async (req, res) => {
   }
 };
 
-// 🔹 Obtener cita por ID
+
 export const obtenerCitaPorId = async (req, res) => {
+  consuile.log("Obteniendo cita por ID...");
   try {
     const { id } = req.params;
     const cita = await Cita.findById(id);
@@ -68,8 +70,9 @@ export const obtenerCitaPorId = async (req, res) => {
   }
 };
 
-// 🔹 Eliminar cita
+
 export const eliminarCita = async (req, res) => {
+  console.log("Eliminando cita...");
   try {
     const { id } = req.params;
     const citaEliminada = await Cita.findByIdAndDelete(id);
@@ -81,8 +84,9 @@ export const eliminarCita = async (req, res) => {
   }
 };
 
-// 🔹 Obtener citas por rol (área)
+
 export const obtenerCitasPorRol = async (req, res) => {
+  console.log("Obteniendo citas por rol...");
   try {
     const { rol } = req.params;
     if (!rol) {
@@ -102,8 +106,9 @@ export const obtenerCitasPorRol = async (req, res) => {
   }
 };
 
-// 🔹 Validar y registrar pacientes no existentes
+
 export const validarPacientesNoRegistrados = async (req, res) => {
+  console.log("Validando pacientes no registrados...");
   try {
     const citas = await Cita.find();
 
@@ -111,12 +116,12 @@ export const validarPacientesNoRegistrados = async (req, res) => {
       return res.status(404).json({ message: "No hay citas registradas" });
     }
 
-    // Generar identificadores de todas las citas
+    console.log("Se esta generando identificadores de pacientes...");
     const identificadoresCitas = citas.map(c =>
       generarIdentificadorPaciente(c.nombres, c.apellidos, c.telefono)
     );
 
-    // Buscar pacientes ya existentes
+    
     const pacientesExistentes = await Paciente.find({
       identificadorPaciente: { $in: identificadoresCitas }
     }).select("identificadorPaciente");
@@ -125,11 +130,12 @@ export const validarPacientesNoRegistrados = async (req, res) => {
 
     const nuevosPacientes = [];
 
-    // Crear los pacientes que no existen aún
+   
     for (const cita of citas) {
       const idPaciente = generarIdentificadorPaciente(cita.nombres, cita.apellidos, cita.telefono);
 
       if (!idsExistentes.has(idPaciente)) {
+        console.log(`Registrando nuevo paciente: ${cita.nombres} ${cita.apellidos}`);
         const nuevoPaciente = new Paciente({
           nombres: cita.nombres,
           apellidos: cita.apellidos,
@@ -137,7 +143,7 @@ export const validarPacientesNoRegistrados = async (req, res) => {
           telefono: cita.telefono,
           identificadorPaciente: idPaciente,
           area: cita.area,
-          esNuevo: true, // 🔹 marcar como nuevo
+          esNuevo: true, 
           fechaRegistro: new Date()
         });
 
@@ -147,7 +153,7 @@ export const validarPacientesNoRegistrados = async (req, res) => {
       }
     }
 
-    console.log(`${nuevosPacientes.length} nuevos pacientes registrados`);
+    console.log("Se registro correctamente los pacientes nuevos.");
 
     res.json({
       totalCitas: citas.length,
@@ -158,5 +164,24 @@ export const validarPacientesNoRegistrados = async (req, res) => {
   } catch (err) {
     console.error("Error al validar o registrar pacientes:", err);
     res.status(500).json({ message: "Error al validar o registrar pacientes", error: err.message });
+  }
+};
+
+
+export const ObtenerDetallesPaciente = async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log("Obteniendo detalles del paciente con ID:", id);
+    const historial = await Cita.find({ identificadorPaciente: id })
+      .sort({ fechaCitaStr: 1, horaCita: 1 });
+
+    return res.status(200).json({
+      total: historial.length,
+      historial
+    });
+
+  } catch (err) {
+    console.error("Error en obtenerHistorialPaciente:", err);
+    res.status(500).json({ error: "Error al obtener historial del paciente" });
   }
 };

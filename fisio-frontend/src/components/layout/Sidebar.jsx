@@ -59,13 +59,14 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
         return [
           { icon: '📊', text: 'Dashboard', path: '/fisioterapeuta' },
           { icon: '📅', text: 'Citas', path: '/fisioterapeuta/agenda' },
-          { icon: '🏋️‍♂️', text: 'Ejercicios', path: '/ejercicios' },
+          { icon: '🙋', text: 'Pacientes', path: '/fisioterapeuta/pacientes' },
           { icon: '🔒', text: 'Bloquear horarios', path: '/fisioterapeuta/bloquear' }
         ];
       case 'nutriologa':
         return [
           { icon: '📊', text: 'Dashboard', path: '/nutriologa' },
           { icon: '📅', text: 'Citas', path: '/nutriologa/agenda' },
+          { icon: '🙋', text: 'Pacientes', path: '/nutriologa/pacientes' },
           { icon: '🥗', text: 'Planes alimenticios', path: '/nutriologa/planes' },
           { icon: '🔒', text: 'Bloquear horarios', path: '/nutriologa/bloquear' }
         ];

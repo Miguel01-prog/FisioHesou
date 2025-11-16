@@ -1,6 +1,6 @@
 import express from "express";
 import { crearCita, obtenerCitas, obtenerCitaPorId, eliminarCita, obtenerCitasPorRol,
-         validarPacientesNoRegistrados} from "../controllers/citas.controller.js";
+         validarPacientesNoRegistrados, ObtenerDetallesPaciente} from "../controllers/citas.controller.js";
 
 const router = express.Router();
 
@@ -11,5 +11,6 @@ router.get("/", obtenerCitas);
 router.get("/:id", obtenerCitaPorId);
 router.delete("/:id", eliminarCita);
 router.get("/rol/:rol", obtenerCitasPorRol);
+router.get("/detalles-paciente/:id", ObtenerDetallesPaciente);
 
 export default router;

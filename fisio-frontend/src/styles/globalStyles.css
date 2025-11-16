@@ -184,18 +184,17 @@ body{
 }
 
 .auth-card {
-  position: relative; 
+   position: relative;
   z-index: 1;
-  width: 100%;          /* ocupa todo el ancho posible */
-  max-width: 700px;     /* límite máximo */
+  width: 100%;
+  max-width: 700px;
   padding: 2rem;
-  border-radius: 0.5rem;
+  border-radius: 10px;
   background: rgba(255,255,255,0.95);
-  display: flex;             /* activa flex */
-  flex-direction: column;    /* organiza verticalmente */
-  align-items: center;       /* centra horizontal */
-  justify-content: center;   /* centra vertical */
-  margin: 2rem auto;         /* centra la tarjeta en la página */
+  margin: 2rem auto;
+
+  /* FIX: ya no centra contenido */
+  display: block;
 }
 
 
@@ -388,4 +387,65 @@ html, body, #root, .auth-wrapper, .auth-wrapper::before {
 .blocked-paciente {
   background-color: #e0f0ff !important;
   border-radius: 8px;
+}
+
+
+.title_card {
+  text-align: left;              /* alineación correcta */
+  color: var(--primary-color);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  width: 100%;                    /* garantiza que pueda alinearse */
+  display: block;                 /* asegura la alineación */
+}
+
+.card-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* mitad y mitad */
+  gap: 1.5rem;                    /* separación entre columnas */
+  align-items: start;
+}
+
+.cards-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 900px; /* opcional para ajustarte al centro */
+}
+
+.tabla-pacientes {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.tabla-pacientes th {
+  background: #f5f5f5;
+  padding: 12px;
+  text-align: left;
+  border-bottom: 2px solid #ddd;
+}
+
+.tabla-pacientes td {
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.tabla-pacientes tr:hover {
+  background-color: #fafafa;
+}
+
+.btn-detalle {
+  background-color: #5867dd;
+  border: none;
+  padding: 6px 12px;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-detalle:hover {
+  background-color: #4654b5;
 }

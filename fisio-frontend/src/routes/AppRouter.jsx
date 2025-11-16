@@ -14,6 +14,8 @@ import AppointmentForm from '../pages/public/AppointmentForm.jsx';
 import BloquearHorarioFisio from '../pages/fisioterapeuta/BloquearHorario.jsx';
 import BloquearHorarioNutri from '../pages/nutriologa/BloquearHorario.jsx';
 import AgendaCitas from '../components/layout/AgendarCitas.jsx';
+import PacienteDetalle from '../components/Pacientes/PacienteDetalle.jsx';
+import ListaPacientes from '../components/Pacientes/Pacientes.jsx';
 
 
 export default function AppRouter() {
@@ -44,11 +46,13 @@ export default function AppRouter() {
         }
       >
         <Route path="agenda" element={<AgendaCitas/>} />
-        <Route path="bloquear" element={<BloquearHorarioFisio />} /></Route>
+        <Route path="bloquear" element={<BloquearHorarioFisio/>} />
+        <Route path="paciente/:id" element={<PacienteDetalle/>} />
+        <Route path="pacientes" element={<ListaPacientes/>} />
+      </Route>
 
       {/* Nutrióloga */}
-      <Route
-        path="/nutriologa/*"
+      <Route path="/nutriologa/*" 
         element={
           <PrivateRoute allowedRoles={['nutriologa']}>
             <NutriologaLayout />
@@ -57,6 +61,8 @@ export default function AppRouter() {
       >
         <Route path="agenda" element={<AgendaCitas />} />
         <Route path="bloquear" element={<BloquearHorarioNutri />} />
+        <Route path="paciente/:id" element={<PacienteDetalle />} />
+        <Route path="pacientes" element={<ListaPacientes/>} />
       </Route>
 
       {/* Ruta no encontrada */}

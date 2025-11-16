@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
 import { getUsuarioRol, formatDateDDMMYYYY, toLocalISODate } from "../../utils/utils";
+import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
 import "react-calendar/dist/Calendar.css";
 import Calendar from "react-calendar";
 import "../../styles/calendary.css";
@@ -17,6 +18,7 @@ export default function AgendaCitas() {
   const rolUsuario = getUsuarioRol(user);
   const hoyStr = toLocalISODate(new Date());
   const fetchedOnce = useRef(false);
+  const navigate = useNavigate();
 
   const normalizar = (str) =>
     (str || "").trim().toLowerCase().replace(/\s+/g, " ");
@@ -72,7 +74,7 @@ export default function AgendaCitas() {
     fetchPacientes();
   }, []);
 
-  // Manejo de clic en el calendario
+  
   const handleDayClick = (date) => {
     const iso = toLocalISODate(date);
     const hoy = toLocalISODate(new Date());
@@ -87,7 +89,9 @@ export default function AgendaCitas() {
   return (
     <div className="auth-wrapper-content">
       <div className="auth-card">
+       
         <h2 className="logo-agendar mb-4">Agenda de citas</h2>
+        
 
         <div className="agenda-columns">
           {/* Calendario */}
@@ -131,7 +135,10 @@ export default function AgendaCitas() {
                       const esNuevo = pacientesNuevos.has(idPaciente);
 
                       return (
-                        <div key={cita._id || i} className="appointment-card">
+                        <div key={cita._id || i} className="appointment-card"  
+                          onClick={() => navigate(`/fisioterapeuta/paciente/${cita.identificadorPaciente}`)}
+                          style={{ cursor: "pointer" }}
+                        >
                           <div className="appointment-time">🕒 {cita.horaCita}</div>
                           <div className="appointment-info">
                             <div className="appointment-name">
