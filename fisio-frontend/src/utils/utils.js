@@ -36,8 +36,9 @@ export function toLocalISODate(date) {
   return local.toISOString().split("T")[0];
 }
 
-export function capitalizeWords(text) {
+export function capitalizeWords(text = "") {
+  if (!text || typeof text !== "string") return "";
   return text
     .toLowerCase()
-    .replace(/\b\w/g, letter => letter.toUpperCase());
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }

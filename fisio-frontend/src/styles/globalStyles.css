@@ -167,13 +167,15 @@ body{
 .auth-wrapper-content {
   min-height: 100vh;
   display: flex;
-  align-items: center;
+  align-items: flex-start; 
   justify-content: center;
+  padding-top: 40px; /* ajusta a tu gusto: 20px, 60px, etc */
   background-image: url('/hesou-fondo-content.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
+
 
 .auth-wrapper::before{
   content: "";
@@ -183,19 +185,23 @@ body{
   pointer-events: none;
 }
 
-.auth-card {
-   position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: 700px;
-  padding: 2rem;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.95);
-  margin: 2rem auto;
-
-  /* FIX: ya no centra contenido */
-  display: block;
+.auth-card { 
+  position: relative; 
+  z-index: 1; 
+  width: 100%; 
+  max-width: 700px; 
+  padding: 1.2rem; 
+  border-radius: 10px; 
+  background: rgba(255,255,255,0.95); 
+  margin: 0 auto !important; /* SIN separación vertical */ 
+  display: block; 
 }
+
+
+.auth-card-detail {
+  margin-top: 30px !important;  /* Ajusta solo el espacio hacia abajo */
+}
+
 
 
 .auth-wrapper-public{
@@ -349,7 +355,7 @@ html, body, #root, .auth-wrapper, .auth-wrapper::before {
 
 
 .save-btn {
-  display: block;      
+   display: block;      
   margin: 1rem auto 0;  
   padding: 0.6rem 1.2rem;
   border: none;
@@ -357,12 +363,9 @@ html, body, #root, .auth-wrapper, .auth-wrapper::before {
   background: var(--success-color);  
   color: white;
   cursor: pointer;
-  transition: filter 0.2s;
+  transition: transform 0.2s ease;
 }
 
-.save-btn:hover {
-  filter: brightness(0.95);
-}
 
 .nuevo-paciente {
   background: #e0f7e9;
@@ -410,42 +413,152 @@ html, body, #root, .auth-wrapper, .auth-wrapper::before {
 .cards-column {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 0;
   width: 100%;
-  max-width: 900px; /* opcional para ajustarte al centro */
+  max-width: 900px;
 }
 
+/* Tabla moderna estilo Hesou */
 .tabla-pacientes {
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
+  border-collapse: separate;
+  border-spacing: 0 8px; /* filas con separación elegante */
 }
 
-.tabla-pacientes th {
-  background: #f5f5f5;
-  padding: 12px;
+.tabla-pacientes thead th {
+  background: var(--card);
+  color: var(--text);
+  padding: 14px;
   text-align: left;
-  border-bottom: 2px solid #ddd;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.tabla-pacientes tbody tr {
+  background: var(--card);
+  box-shadow: var(--shadow);
+  border-radius: 10px;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.tabla-pacientes tbody tr:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(20,30,60,0.12);
 }
 
 .tabla-pacientes td {
-  padding: 20px;
-  border-bottom: 1px solid #eee;
+  padding: 16px 18px;
+  border-bottom: none;
+  color: var(--text-color);
 }
 
-.tabla-pacientes tr:hover {
-  background-color: #fafafa;
+/* bordes redondeados por fila */
+.tabla-pacientes tr td:first-child {
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
 }
 
-.btn-detalle {
-  background-color: #5867dd;
+.tabla-pacientes tr td:last-child {
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+.btn-eye {
+  color: #000000;
   border: none;
-  padding: 6px 12px;
-  color: white;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: transform 0.15s ease, filter 0.15s ease;
+  box-shadow: var(--shadow);
+}
+
+.btn-eye:hover {
+  transform: scale(1.06);
+  filter: brightness(0.92);
+}
+
+.btn-eye:active {
+  transform: scale(0.94);
+}
+
+
+
+.btn-icon-delete {   
+  background: transparent;        
+  border: none;                   
+  padding: 0;                     
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.btn-icon-delete svg {
+  width: 28px !important;           
+  height: 28px !important;
+  color: #e74c3c;                   
+}
+
+
+.btn-add-icon {
+  background: transparent;        
+  border: none;                  
+  padding: 0;                     
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.btn-add-icon:hover,
+.btn-icon-delete:hover , 
+.save-btn:hover {
+  transform: scale(1.15);    /* efecto suave SOLO al pasar el mouse */
+}
+
+.btn-add-icon svg {
+  width: 25px !important;         /* ícono más grande */
+  height: 25px !important;
+  color: #38c2a0;                 /* color del ícono */
+}
+
+
+/* Botón + */
+.btn-eye {
+  background: #e7e7e7;
+  border: 1px solid #cfcfcf;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 6px;
   cursor: pointer;
+  flex-shrink: 0;
+  transition: 0.2s;
 }
 
-.btn-detalle:hover {
-  background-color: #4654b5;
+.btn-eye:hover {
+  background: #dcdcdc;
+}
+
+.input-dynamic {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  width: 100%;
+  flex-wrap: nowrap;
+}
+
+/* Input dentro de fila dinámica */
+.dynamic-input {
+  flex: 1;
+  width: auto !important;
+  min-width: 0;
 }

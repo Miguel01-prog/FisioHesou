@@ -14,8 +14,15 @@ import AppointmentForm from '../pages/public/AppointmentForm.jsx';
 import BloquearHorarioFisio from '../pages/fisioterapeuta/BloquearHorario.jsx';
 import BloquearHorarioNutri from '../pages/nutriologa/BloquearHorario.jsx';
 import AgendaCitas from '../components/layout/AgendarCitas.jsx';
+// Componentes Pacientes
 import PacienteDetalle from '../components/Pacientes/PacienteDetalle.jsx';
 import ListaPacientes from '../components/Pacientes/Pacientes.jsx';
+
+//Historiales
+import FormularioHistorial from '../components/historial/FormularioHistorial.jsx';
+
+// Notas
+import Notas from '../components/notas/NuevaNota.jsx';
 
 
 export default function AppRouter() {
@@ -49,6 +56,8 @@ export default function AppRouter() {
         <Route path="bloquear" element={<BloquearHorarioFisio/>} />
         <Route path="paciente/:id" element={<PacienteDetalle/>} />
         <Route path="pacientes" element={<ListaPacientes/>} />
+        <Route path="creacion-historial" element={<FormularioHistorial/>} />
+        <Route path="notas" element={<Notas/>} />
       </Route>
 
       {/* Nutrióloga */}

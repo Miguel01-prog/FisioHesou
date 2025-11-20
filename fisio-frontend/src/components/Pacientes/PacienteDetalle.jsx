@@ -1,21 +1,22 @@
+import { capitalizeWords, formatDateDDMMYYYY } from "../../utils/utils.js";
+import CardPaciente from "../pacientes/CardPaciente.jsx";
+import { useNavigate } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../../api.js";
-import { capitalizeWords, formatDateDDMMYYYY } from "../../utils/utils.js";
 
 export default function PacienteDetalle() {
   const { id } = useParams();
   const [historial, setHistorial] = useState([]);
   const [paciente, setPaciente] = useState(null);
-
+  const navigate = useNavigate();
   useEffect(() => {
     const fetchHistorial = async () => {
       try {
         const { data } = await api.get(`/citas/detalles-paciente/${id}`);
         setHistorial(data.historial || []);
-
+   
         if (data.historial.length > 0) {
-            console.log(data.historial[0]);
           setPaciente({
             nombres: data.historial[0].nombres,
             apellidos: data.historial[0].apellidos,
@@ -36,41 +37,28 @@ export default function PacienteDetalle() {
   return (
   <div className="auth-wrapper-content">
     <div className="cards-column">
-        <div className="auth-card card" style={{marginTop: '-30%'}}>
-            <h2 className="title_card">Detalle paciente</h2>
-            <hr />
-            {paciente && (
-                <div className="card-split">
-                    <div>
-                        <span className="form-label">Nombre completo:
-                            <strong> {capitalizeWords(paciente.nombres)} {capitalizeWords(paciente.apellidos)}</strong>
-                        </span>
-                    </div>
+      {paciente && (
+          <CardPaciente paciente={paciente} />
+        )}
+       
+      <div className="auth-card auth-card-detail">
+        <div>
+          <h2 className="title_card" style={{marginTop: '-10px'}}>Historial</h2>
+         <button className="save-btn" style={{marginTop: '-55px', marginRight: '-2px'}}
+            onClick={() => {
+    
+              localStorage.setItem("dataPaciente", JSON.stringify(paciente));
+              console.log("Paciente guardadoantes de navegar:", paciente);
+              navigate(`/fisioterapeuta/creacion-historial`);
+            }}
+          >
+            Crear historial
+          </button>
 
-                    <div>
-                        <span className="form-label">Teléfono:
-                            <strong> {paciente.telefono}</strong>
-                        </span>
-                    </div>
 
-                    <div>
-                        <span className="form-label">Edad:
-                            <strong> {paciente.edad}</strong>
-                        </span>
-                    </div>
-
-                    <div>
-                        <span className="form-label">Fecha primera cita:
-                            <strong> {formatDateDDMMYYYY(paciente.fechaRegistro)}</strong>
-                        </span>
-                    </div>
-                </div>
-            )}
         </div>
-        <div className="auth-card card" style={{marginTop: '-23px'}}>
-            <h2 className="title_card">Historial</h2>
-            <hr/>
-        </div>
+          <hr/>
+      </div>
     </div>
 </div>
 

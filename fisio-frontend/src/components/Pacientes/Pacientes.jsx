@@ -1,30 +1,33 @@
 import React, { useEffect, useState } from "react";
-import api from "../../api";
 import { capitalizeWords } from "../../utils/utils";
+import { useNavigate } from "react-router-dom";
+import { FaEye } from "react-icons/fa";
+import api from "../../api";
 
 export default function ListaPacientes() {
-  const [pacientes, setPacientes] = useState([]);
-  const [cargando, setCargando] = useState(true);
+    const [pacientes, setPacientes] = useState([]);
+    const [cargando, setCargando] = useState(true);
+    const navigate = useNavigate();
+    useEffect(() => {
+        obtenerPacientes();
+    }, []);
 
-  useEffect(() => {
-    obtenerPacientes();
-  }, []);
-
-  const obtenerPacientes = async () => {
-    try {
-      const { data } = await api.get("/pacientes");
-      setPacientes(data);
-    } catch (error) {
-      console.error("Error al cargar pacientes:", error);
-    } finally {
-      setCargando(false);
-    }
-  };
+    const obtenerPacientes = async () => {
+        try {
+        const { data } = await api.get("/pacientes");
+        
+        setPacientes(data);
+        } catch (error) {
+        console.error("Error al cargar pacientes:", error);
+        } finally {
+        setCargando(false);
+        }
+    };
 
   return (
     <div className="auth-wrapper-content">
-      <div className="auth-card card" style={{ width: "900px" }}>
-        <h2 className="title_card">Pacientes</h2>
+      <div className="auth-card" style={{ width: "900px", marginTop: '20%'}}>
+        <h2 className="title_card" style={{marginTop: '-10px'}}>Pacientes</h2>
         <hr />
 
         {cargando && <p>Cargando...</p>}
@@ -39,26 +42,25 @@ export default function ListaPacientes() {
               <tr>
                 <th>Nombre completo</th>
                 <th>Teléfono</th>
-                <th>Edad</th>
-                <th>Acciones</th>
+                <th>Ver historial</th>
               </tr>
             </thead>
 
             <tbody>
               {pacientes.map((p) => (
-                <tr key={p._id}>
+                <tr key={p.identificadorPaciente}>
                   <td>
                     {capitalizeWords(p.nombres)} {capitalizeWords(p.apellidos)}
                   </td>
                   <td>{p.telefono}</td>
-                  <td>{p.edad}</td>
                   <td>
-                    <button
-                      className="btn-detalle"
-                      onClick={() => window.location.href = `/paciente/${p._id}`}
-                    >
-                      Ver detalle
-                    </button>
+                    <button className="btn-eye" onClick={() => {localStorage.setItem("dataPaciente", JSON.stringify(p));
+                        navigate(`/fisioterapeuta/paciente/${p.identificadorPaciente}`);
+                      }}
+                      >
+                        <FaEye/>
+                      </button>
+
                   </td>
                 </tr>
               ))}
