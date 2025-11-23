@@ -66,11 +66,7 @@ export default function CrearNota() {
   };
 
   return (
-    <div className="auth-wrapper-content">
-        <div className="auth-card auth-card-detail" style={{ width: "900px" }}>
-            <h2 className="title_card" style={{ marginTop: "-10px" }}>
-                Crear Nota</h2>
-            <hr />
+        <div className="auth-card auth-card-detail" >
             <form onSubmit={handleSubmit} className="form">
                 <div className="form-row">
                     <div className="col">
@@ -144,12 +140,9 @@ export default function CrearNota() {
                         />
                     </div>
                 </div>
-                <button className="save-btn" type="submit" style={{ marginTop: "15px" }}>
-                    Guardar Nota
-                </button>
             </form>
         </div>
-    </div>
+
 
   );
 }

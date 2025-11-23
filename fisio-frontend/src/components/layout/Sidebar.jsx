@@ -60,7 +60,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           { icon: '📊', text: 'Dashboard', path: '/fisioterapeuta' },
           { icon: '📅', text: 'Citas', path: '/fisioterapeuta/agenda' },
           { icon: '🙋', text: 'Pacientes', path: '/fisioterapeuta/pacientes' },
-          { icon: '📝', text: 'Notas SOAP', path: '/fisioterapeuta/notas' },
           { icon: '🔒', text: 'Bloquear horarios', path: '/fisioterapeuta/bloquear' }
         ];
       case 'nutriologa':
