@@ -15,7 +15,6 @@ export default function ListaPacientes() {
     const obtenerPacientes = async () => {
         try {
         const { data } = await api.get("/pacientes");
-        
         setPacientes(data);
         } catch (error) {
         console.error("Error al cargar pacientes:", error);
@@ -55,6 +54,7 @@ export default function ListaPacientes() {
                   <td>{p.telefono}</td>
                   <td>
                     <button className="btn-eye" onClick={() => {localStorage.setItem("dataPaciente", JSON.stringify(p));
+                    console.log("Paciente seleccionado:", p.identificadorPaciente);
                         navigate(`/fisioterapeuta/paciente/${p.identificadorPaciente}`);
                       }}
                       >

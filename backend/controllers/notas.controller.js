@@ -86,3 +86,36 @@ export const eliminarNota = async (req, res) => {
         res.status(500).json({ message: "Error al eliminar nota", error: err.message });
     }
 };
+
+
+
+export const generarIdNota = async (req, res) => {
+    try {
+        const { nombrePaciente, apellidoPaciente, identificadorPaciente } = req.body;
+
+        if (!nombrePaciente || !apellidoPaciente || !identificadorPaciente) {
+            return res.status(400).json({
+                message: "Faltan datos: nombrePaciente, apellidoPaciente, identificadorPaciente"
+            });
+        }
+
+        // Fecha actual en formato MM-YYYY
+        const fecha = new Date();
+        const mes = String(fecha.getMonth() + 1).padStart(2, "0"); // 01-12
+        const año = fecha.getFullYear();
+        const mesAñoNota = `${mes}-${año}`;
+
+        // Contar cuántas notas tiene este paciente en el mes
+        const cantidadNotas = await Nota.countDocuments({
+            identificadorPaciente
+        });
+
+        // Generar ID: iniciales + fecha + conteo + random
+        const iniciales = `${nombrePaciente[0]}${apellidoPaciente[0]}`.toUpperCase();
+        const idNota = `${iniciales}-${mesAñoNota}-${cantidadNotas + 1}`;
+
+        res.json({ idNota, mesAñoNota });
+    } catch (err) {
+        res.status(500).json({ message: "Error al generar ID", error: err.message });
+    }
+};

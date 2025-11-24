@@ -46,8 +46,6 @@ export default function PacienteDetalle() {
           <h2 className="title_card" style={{marginTop: '-10px'}}>Historial</h2>
          <button className="save-btn" style={{marginTop: '-55px', marginRight: '-2px'}}
             onClick={() => {
-    
-              localStorage.setItem("dataPaciente", JSON.stringify(paciente));
               console.log("Paciente guardadoantes de navegar:", paciente);
               navigate(`/fisioterapeuta/creacion-historial`);
             }}
