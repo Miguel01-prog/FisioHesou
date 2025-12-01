@@ -89,7 +89,8 @@ export const eliminarNota = async (req, res) => {
 
 
 
-export const generarIdNota = async (req, res) => {
+export const generaridHistoricoFk = async (req, res) => {
+    console.log("Creando Id nota...")
     try {
         const { nombrePaciente, apellidoPaciente, identificadorPaciente } = req.body;
 
@@ -112,9 +113,9 @@ export const generarIdNota = async (req, res) => {
 
         // Generar ID: iniciales + fecha + conteo + random
         const iniciales = `${nombrePaciente[0]}${apellidoPaciente[0]}`.toUpperCase();
-        const idNota = `${iniciales}-${mesAñoNota}-${cantidadNotas + 1}`;
+        const idHistoricoFk = `${iniciales}-${mesAñoNota}-${cantidadNotas + 1}`;
 
-        res.json({ idNota, mesAñoNota });
+        res.json({ idHistoricoFk, mesAñoNota });
     } catch (err) {
         res.status(500).json({ message: "Error al generar ID", error: err.message });
     }

@@ -8,6 +8,7 @@ import citasRoutes from './routes/citas.routes.js';
 import horariosRoutes from './routes/horarios.routes.js';
 import pacientesRoutes from './routes/pacientes.router.js';
 import notasRoutes from './routes/notas.route.js';
+import historialNotasRoutes from './routes/historial-notas.route.js'
 
 const app = express();
 
@@ -23,5 +24,6 @@ app.use('/api/citas', citasRoutes);      // rutas de citas
 app.use('/api/horarios', horariosRoutes);// rutas de horarios
 app.use('/api/pacientes', pacientesRoutes);      // rutas de pacientes
 app.use('/api/notas', notasRoutes);      // rutas de notas
+app.use('/api/historial-notas', historialNotasRoutes) 
 
 export default app;

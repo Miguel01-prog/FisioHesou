@@ -6,7 +6,7 @@ import {
     obtenerNotasPorHistorial,
     obtenerNotasPorPaciente,
     actualizarNota,
-    eliminarNota, generarIdNota
+    eliminarNota, generaridHistoricoFk
 } from "../controllers/notas.controller.js";
 
 const router = express.Router();
@@ -19,6 +19,6 @@ router.get("/paciente/:pacienteId", obtenerNotasPorPaciente);
 
 router.put("/:id", actualizarNota);           
 router.delete("/:id", eliminarNota);          
-router.post("/generar-id", generarIdNota);              
+router.post("/generar-id", generaridHistoricoFk);              
 
 export default router;

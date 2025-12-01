@@ -17,7 +17,7 @@ export default function CrearNota() {
   });
 
   const generarIdNotaFront = async (paciente, mesAñoNota) => {
-    console.log("Generando ID para paciente:", paciente);
+    
     try {
       const response = await api.post("/notas/generar-id", {
         nombrePaciente: paciente.nombres,
