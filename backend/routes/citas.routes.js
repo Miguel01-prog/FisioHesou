@@ -1,21 +1,16 @@
-import { Router } from 'express';
-import { verifyToken, checkRole } from '../libs/auth.middleware.js';
+import express from "express";
+import { crearCita, obtenerCitas, obtenerCitaPorId, eliminarCita, obtenerCitasPorRol,
+         validarPacientesNoRegistrados, ObtenerDetallesPaciente} from "../controllers/citas.controller.js";
 
-const router = Router();
+const router = express.Router();
 
-// Solo fisioterapeuta y superadmin pueden ver estas rutas
-router.get('/fisioterapeuta', verifyToken, checkRole('fisioterapeuta', 'superadmin'), (req, res) => {
-  res.json({ message: 'Contenido para fisioterapeuta' });
-});
+router.get("/validar-pacientes", validarPacientesNoRegistrados);
 
-// Solo nutrióloga y superadmin
-router.get('/nutriologa', verifyToken, checkRole('nutriologa', 'superadmin'), (req, res) => {
-  res.json({ message: 'Contenido para nutrióloga' });
-});
-
-// Solo superadmin
-router.get('/admin', verifyToken, checkRole('superadmin'), (req, res) => {
-  res.json({ message: 'Contenido para superadmin' });
-});
+router.post("/", crearCita);
+router.get("/", obtenerCitas);
+router.get("/:id", obtenerCitaPorId);
+router.delete("/:id", eliminarCita);
+router.get("/rol/:rol", obtenerCitasPorRol);
+router.get("/detalles-paciente/:id", ObtenerDetallesPaciente);
 
 export default router;

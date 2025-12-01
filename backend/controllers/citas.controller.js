@@ -1,52 +1,208 @@
-import citaModel from "../models/cita.model.js";
-import solicitarCitaModel from "../models/solicitarCita.model.js"; // ✅ ESTA LÍNEA ES CLAVE
+import Cita from "../models/cita.model.js";
+import Paciente from "../models/pacientes.model.js";
+import crypto from "crypto";
 
-export const obtenerCitas = async (req, res) => {
+
+function generarIdentificadorPaciente(nombres, apellidos, telefono) {
+  const base = `${nombres.trim().toLowerCase()}-${apellidos.trim().toLowerCase()}-${telefono}`;
+  return crypto.createHash("sha256").update(base).digest("hex").slice(0, 10);
+}
+
+
+export const crearCita = async (req, res) => {
+  console.log("- Crear cita: Creando una nueva cita...");
   try {
-    const citas = await citaModel.find();
-    res.json(citas);
-  } catch (error) {
-    res.status(500).json({ message: "Error al obtener citas", error });
+    const { nombres, apellidos, edad, telefono, fechaCitaStr, horaCita, area } = req.body;
+
+    if (!nombres || !apellidos || !edad || !telefono || !fechaCitaStr || !horaCita || !area) {
+      return res.status(400).json({ message: "Todos los campos son obligatorios" });
+    }
+
+    const identificadorPaciente = generarIdentificadorPaciente(nombres, apellidos, telefono);
+
+    // 1. Verificar si el paciente ya existe
+    const pacienteExiste = await Paciente.findOne({ identificadorPaciente });
+
+    // 2. Si no existe → crear paciente
+    if (!pacienteExiste) {
+      await Paciente.create({
+        nombres,
+        apellidos,
+        edad,
+        telefono,
+        identificadorPaciente,
+        area,
+        esNuevo: true,
+        fechaRegistro: new Date(),
+      });
+      console.log("Paciente creado automáticamente");
+    }
+
+    // 3. Registrar la cita
+    const fechaCita = new Date(fechaCitaStr);
+
+    const nuevaCita = new Cita({
+      nombres,
+      apellidos,
+      edad,
+      telefono,
+      fechaCita,
+      fechaCitaStr,
+      horaCita,
+      area,
+      identificadorPaciente,
+    });
+
+    await nuevaCita.save();
+
+    res.status(201).json({ message: "Cita creada correctamente", cita: nuevaCita });
+  } catch (err) {
+    console.error(" Error al crear cita:", err);
+    res.status(500).json({ message: "Error al crear la cita", error: err.message });
   }
 };
 
-export const ObtenerHorasDisponibles = async (req, res) => {
+
+
+export const obtenerCitas = async (req, res) => {
+  console.log("- Obtener Citas: Obteniendo todas las citas por area...");
   try {
-    const { fecha } = req.query;
-    if (!fecha) {
-      return res.status(400).json({ message: "La fecha es requerida" });
+    const { area } = req.query;
+    const filtro = area ? { area } : {};
+    const citas = await Cita.find(filtro).sort({ fechaCita: 1 });
+    res.json(citas);
+  } catch (err) {
+    console.error(" Error al obtener citas:", err);
+    res.status(500).json({ message: "Error al obtener citas" });
+  }
+};
+
+
+export const obtenerCitaPorId = async (req, res) => {
+  consuile.log("Obteniendo cita por ID...");
+  try {
+    const { id } = req.params;
+    const cita = await Cita.findById(id);
+    if (!cita) return res.status(404).json({ message: "Cita no encontrada" });
+    res.json(cita);
+  } catch (err) {
+    console.error(" Error al obtener cita:", err);
+    res.status(500).json({ message: "Error al obtener cita" });
+  }
+};
+
+
+export const eliminarCita = async (req, res) => {
+  console.log("Eliminando cita...");
+  try {
+    const { id } = req.params;
+    const citaEliminada = await Cita.findByIdAndDelete(id);
+    if (!citaEliminada) return res.status(404).json({ message: "Cita no encontrada" });
+    res.json({ message: "Cita eliminada correctamente" });
+  } catch (err) {
+    console.error(" Error al eliminar cita:", err);
+    res.status(500).json({ message: "Error al eliminar cita" });
+  }
+};
+
+
+export const obtenerCitasPorRol = async (req, res) => {
+  console.log("Obteniendo citas por rol...");
+  try {
+    const { rol } = req.params;
+    if (!rol) {
+      return res.status(400).json({ message: "Debe especificar un rol o área" });
     }
 
-    // Horas laborables
-    const todasLasHoras = [
-      "08:00", "08:30", "09:00", "09:30",
-      "10:00", "10:30", "11:00", "11:30",
-      "12:00", "12:30", "13:00", "13:30",
-      "14:00", "14:30", "15:00", "15:30",
-      "16:00", "16:30", "17:00", "17:30",
-    ];
+    const citas = await Cita.find({ area: rol }).sort({ fechaCita: 1 });
+
+    if (!citas.length) {
+      return res.status(404).json({ message: "No hay citas para este rol" });
+    }
+
+    res.json(citas);
+  } catch (err) {
+    console.error(" Error al obtener citas por rol:", err);
+    res.status(500).json({ message: "Error al obtener citas por rol" });
+  }
+};
+
+
+export const validarPacientesNoRegistrados = async (req, res) => {
+  console.log("Validando pacientes no registrados...");
+  try {
+    const citas = await Cita.find();
+
+    if (!citas.length) {
+      return res.status(404).json({ message: "No hay citas registradas" });
+    }
+
+    console.log("Se esta generando identificadores de pacientes...");
+    const identificadoresCitas = citas.map(c =>
+      generarIdentificadorPaciente(c.nombres, c.apellidos, c.telefono)
+    );
+
+    
+    const pacientesExistentes = await Paciente.find({
+      identificadorPaciente: { $in: identificadoresCitas }
+    }).select("identificadorPaciente");
+
+    const idsExistentes = new Set(pacientesExistentes.map(p => p.identificadorPaciente));
+
+    const nuevosPacientes = [];
 
    
-    const fechaStart = new Date(fecha);
-    fechaStart.setHours(0, 0, 0, 0);  
+    for (const cita of citas) {
+      const idPaciente = generarIdentificadorPaciente(cita.nombres, cita.apellidos, cita.telefono);
 
-    const fechaEnd = new Date(fecha);
-    fechaEnd.setHours(23, 59, 59, 999);  
+      if (!idsExistentes.has(idPaciente)) {
+        console.log(`Registrando nuevo paciente: ${cita.nombres} ${cita.apellidos}`);
+        const nuevoPaciente = new Paciente({
+          nombres: cita.nombres,
+          apellidos: cita.apellidos,
+          edad: cita.edad,
+          telefono: cita.telefono,
+          identificadorPaciente: idPaciente,
+          area: cita.area,
+          esNuevo: true, 
+          fechaRegistro: new Date()
+        });
 
-    const citas = await citaModel.find({ fecha: { $gte: fechaStart, $lte: fechaEnd } });
-    const solicitudes = await solicitarCitaModel.find({ fecha: { $gte: fechaStart, $lte: fechaEnd } });
-
-    const horasOcupadas = [
-      ...citas.map(c => c.hora),
-      ...solicitudes.map(s => s.hora)
-    ];
-    const horasDisponibles = todasLasHoras.filter(hora => !horasOcupadas.includes(hora));
-    if (horasDisponibles.length === 0) {
-      return res.status(404).json({ message: "No hay horas disponibles para esta fecha" });
+        await nuevoPaciente.save();
+        nuevosPacientes.push(nuevoPaciente);
+        idsExistentes.add(idPaciente);
+      }
     }
-    res.json(horasDisponibles);
-  } catch (error) {
-    console.error('Error al obtener horas disponibles:', error.message);
-    res.status(500).json({ message: 'Error interno del servidor', error: error.message });
+
+    console.log("Se registro correctamente los pacientes nuevos.");
+
+    res.json({
+      totalCitas: citas.length,
+      pacientesRegistrados: idsExistentes.size,
+      pacientesNuevosCreados: nuevosPacientes.length,
+      nuevosPacientes
+    });
+  } catch (err) {
+    console.error("Error al validar o registrar pacientes:", err);
+    res.status(500).json({ message: "Error al validar o registrar pacientes", error: err.message });
+  }
+};
+
+
+export const ObtenerDetallesPaciente = async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log("Obteniendo detalles del paciente con ID:", id);
+    const historial = await Cita.find({ identificadorPaciente: id })
+      .sort({ fechaCitaStr: 1, horaCita: 1 });
+
+    return res.status(200).json({
+      total: historial.length,
+      historial
+    });
+
+  } catch (err) {
+    console.error("Error en obtenerHistorialPaciente:", err);
+    res.status(500).json({ error: "Error al obtener historial del paciente" });
   }
 };

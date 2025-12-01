@@ -19,6 +19,7 @@ export default function LoginPage() {
       navigate('/fisioterapeuta');
       console.log("este es el rol: ",res.data.role);
       console.log("este es el name: ",res.data.name);
+      localStorage.setItem("user",JSON.stringify({rol: res.data.role, nombre: res.data.name, token: res.data.token}))
     } else if (res.data.role === 'nutriologa') {
       navigate('/nutriologa');
     } else if (res.data.role === 'superadmin') {
