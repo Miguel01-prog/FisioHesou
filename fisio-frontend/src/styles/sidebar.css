@@ -39,7 +39,6 @@
   flex-shrink: 0;
 }
 
-/* Collapsed sidebar */
 .sidebar.collapsed {
   width: var(--sidebar-width-collapsed);
 }
@@ -64,6 +63,7 @@
   overflow: hidden;
   transition: var(--transition);
 }
+
 .logo-agendar {
   color: var(--primary-color);
   text-align: center;
@@ -73,7 +73,6 @@
   overflow: hidden;
   transition: var(--transition);
 }
-
 
 .sidebar.collapsed .logo {
   font-size: 1.2rem;
@@ -246,17 +245,17 @@
 ==================== */
 .main-content {
   position: relative;
-  margin-left: 260px; /* evita superposición */
-  z-index: 1; /* debajo del sidebar */
+  margin-left: 260px;
+  z-index: 1;
   min-height: 100vh;
-  background-color: #ffffff !important; /* fuerza blanco */
+  background-color: #ffffff !important;
 }
 
-/* Si tienes algún fondo o capa oscura que tapa todo */
 .auth-wrapper::before,
 .overlay {
   z-index: 0 !important;
 }
+
 /* ====================
    📱 Responsive - Móviles
 ==================== */
@@ -278,7 +277,7 @@
   .main-content,
   .main-content.sidebar-collapsed {
     margin-left: 0;
-    padding-top: 70px; /* espacio para botón móvil */
+    padding-top: 70px;
   }
 
   .sidebar-overlay {
@@ -311,12 +310,13 @@
     box-shadow: var(--shadow);
   }
 }
+
 /* === Prioridad visual === */
 .sidebar {
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 1000; /* más alto que todo */
+  z-index: 1000;
 }
 
 .main-content {
@@ -325,13 +325,13 @@
   z-index: 1;
 }
 
-/* Evita que algo lo tape */
 .auth-wrapper,
 .login-container,
 .page-wrapper {
   position: relative;
   z-index: 0 !important;
 }
+
 /* Ajuste automático del contenido al colapsar */
 .main-content {
   margin-left: var(--sidebar-width-expanded);
@@ -340,4 +340,83 @@
 
 .sidebar.collapsed ~ .main-content {
   margin-left: var(--sidebar-width-collapsed);
+}
+
+/* ====================
+   Submenu y toggle
+==================== */
+.submenu-toggle {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: inherit;
+}
+
+.submenu {
+  margin-left: 20px;
+  padding-left: 10px;
+  border-left: 2px solid #ddd;
+}
+
+.submenu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  color: var(--text-color);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.submenu li {
+  list-style: none;
+}
+
+.submenu-item:hover {
+  color: var(--primary-color);
+}
+
+/* ====================
+   Fix iconos y submenu colapsado
+==================== */
+.sidebar.collapsed .nav-icon {
+  font-size: 1.4rem;
+  min-width: 100%;
+}
+
+/* Submenu flotante */
+.sidebar.collapsed .submenu {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  margin-left: 8px;
+  background: var(--card-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 8px 12px;
+  min-width: 180px;
+  z-index: 2000;
+  display: none; /* oculto por defecto */
+}
+
+.sidebar.collapsed li:hover > .submenu,
+.sidebar.collapsed li .submenu.open {
+  display: block;
+}
+
+/* Submenu items visibles */
+.sidebar.collapsed .submenu-item {
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+
+.sidebar.collapsed .submenu .nav-text {
+  opacity: 1;
+  width: auto;
+  margin-left: 8px;
 }

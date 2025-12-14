@@ -19,6 +19,7 @@ router.get("/paciente/:pacienteId", obtenerNotasPorPaciente);
 
 router.put("/:id", actualizarNota);           
 router.delete("/:id", eliminarNota);          
-router.post("/generar-id", generaridHistoricoFk);              
+router.post("/generar-id", generaridHistoricoFk);  
+ 
 
 export default router;

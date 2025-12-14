@@ -1,15 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Children } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import '../../styles/sidebar.css';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { IoMdClose } from 'react-icons/io';
 import { FaArrowLeftLong } from "react-icons/fa6";
+import { FiCalendar} from "react-icons/fi";
+
 
 const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const [collapsed, setCollapsed] = useState(isCollapsed);
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useAuth();
+  const [openSubmenu, setOpenSubmenu] = useState(null);
   const location = useLocation();
 
   useEffect(() => {
@@ -60,7 +63,11 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           { icon: '📊', text: 'Dashboard', path: '/fisioterapeuta' },
           { icon: '📅', text: 'Citas', path: '/fisioterapeuta/agenda' },
           { icon: '🙋', text: 'Pacientes', path: '/fisioterapeuta/pacientes' },
-          { icon: '🔒', text: 'Bloquear horarios', path: '/fisioterapeuta/bloquear' }
+          { icon: "⚙️", text: "Configuración", children: [
+            { icon: '⌚', text: "Bloquear días", path: "/fisioterapeuta/bloquear" },
+            { icon: '🗒️', text: "Antecedentes", path: "/fisioterapeuta/antecedentes" },
+          ]
+        }
         ];
       case 'nutriologa':
         return [
@@ -68,7 +75,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           { icon: '📅', text: 'Citas', path: '/nutriologa/agenda' },
           { icon: '🙋', text: 'Pacientes', path: '/nutriologa/pacientes' },
           { icon: '🥗', text: 'Planes alimenticios', path: '/nutriologa/planes' },
-          { icon: '🔒', text: 'Bloquear horarios', path: '/nutriologa/bloquear' }
+          { icon: '⚙️', text: 'Configuracion', path: '/nutriologa/bloquear' }
         ];
       default:
         return [];
@@ -115,19 +122,51 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
         </div>
 
         <nav className="sidebar-nav">
-          <ul>
-            {navItems.map((item, index) => (
-              <li
-                key={index}
-                data-tooltip={item.text}
-                className={isActive(item.path) ? 'active' : ''}
-              >
-                <Link to={item.path}>
+        <ul>
+            {navItems.map((item, index) => {
+            const hasChildren = !!item.children;
+            const isOpen = openSubmenu === index;
+
+            return (
+            <li 
+              key={index}
+              data-tooltip={item.text}
+              className={isActive(item.path) ? "active" : ""}
+            >
+              {!hasChildren && (
+                <Link to={item.path} className="nav-link">
                   <span className="nav-icon">{item.icon}</span>
                   <span className="nav-text">{item.text}</span>
                 </Link>
-              </li>
-            ))}
+              )}
+             {hasChildren && (
+              <>
+                <button
+                  type="button"
+                  className="submenu-toggle"
+                  onClick={() => setOpenSubmenu(isOpen ? null : index)}
+                >
+                  <span className="nav-icon">{item.icon}</span>
+                  <span className="nav-text">{item.text}</span>
+                </button>
+
+                {isOpen && (
+                  <ul className={`submenu ${isOpen ? "open" : ""}`}>
+                    {item.children.map((sub, j) => (
+                      <li key={j}>
+                        <Link to={sub.path} className="submenu-item">
+                          <span className="nav-icon">{sub.icon}</span>
+                          <span className="nav-text">{sub.text}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
+            </li>
+            );
+            })}
           </ul>
         </nav>
       </aside>

@@ -255,11 +255,11 @@ body{
   display: block;
 }
 
-.input {
-  color: #686868; 
+.input, textarea, select {
+  color: #686868 !important; /* texto gris */
 } 
-.input::placeholder {
-  color: #c2c2c2; /* tono más claro opcional */
+.input[readonly]::placeholder, textarea::placeholder, select::placeholder {
+  color: #c2c2c2 !important; /* tono más claro opcional */
   opacity: 1;     /* para evitar que algunos navegadores lo hagan gris */
 } 
 .checkbox {
@@ -556,7 +556,7 @@ html, body, #root, .auth-wrapper, .auth-wrapper::before {
   flex-wrap: nowrap;
 }
 
-/* Input dentro de fila dinámica */
+
 .dynamic-input {
   flex: 1;
   width: auto !important;
@@ -619,4 +619,11 @@ html, body, #root, .auth-wrapper, .auth-wrapper::before {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+.input[readonly] {
+  background-color: #f3f2f2;  
+  color: #aaaaaa;             
+  cursor: not-allowed;        
+}
+
 

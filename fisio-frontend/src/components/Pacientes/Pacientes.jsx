@@ -16,6 +16,7 @@ export default function ListaPacientes() {
         try {
         const { data } = await api.get("/pacientes");
         setPacientes(data);
+          localStorage.setItem("listaPacientes", JSON.stringify(data));
         } catch (error) {
         console.error("Error al cargar pacientes:", error);
         } finally {

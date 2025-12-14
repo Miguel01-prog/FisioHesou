@@ -23,6 +23,10 @@ import FormularioHistorial from '../components/historial/FormularioHistorial.jsx
 
 // Notas
 import Notas from '../components/notas/NuevaNota.jsx';
+import NotaDetalle from '../components/notas/DetalleNota.jsx';
+
+// Información clínica
+import InformacionClinica from '../components/layout/InformacionClinica.jsx';
 
 
 export default function AppRouter() {
@@ -58,6 +62,8 @@ export default function AppRouter() {
         <Route path="pacientes" element={<ListaPacientes/>} />
         <Route path="creacion-historial" element={<FormularioHistorial/>} />
         <Route path="notas" element={<Notas/>} />
+        <Route path="nota-detalle/:id" element={<NotaDetalle/>} />
+        <Route path="informacion-clinica" element={<InformacionClinica/>}/>
       </Route>
 
       {/* Nutrióloga */}

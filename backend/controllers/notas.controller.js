@@ -120,3 +120,6 @@ export const generaridHistoricoFk = async (req, res) => {
         res.status(500).json({ message: "Error al generar ID", error: err.message });
     }
 };
+
+
+
