@@ -29,6 +29,10 @@ import NotaDetalle from '../components/notas/DetalleNota.jsx';
 import InformacionClinica from '../components/layout/InformacionClinica.jsx';
 
 
+//configuraciones 
+import Antecedentes from '../components/layout/Antecedentes.jsx';
+
+
 export default function AppRouter() {
   return (
     <Routes>
@@ -64,6 +68,7 @@ export default function AppRouter() {
         <Route path="notas" element={<Notas/>} />
         <Route path="nota-detalle/:id" element={<NotaDetalle/>} />
         <Route path="informacion-clinica" element={<InformacionClinica/>}/>
+        <Route path="antecedentes" element={<Antecedentes/>}/>
       </Route>
 
       {/* Nutrióloga */}
