@@ -35,8 +35,6 @@ export const crearItem = async (req, res) => {
     const { configId } = req.params;
     const { valor } = req.body;
 
-    console.log(`configId: ${configId}, valor: ${valor}`);
-
     if (!configId || !valor) {
       return res.status(400).json({
         ok: false,
@@ -58,6 +56,34 @@ export const crearItem = async (req, res) => {
     res.status(500).json({
       ok: false,
       message: "Error al crear antecedente"
+    });
+  }
+};
+
+
+export const obtenerItemsPorClave = async (req, res) => {
+  console.log("PARAMS RECIBIDOS:", req.params);
+
+  try {
+    const { clave } = req.params;
+    console.log("Clave recibida:", clave);
+
+    const config = await configuracion.findOne({ clave });
+
+    if (!config) {
+      return res.json({ ok: true, items: [] });
+    }
+
+    const items = await confItemSchema.find({
+      configuracion: config._id
+    }).sort({ consecutivo: 1 });
+
+    res.json({ ok: true, items });
+  } catch (error) {
+    console.error("ERROR REAL:", error);
+    res.status(500).json({
+      ok: false,
+      message: "Error al obtener items"
     });
   }
 };

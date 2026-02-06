@@ -1,4 +1,6 @@
 import { IoIosAddCircle } from "react-icons/io";
+import { IoCaretDown } from "react-icons/io5";
+import { IoCaretUp } from "react-icons/io5";
 import { useState, useEffect } from "react";
 import { TiDelete } from "react-icons/ti";
 import InformacionClinica from "../layout/InformacionClinica";
@@ -10,6 +12,44 @@ const FormularioHistorial = () => {
   const [activeTab, setActiveTab] = useState("datosPersonales");
   const [nuevoID, setNuevoID] = useState("");
   const [mesAñoNota, setMesAñoNota] = useState("");
+  const [itemsAntFam, setItemsAntFam] = useState([]);
+  const [antecedenteSeleccionado, setAntecedenteSeleccionado] = useState("");
+  const [itemsAntMed, setItemsAntMed] = useState([]);
+  const [antecedenteMedico, setAntecedenteMedico] = useState("");
+  const [openLesiones, setOpenLesiones] = useState(false);
+  const [lesiones, setLesiones] = useState({
+    caidas: { activo: false, detalle: "" },
+    accidentes: { activo: false, detalle: "" },
+    esguince: { activo: false, detalle: "" },
+    fractura: { activo: false, detalle: "" },
+    otro: { activo: false, detalle: "" }
+  });
+
+  const [obser, setObser] = useState({
+    edema: { activo: false, detalle: "" },
+    enrojecimiento: { activo: false, detalle: "" },
+    esguince: { activo: false, detalle: "" },
+    hematoma: { activo: false, detalle: "" },
+    marcha: { activo: false, detalle: "" },
+    otro: { activo: false, detalle: "" }
+  });
+
+  const [antecedentesNoPatologicos, setAntecedentesNoPatologicos] = useState({
+  actividadFisica: "",
+  alimentacion: "",
+  descanso: "",
+  adicciones: {
+    tabaquismo: false,
+    alcohol: false
+  },
+  estres: ""
+});
+
+
+
+
+
+  
   
 
   const [formData, setFormData] = useState({
@@ -70,7 +110,7 @@ const FormularioHistorial = () => {
 
     if (!datosPaciente) {
       console.warn("dataPaciente es null — se detiene useEffect");
-      return; // ⛔ EVITA QUE SE EJECUTE cargarID()
+      return; 
     }
 
     const fecha = new Date();
@@ -98,12 +138,29 @@ const FormularioHistorial = () => {
       }));
     };
 
+    const cargarAntecedentesFamiliares = async () => {
+      try {
+        const { data } = await api.get("/configuracion/item/AntFam");
+        setItemsAntFam(data.items || []);
+      } catch (error) {
+        console.error("Error cargando antecedentes familiares", error);
+      }
+    };
+
+    const cargarAntecedentesMedicos = async () => {
+      try {
+        const { data } = await api.get("/configuracion/item/AntMed");
+        setItemsAntMed(data.items || []);
+      } catch (error) {
+        console.error("Error cargando antecedentes médicos", error);
+      }
+    };
+
     cargarID();
+    cargarAntecedentesFamiliares();
+    cargarAntecedentesMedicos();
   }, []);
 
-  // ============================
-  //  HANDLERS MISC
-  // ============================
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -124,6 +181,66 @@ const FormularioHistorial = () => {
     copia.splice(index, 1);
     setFormData({ ...formData, [campo]: copia });
   };
+  const handleNoPatChange = (e) => {
+  const { name, value } = e.target;
+  setAntecedentesNoPatologicos(prev => ({
+    ...prev,
+    [name]: value
+  }));
+};
+
+  const toggleAdiccion = (key) => {
+    setAntecedentesNoPatologicos(prev => ({
+      ...prev,
+      adicciones: {
+        ...prev.adicciones,
+        [key]: !prev.adicciones[key]
+      }
+    }));
+  };
+
+  const toggleLesion = (key) => {
+    setLesiones(prev => ({
+      ...prev,
+      [key]: {
+        activo: !prev[key].activo,
+        detalle: !prev[key].activo ? prev[key].detalle : ""
+      }
+    }));
+  };
+
+  const changeDetalle = (key, value) => {
+    setLesiones(prev => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        detalle: value
+      }
+    }));
+  };
+
+  const toggleObser = (key) => {
+    setObser(prev => ({
+      ...prev,
+      [key]: {
+        activo: !prev[key].activo,
+        detalle: !prev[key].activo ? prev[key].detalle : ""
+      }
+    }));
+  };
+
+  const changeObser = (key, value) => {
+    setObser(prev => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        detalle: value
+      }
+    }));
+  };
+
+
+
 
   const handleSubmit = async (e) => {
   e.preventDefault();
@@ -218,6 +335,7 @@ const FormularioHistorial = () => {
           <div className="tabs">
             <button className={`tab ${activeTab === "datosPersonales" ? "active" : ""}`} onClick={() => setActiveTab("datosPersonales")}>Datos personales</button>
             <button className={`tab ${activeTab === "AnaAnte" ? "active" : ""}`} onClick={() => setActiveTab("AnaAnte")}>Anamnesis y Antecedentes</button>
+            <button className={`tab ${activeTab === "evaluacion" ? "active" : ""}`} onClick={() => setActiveTab("evaluacion")}>Evaluación</button>
             <button className={`tab ${activeTab === "soap" ? "active" : ""}`} onClick={() => setActiveTab("soap")}>Notas SOAP</button>
           </div>
 
@@ -292,144 +410,307 @@ const FormularioHistorial = () => {
               </div>
             )}
 
-            {/* TAB 2 */}
-            {activeTab === "AnaAnte" && (
-              <div className="tab-content">
-                <div className="form-row" style={{ flexDirection: "column", gap: "12px" }}>
-                  <div className="form-col" style={{ maxWidth: "700px" }}>
-                    <label className="form-label">Motivo de consulta:</label>
-                    <textarea
-                      name="motivoConsulta"
-                      className="textarea"
-                      value={formData.motivoConsulta}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="form-row" style={{ flexDirection: "row", gap: "12px" }}>
+            {/*TAB 2 */}
+              {activeTab === "AnaAnte" && (
+                <div className="tab-content">
+                  <div className="form-row" style={{ flexDirection: "column", gap: "12px" }}>
+                    <div className="form-col" style={{ maxWidth: "700px" }}>
+                      <label className="form-label">Motivo de consulta:</label>
+                      <textarea name="motivoConsulta" className="textarea" value={formData.motivoConsulta}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div className="form-row" style={{ flexDirection: "row", gap: "12px" }}>
+                      <div className="form-col" style={{ maxWidth: "150px" }}>
+                        <label className="form-label">EVA:</label>
+                        <select   name="eva"
+                          className="input"
+                          value={formData.eva}
+                          onChange={handleInputChange}
+                        >
+                          <option value="">Seleccione</option>
+                          {[...Array(11).keys()].map((num) => (
+                            <option key={num} value={num}>{num}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="form-col" style={{ maxWidth: "300px" }}>
+                        <label className="form-label">Dolor 24hrs:</label>
+                        <textarea name="dolor24hrs" className="textarea" value={formData.dolor24hrs}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="form-col" style={{ maxWidth: "150px" }}>
+                        <label className="form-label">Tipo:</label>
+                        <select name="tipo" className="input" value={formData.tipo}
+                          onChange={handleInputChange}>
+                          <option value="">Seleccione</option>
+                          <option value="ardon">Ardon</option>
+                          <option value="quemante">Quemante</option>
+                          <option value="punzante">Punzante</option>
+                          <option value="pellizco">Pellizco</option>
+                          <option value="muscular">Muscular</option>
+                          <option value="otra">Otra</option>
+                        </select>
+                        {formData.tipo === "otra" && (
+                          <input type="text" className="input mt-2"
+                            value={formData.tipoOtra || ""}
+                            onChange={(e) => setFormData({ ...formData, tipoOtra: e.target.value })}
+                            placeholder="Especifique" style={{ marginTop: "8px" }}
+                          />
+                        )}
+                      </div>
+                      <div className="form-col">
+                        <label className="form-label">Factores que lo modifican:</label>
+                        <textarea name="facModifica" className="textarea" style={{maxWidth: "600px"}} value={formData.facModifica}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="form-col" style={{ maxWidth: "230px" }}>
+                        <label className="form-label">Sensación:</label>
+                        <select name="sensacion" className="input" value={formData.sensacion}
+                          onChange={handleInputChange}>
+                          <option value="">Seleccione</option>
+                          <option value="hormigueo">Hormigueo</option>
+                          <option value="adormecimiento">Adormecimiento</option>
+                          <option value="calambre">Calambre</option>
+                          <option value="rigidez">Rigidez</option>
+                          <option value="otra">Otra</option>
+                        </select>
+                        {formData.sensacion === "otra" && (
+                          <input type="text" className="input mt-2"
+                            value={formData.tipoOtra || ""}
+                            onChange={(e) => setFormData({ ...formData, tipoOtra: e.target.value })}
+                            placeholder="Especifique" style={{ marginTop: "8px" }}
+                          />
+                        )}
+                      </div>
+                      
+                      <div className="form-col" style={{ maxWidth: "280px" }}>
+                        <label className="form-label">Antecedentes familiares:</label>
+                        <select className="input"value={antecedenteSeleccionado}
+                          onChange={(e) => {const value = e.target.value; setAntecedenteSeleccionado(value);
+                              setFormData(prev => ({...prev, antecedentesFamiliares: [...prev.antecedentesFamiliares, value]}));
+                          }}>
+                          <option value="">Seleccione una opción</option>
+                          {itemsAntFam.map((item) => (
+                            <option key={item._id} value={item._id}>
+                              {item.valor}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="form-col" style={{ maxWidth: "280px" }}>
+                        <label className="form-label">Antecedentes médicos:</label>
+                        <select className="input"value={antecedenteMedico}
+                          onChange={(e) => {const value = e.target.value; setAntecedenteMedico(value);
+                              setFormData(prev => ({...prev, antecedentesMedicos: [...prev.antecedentesMedicos, value]}));
+                          }}>
+                          <option value="">Seleccione una opción</option>
+                          {itemsAntMed.map((item) => (
+                            <option key={item._id} value={item._id}>
+                              {item.valor}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                    <div className="form-col" style={{ maxWidth: "150px" }}>
-                      <label className="form-label">EVA:</label>
-                      <select   name="eva"
-                        className="input"
-                        value={formData.eva}
-                        onChange={handleInputChange}
-                      >
-                        <option value="">Seleccione</option>
-                        {[...Array(11).keys()].map((num) => (
-                          <option key={num} value={num}>{num}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="form-col" style={{ maxWidth: "300px" }}>
-                      <label className="form-label">Dolor 24hrs:</label>
-                      <textarea name="dolor24hrs" className="textarea" value={formData.dolor24hrs}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                    <div className="form-col" style={{ maxWidth: "150px" }}>
-                      <label className="form-label">Tipo:</label>
-                      <select name="tipo" className="input" value={formData.tipo}
-                        onChange={handleInputChange}>
-                        <option value="">Seleccione</option>
-                        <option value="ardon">Ardon</option>
-                        <option value="quemante">Quemante</option>
-                        <option value="punzante">Punzante</option>
-                        <option value="pellizco">Pellizco</option>
-                        <option value="muscular">Muscular</option>
-                        <option value="otra">Otra</option>
-                      </select>
-                      {formData.tipo === "otra" && (
-                        <input type="text" className="input mt-2"
-                          value={formData.tipoOtra || ""}
-                          onChange={(e) => setFormData({ ...formData, tipoOtra: e.target.value })}
-                          placeholder="Especifique" style={{ marginTop: "8px" }}
-                        />
-                      )}
-                    </div>
-                    <div className="form-col">
-                      <label className="form-label">Factores que lo modifican:</label>
-                      <textarea name="facModifica" className="textarea" style={{maxWidth: "600px"}} value={formData.facModifica}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                     <div className="form-col" style={{ maxWidth: "230px" }}>
-                      <label className="form-label">Sensación:</label>
-                      <select name="sensacion" className="input" value={formData.sensacion}
-                        onChange={handleInputChange}>
-                        <option value="">Seleccione</option>
-                        <option value="hormigueo">Hormigueo</option>
-                        <option value="adormecimiento">Adormecimiento</option>
-                        <option value="calambre">Calambre</option>
-                        <option value="rigidez">Rigidez</option>
-                        <option value="otra">Otra</option>
-                      </select>
-                      {formData.sensacion === "otra" && (
-                        <input type="text" className="input mt-2"
-                          value={formData.tipoOtra || ""}
-                          onChange={(e) => setFormData({ ...formData, tipoOtra: e.target.value })}
-                          placeholder="Especifique" style={{ marginTop: "8px" }}
-                        />
-                      )}
-                    </div>
-                     <div className="form-col">
+                      <div className="form-col" style={{maxWidth: "230px" }}>
+                        <label className="form-label">Medicacion actual:</label>
+                        <textarea name="facModifica" className="textarea" style={{maxWidth: "300px"}} value={formData.medActual}
+                          onChange={handleInputChange}/>
+                      </div>
+                      <div className="form-col" style={{maxWidth: "230px" }}>
                         <label className="form-label">Antecedentes quirúrgicos:</label>
-                        {formData.antecedentesQuirurgicos.map((valor, index) => (
-                            <div key={index} className="input-dynamic d-flex align-items-center mb-1">
-                                <input type="text" className="input flex-grow-1"
-                                placeholder={`Antecedente Quirúrgico ${index + 1}`}
-                                value={valor}
-                               
-                                onChange={(e) =>
-                                    handleDynamicChange("antecedentesQuirurgicos", index, e.target.value)
-                                }
-                                />
-                                {index > 0 && (
-                                <button
-                                    type="button"
-                                    className="btn-icon-delete ms-1"
-                                    onClick={() => eliminarItem("antecedentesQuirurgicos", index)}
-                                ><TiDelete /></button>
-                                )}
-                                {index === formData.antecedentesQuirurgicos.length - 1 && (
-                                <button
-                                    type="button"
-                                    className="btn-add-icon ms-1"
-                                    onClick={() => agregarItem("antecedentesQuirurgicos")}
-                                ><IoIosAddCircle /></button>
-                                )}
-                            </div>
-                        ))}
-                     </div>
-                     <div className="form-col" style={{ maxWidth: "230px" }}>
-                         <label className="form-label">Antecedentes médicos:</label>
-                          
-                     </div>
+                        <textarea name="facModifica" className="textarea" style={{maxWidth: "400px"}} value={formData.antecedentesQuirurgicos}
+                          onChange={handleInputChange}/>
+                      </div>
+                      <div className="form-col" style={{ maxWidth: "130px" }}>
+                        <label className="form-label">Año:</label>
+                        <input type="date" style={{maxWidth: "200px"}} name="anio" className="input" value={formData.anioQuirurgico}
+                          onChange={handleInputChange}/>
+                      </div>
+                      <div className="form-row" style={{ alignItems: "flex-end", gap: "12px" }}>
+                        <div className="lesiones-block">
+                          <div className="accordion">
+
+                            <button type="button" className={`accordion-header ${openLesiones ? "open" : ""}`} onClick={() => setOpenLesiones(!openLesiones)}>
+                              <span className="form-label">Antecedentes de lesiones músculo-esqueléticas</span>
+                              <span className="accordion-icon">{openLesiones ? <IoCaretUp color="#808080ff"/>: <IoCaretDown color="#808080ff"/>}</span>
+                            </button>
+
+                            {openLesiones && (
+                              <div className="accordion-body">
+
+                                {[
+                                  { key: "caidas", label: "Caídas" },
+                                  { key: "accidentes", label: "Accidentes automovilísticos" },
+                                  { key: "esguince", label: "Esguince" },
+                                  { key: "fractura", label: "Fractura" },
+                                  { key: "otro", label: "Otro" }
+                                ].map(({ key, label }) => (
+                                  <div key={key} className="lesion-row">
+                                    <label className="checkbox-label form-label">
+                                      <input
+                                        type="checkbox"
+                                        checked={lesiones[key].activo}
+                                        onChange={() => toggleLesion(key)}
+                                      />
+                                      <span>{label}</span>
+                                    </label>
+
+                                    {lesiones[key].activo && (
+                                      <input
+                                        type="text"
+                                        className="input lesion-input"
+                                        placeholder="Describa"
+                                        value={lesiones[key].detalle}
+                                        onChange={(e) => changeDetalle(key, e.target.value)}
+                                      />
+                                    )}
+                                  </div>
+                                ))}
+
+                              </div>
+                            )}
+                          </div>
 
 
+                        </div>
+                        <div className="form-row" style={{ alignItems: "flex-end", gap: "12px" }}>
+                          <div className="form-col" style={{ maxWidth: "350px" }}>
+                            <label className="form-label">Actividad física</label>
+                            <select name="actividadFisica" className="input" value={antecedentesNoPatologicos.actividadFisica}
+                              onChange={handleNoPatChange}>
+                                <option value="">Seleccione</option>
+                                <option value="ligera">Ligera</option>
+                                <option value="moderada">Moderada</option>
+                                <option value="fuerte">Fuerte</option>
+                            </select>
+                          </div>
 
+                          <div className="form-col" style={{ maxWidth: "350px" }}>
+                            <label className="form-label">Alimentación</label>
+                              <select name="alimentacion" className="input" value={antecedentesNoPatologicos.alimentacion}
+                              onChange={handleNoPatChange}>
+                                <option value="">Seleccione</option>
+                                <option value="buena">Buena</option>
+                                <option value="regular">Regular</option>
+                                <option value="mala">Mala</option>
+                              </select>
+                          </div>
+                          <div className="form-col" style={{ maxWidth: "350px" }}>
+                            <label className="form-label">Descanso</label>
+                            <select name="descanso" className="input" value={antecedentesNoPatologicos.descanso}
+                              onChange={handleNoPatChange} >
+                              <option value="">Seleccione</option>
+                              <option value="bueno">Bueno</option>
+                              <option value="regular">Regular</option>
+                              <option value="malo">Malo</option>
+                            </select>
+                          </div>
 
+                          <div className="form-col" style={{ maxWidth: "350px" }}>
+                            <label className="form-label">Estrés</label>
+                            <select name="estres" className="input" value={antecedentesNoPatologicos.estres}
+                              onChange={handleNoPatChange}>
+                              <option value="">Seleccione</option>
+                              <option value="ligero">Ligero</option>
+                              <option value="moderado">Moderado</option>
+                              <option value="fuerte">Fuerte</option>
+                            </select>
+                          </div>
+                          <div className="form-col">
+                            <label className="form-label">Adicciones</label>
+                            <br></br>
+                            <label className="checkbox-label form-label">
+                              <input type="checkbox" checked={antecedentesNoPatologicos.adicciones.tabaquismo}
+                                onChange={() => toggleAdiccion("tabaquismo")}/>Tabaquismo</label>
+                            <label className="checkbox-label form-label form-label">
+                              <input type="checkbox" checked={antecedentesNoPatologicos.adicciones.alcohol}
+                                onChange={() => toggleAdiccion("alcohol")}/>Alcohol</label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="form-col" style={{ maxWidth: "700px" }}>
+                      <label className="form-label">Diagnóstico médico:</label>
+                      <textarea name="diagMedico" className="textarea" value={formData.diagnosticoMedico}
+                        onChange={handleInputChange}/>
+                    </div>
+                    <div className="form-col" style={{ maxWidth: "700px" }}>
+                      <label className="form-label">Indicaciones médicas:</label>
+                      <textarea name="diagMedico" className="textarea" value={formData.diagnosticoMedico}
+                        onChange={handleInputChange}/>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
+            {/*TAB 3*/}
+            {activeTab === "evaluacion" && (
+                <div className="tab-content">
+                  <div className="form-row">
+                    <div className="form-col">
+                      <label className="form-label"><strong>Observación</strong></label>
+                      <br />
+                      {[
+                        { key: "edema", label: "Edema" },
+                        { key: "enrojecimiento", label: "Enrojecimiento" },
+                        { key: "esguince", label: "Esguince" },
+                        { key: "hematoma", label: "Hematoma" },
+                        { key: "marcha", label: "Marcha" },
+                        { key: "otro", label: "Otro" }
 
-            )}
+                      ].map(({ key, label }) => (
+                        <div key={key}style={{display: "flex", alignItems: "center",  gap: "12px", marginBottom: "8px"}}>
+                          <label className="checkbox-label form-label" style={{display: "flex", alignItems: "center", gap: "6px",  minWidth: "260px"}}>
+                            <input type="checkbox" checked={obser[key].activo} onChange={() => toggleObser(key)}/>{label}
+                          </label>
 
-            {/* TAB 3 (SOAP) */}
-            {activeTab === "soap" && (
-              <div className="tab-content">
-                <div className="form-row">
-                  <div className="col">
-                    <label>ID Nota: <strong>{formData.idHistoricoFk}</strong></label>
+                          {obser[key].activo && (
+                            <input type="text" className="input" placeholder="Lugar" value={obser[key].detalle}
+                              onChange={(e) => changeObser(key, e.target.value)} style={{ maxWidth: "400px" }}
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="col">
-                    <label>Mes-Año: <strong>{formData.mesAñoNota}</strong></label>
-                  </div>
-                </div>
+                   <div className="form-row">
+                      <div className="form-col">
+                        <label className="form-label"><strong>Palpación</strong></label>
+                        <br />
+                        <div className="form-col" style={{ maxWidth: "300px" }}>
+                          <label className="form-label">Dolor en:</label>
+                          <textarea name="dolorEn" className="textarea" value={formData.dolor24hrs}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                        <div className="form-col" style={{ maxWidth: "300px" }}>
+                          <label className="form-label">Dolor en:</label>
+                          <textarea name="dolorEn" className="textarea" value={formData.dolor24hrs}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                      </div>
+                   </div>
+                </div> 
+              )}
 
-                {/* resto de la UI SOAP */}
-              </div>
-            )}
+             {activeTab === "soap" && ( 
+                 <div className="tab-content">
+                   <div className="form-row">
+                    <div className="col">
+                      <label>ID Nota: <strong>{formData.idHistoricoFk}</strong></label>
+                    </div>
+                    <div className="col">
+                      <label>Mes-Año: <strong>{formData.mesAñoNota}</strong></label>
+                    </div>
+                   </div>
+                 </div>
+             )}
+             
 
             <button type="submit" className="save-btn" disabled={loading} style={{ marginTop: 20 }}>
               {loading ? "Guardando..." : "Guardar historial"}

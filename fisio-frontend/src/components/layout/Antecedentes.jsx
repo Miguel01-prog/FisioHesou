@@ -29,10 +29,9 @@ const Antecedentes = () => {
     setMostrarModal(true);
 
     try {
-      const res = await api.get(
-        `/configuracion/items/${categoria.clave}`
-      );
-      setItems(res.data || []);
+      const res = await api.get(`/configuracion/item/${categoria.clave}`);
+
+      setItems(Array.isArray(res.data.items) ? res.data.items : []);
     } catch (err) {
       console.error(err);
       setItems([]);
@@ -53,7 +52,7 @@ const Antecedentes = () => {
         valor: nuevoItem
       });
 
-      setItems([...items, { valor: nuevoItem }]);
+      setItems(prev => [...prev, { valor: nuevoItem }]);
       setNuevoItem("");
     } catch (err) {
       console.error(err);
@@ -74,12 +73,7 @@ const Antecedentes = () => {
                 value={c.descripcion}
                 readOnly
               />
-
-              <button
-                className="btn-eye"
-                onClick={() => abrirModal(c)}
-                title="Ver antecedentes"
-              >
+              <button className="btn-eye" onClick={() => abrirModal(c)}>
                 <FaEye />
               </button>
             </div>
@@ -87,49 +81,33 @@ const Antecedentes = () => {
         </div>
       </div>
 
-      {/* MODAL */}
       {mostrarModal && (
         <div className="modal-backdrop">
           <div className="modal-content">
-            <button className="close-btn" onClick={cerrarModal}>
-              ✕
-            </button>
+            <button className="close-btn" onClick={cerrarModal}>✕</button>
 
-            <h2 className="title_card">
-              {categoriaActual.descripcion}
-            </h2>
+            <h2 className="title_card">{categoriaActual?.descripcion}</h2>
             <hr />
 
             {items.length === 0 && (
-              <p className="text-muted">
-                No hay antecedentes registrados
-              </p>
+              <p className="text-muted">No hay antecedentes registrados</p>
             )}
 
-            {items.map((i, idx) => (
+            {items.length > 0 && items.map((i, idx) => (
               <div key={idx} className="input-dynamic">
-                <input
-                  className="input dynamic-input"
-                  value={i.valor}
-                  readOnly
-                />
+                <input className="input dynamic-input" value={i.valor} readOnly />
               </div>
             ))}
 
-            <div className="input-dynamic d-flex align-items-center mb-1">
+            <div className="input-dynamic d-flex">
               <input
                 className="input flex-grow-1"
                 placeholder="Nuevo antecedente"
                 value={nuevoItem}
                 onChange={(e) => setNuevoItem(e.target.value)}
               />
-
-              <button
-                className="btn-add-icon ms-1"
-                onClick={agregarItem}
-                title="Agregar"
-              >
-                <IoIosAddCircle/>
+              <button className="btn-add-icon" onClick={agregarItem}>
+                <IoIosAddCircle />
               </button>
             </div>
           </div>
