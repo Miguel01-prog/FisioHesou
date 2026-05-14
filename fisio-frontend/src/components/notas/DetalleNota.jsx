@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../api.js";
 import { formatDateDDMMYYYY } from "../../utils/utils.js";
+import LoadingSpinner from "../layout/LoadingSpinner";
 
 export default function NotaDetalle() {
   const { id } = useParams();  // ID de la nota
@@ -21,7 +22,13 @@ export default function NotaDetalle() {
     fetchNota();
   }, [id]);
 
-  if (!nota) return <p>Cargando nota...</p>;
+  if (!nota) {
+    return (
+      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>
+        <LoadingSpinner size="large" />
+      </div>
+    );
+  }
 
   return (
     <div className="auth-wrapper-content">

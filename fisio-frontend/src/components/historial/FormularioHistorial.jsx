@@ -6,6 +6,7 @@ import { TiDelete } from "react-icons/ti";
 import InformacionClinica from "../layout/InformacionClinica";
 import api from "../../api";
 import { showError } from "../../utils/alerts";
+import LoadingSpinner from "../layout/LoadingSpinner";
 
 const FormularioHistorial = () => {
   const [paciente, setPaciente] = useState(null);
@@ -712,8 +713,8 @@ const FormularioHistorial = () => {
              )}
              
 
-            <button type="submit" className="save-btn" disabled={loading} style={{ marginTop: 20 }}>
-              {loading ? "Guardando..." : "Guardar historial"}
+            <button type="submit" className="save-btn" disabled={loading} style={{ marginTop: 20, minWidth: '160px', height: '45px' }}>
+              {loading ? <LoadingSpinner size="small" color="#fff" /> : "Guardar historial"}
             </button>
           </form>
 

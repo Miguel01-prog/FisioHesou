@@ -4,7 +4,6 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 
-
 console.log('[auth.routes.js] cargado correctamente');
 
 
@@ -67,6 +66,34 @@ router.post('/login', async (req, res) => {
     console.log("Usuario logueado exitosamente:", user.email);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Reset Password Simple (por ID)
+router.put('/reset-password/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword) {
+      return res.status(400).json({ message: 'La nueva contraseña es obligatoria' });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Hashear la nueva contraseña
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    
+    await user.save();
+
+    res.json({ message: 'Contraseña actualizada correctamente' });
+  } catch (error) {
+    console.error('Error en reset-password:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 

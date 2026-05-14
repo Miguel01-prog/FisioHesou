@@ -3,6 +3,7 @@ import { capitalizeWords } from "../../utils/utils";
 import { useNavigate } from "react-router-dom";
 import { FaEye } from "react-icons/fa";
 import api from "../../api";
+import LoadingSpinner from "../layout/LoadingSpinner";
 
 export default function ListaPacientes() {
     const [pacientes, setPacientes] = useState([]);
@@ -30,7 +31,11 @@ export default function ListaPacientes() {
         <h2 className="title_card" style={{marginTop: '-10px'}}>Pacientes</h2>
         <hr />
 
-        {cargando && <p>Cargando...</p>}
+        {cargando && (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem 0' }}>
+            <LoadingSpinner size="large" />
+          </div>
+        )}
 
         {!cargando && pacientes.length === 0 && (
           <p className="text-muted">No hay pacientes registrados.</p>
