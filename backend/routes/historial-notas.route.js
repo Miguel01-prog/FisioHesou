@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { 
   crearHistorialConNotaSOAP, 
-  obtenerHistorialConNotaSOAP 
+  obtenerHistorialConNotaSOAP,
+  obtenerHistorialPorPaciente
 } from "../controllers/historial.controller.js";
 
 const router = Router();
@@ -11,5 +12,8 @@ router.post("/", crearHistorialConNotaSOAP);
 
 // Obtener historial + nota SOAP por ID
 router.get("/:id", obtenerHistorialConNotaSOAP);
+
+// Obtener historial por identificadorPaciente
+router.get("/paciente/:pacienteId", obtenerHistorialPorPaciente);
 
 export default router;

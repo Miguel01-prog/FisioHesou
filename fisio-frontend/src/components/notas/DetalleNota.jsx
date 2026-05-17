@@ -33,27 +33,90 @@ export default function NotaDetalle() {
   return (
     <div className="auth-wrapper-content">
       <div className="auth-card auth-card-detail">
-        <h2 style={{ marginBottom: "20px" }}>Nota SOAP #{nota.idNota}</h2>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h2 className="title_card" style={{ marginTop: "-10px" }}>
+              Detalle Nota SOAP
+            </h2>
 
-        <button className="save-btn" onClick={() => navigate(-1)}>
-          ⬅ Volver
-        </button>
+            <button
+              className="save-btn"
+              style={{ marginTop: "-20px" }}
+              onClick={() => navigate(-1)}
+            >
+              ⬅ Volver
+            </button>
+        </div>
 
         <hr />
 
-        <p><strong>Fecha:</strong> {formatDateDDMMYYYY(nota.fechaNota)}</p>
+        <form className="form">
+            <div className="form-row">
+              <div className="col">
+                <label className="form-label">ID Nota: <strong>{nota.idHistoricoFk || nota._id}</strong></label>
+              </div>
 
-        <h3>Subjective (S)</h3>
-        <p>{nota.S}</p>
+              <div className="col">
+                <label className="form-label">Mes-Año: <strong>{nota.mesAñoNota}</strong></label> 
+              </div>
 
-        <h3>Objective (O)</h3>
-        <p>{nota.O}</p>
+              <div className="col">
+                <label className="form-label">Fecha: <strong>{formatDateDDMMYYYY(nota.fechaNota || nota.createdAt)}</strong></label> 
+              </div>
+            </div>
 
-        <h3>Assessment (A)</h3>
-        <p>{nota.A}</p>
+            <div className="form-row">
+              <div className="col">
+                <label className="form-label">Contenido general:</label>
+                <textarea
+                  className="textarea"
+                  value={nota.contenidoNota || "No especificado"}
+                  disabled
+                />
+              </div>
+            </div>
 
-        <h3>Plan (P)</h3>
-        <p>{nota.P}</p>
+            <h3 style={{ marginTop: "10px", color: "#6c757d" }}>Nota SOAP</h3>
+
+            <div className="form-row" style={{ display: 'flex', gap: '20px' }}>
+              <div className="col" style={{ flex: 1 }}>
+                <label className="form-label">S (Subjetivo):</label>
+                <textarea
+                  className="textarea"
+                  value={nota.S || ""}
+                  disabled
+                />
+              </div>
+
+              <div className="col" style={{ flex: 1 }}>
+                <label className="form-label">O (Objetivo):</label>
+                <textarea
+                  className="textarea"
+                  value={nota.O || ""}
+                  disabled
+                />
+              </div>
+            </div>
+
+            <div className="form-row" style={{ display: 'flex', gap: '20px' }}>
+              <div className="col" style={{ flex: 1 }}>
+                <label className="form-label">A (Análisis):</label>
+                <textarea
+                  className="textarea"
+                  value={nota.A || ""}
+                  disabled
+                />
+              </div>
+
+              <div className="col" style={{ flex: 1 }}>
+                <label className="form-label">P (Plan):</label>
+                <textarea
+                  className="textarea"
+                  value={nota.P || ""}
+                  disabled
+                />
+              </div>
+            </div>
+        </form>
       </div>
     </div>
   );

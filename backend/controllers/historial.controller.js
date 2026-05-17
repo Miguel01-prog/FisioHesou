@@ -57,3 +57,17 @@ export const obtenerHistorialConNotaSOAP = async (req, res) => {
   res.status(500).json({ ok: false, error: error.message });
   }
 };
+
+// Obtener historial por identificadorPaciente
+export const obtenerHistorialPorPaciente = async (req, res) => {
+  try {
+    const { pacienteId } = req.params;
+    const historial = await Historial.findOne({ identificadorPaciente: pacienteId }).populate("soapFK");
+    if (!historial) {
+      return res.status(404).json({ ok: false, msg: "No se encontró historial para este paciente" });
+    }
+    res.json({ ok: true, historial });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+};

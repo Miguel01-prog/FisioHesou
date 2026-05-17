@@ -130,7 +130,7 @@ export default function AppointmentForm() {
       return showError("Campos vacíos", "Completa todos los datos del formulario.");
 
     try {
-      await api.post("/citas", {
+      const { data } = await api.post("/citas", {
         nombres: formData.nombres,
         apellidos: formData.apellidos,
         edad: formData.edad,
@@ -140,21 +140,28 @@ export default function AppointmentForm() {
         area: tipoConsulta,
       });
 
-      showSuccess(
-        "Cita guardada",
-        `Tu cita para ${formatDateDDMMYYYY(selectedDate)} a las ${selectedHour} se ha registrado.`
-      );
+      if (data.pacienteNuevo) {
+        showSuccess(
+          "Cita guardada",
+          `Tu cita para ${formatDateDDMMYYYY(selectedDate)} a las ${selectedHour} se ha registrado. Se ha creado tu expediente nuevo exitosamente.`
+        );
+      } else {
+        showSuccess(
+          "Cita guardada",
+          `Tu cita para ${formatDateDDMMYYYY(selectedDate)} a las ${selectedHour} se ha registrado.`
+        );
+      }
 
       // Limpiar y recargar bloqueos
       setSelectedDate(null);
       setSelectedHour(null);
       setFormData({ nombres: "", apellidos: "", edad: "", telefono: "" });
 
-      const { data } = await api.get(`/horarios/${tipoConsulta}`);
-      setBlockedDatesAdmin(data.blockedDatesAdmin || []);
-      setBlockedHoursAdmin(data.blockedHoursAdmin || {});
-      setBlockedDatesPaciente(data.blockedDatesPaciente || []);
-      setBlockedHoursCitas(data.blockedHoursCitas || {});
+      const resHorarios = await api.get(`/horarios/${tipoConsulta}`);
+      setBlockedDatesAdmin(resHorarios.data.blockedDatesAdmin || []);
+      setBlockedHoursAdmin(resHorarios.data.blockedHoursAdmin || {});
+      setBlockedDatesPaciente(resHorarios.data.blockedDatesPaciente || []);
+      setBlockedHoursCitas(resHorarios.data.blockedHoursCitas || {});
     } catch (err) {
       console.error(err);
       showError("Error", "No se pudo guardar la cita. Intenta nuevamente.");
