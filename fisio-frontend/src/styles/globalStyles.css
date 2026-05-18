@@ -229,9 +229,69 @@ body{
 .alert-success{background:rgba(45,206,137,0.08);color:#0b6b3a;border:1px solid rgba(11,107,58,0.12)}
 
 /* Responsive tweaks */
-@media (max-width:640px){
-  .auth-card{padding:1rem;margin:0 8px}
-  .container{padding:.6rem}
+@media (max-width: 768px) {
+  .auth-card { padding: 1rem; margin: 0 10px !important; width: calc(100% - 20px) !important; }
+  .container { padding: .6rem; }
+  
+  .card-split {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  
+  .form-row {
+    flex-direction: column !important;
+  }
+  
+  .auth-wrapper-content {
+    padding: 20px 10px !important;
+  }
+  
+  .modal-content {
+    padding: 1rem !important;
+    width: 95% !important;
+  }
+  
+  .title_card {
+    font-size: 1.25rem !important;
+  }
+}
+
+/* Tablas responsivas en Móvil Y Tablet */
+@media (max-width: 1024px) {
+  .tabla-pacientes {
+    display: block !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    width: 100% !important;
+  }
+}
+
+/* Ajustes específicos para Tablets */
+@media (min-width: 769px) and (max-width: 1024px) {
+  body {
+    font-size: 1.05rem; /* Un poco más grande, pero sin romper tablas */
+  }
+  
+  .auth-card {
+    max-width: 95% !important; /* Más espacio en tablet */
+    width: 95% !important;
+    padding: 1.5rem !important;
+    margin: 0 auto !important;
+  }
+
+  .title_card {
+    font-size: 1.6rem !important;
+  }
+
+  .btn, .save-btn {
+    padding: 0.7rem 1.2rem;
+    font-size: 1rem;
+  }
+
+  .input, .textarea {
+    padding: 0.7rem 1rem;
+    font-size: 1rem;
+  }
 }
 
 /* fila que contiene columnas */
@@ -432,6 +492,7 @@ html, body, #root, .auth-wrapper, .auth-wrapper::before {
   text-align: left;
   font-weight: 600;
   border-bottom: 2px solid var(--border-color);
+  white-space: nowrap;
 }
 
 .tabla-pacientes tbody tr {

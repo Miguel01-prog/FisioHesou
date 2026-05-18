@@ -245,10 +245,8 @@
 ==================== */
 .main-content {
   position: relative;
-  margin-left: 260px;
   z-index: 1;
   min-height: 100vh;
-  background-color: #ffffff !important;
 }
 
 .auth-wrapper::before,
@@ -256,73 +254,22 @@
   z-index: 0 !important;
 }
 
-/* ====================
-   📱 Responsive - Móviles
-==================== */
-@media (max-width: 768px) {
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100%;
-    transform: translateX(-100%);
-    z-index: 100;
-  }
-
-  .sidebar.open {
-    transform: translateX(0);
-    box-shadow: var(--shadow);
-  }
-
-  .main-content,
-  .main-content.sidebar-collapsed {
-    margin-left: 0;
-    padding-top: 70px;
-  }
-
-  .sidebar-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 99;
-    display: block;
-  }
-
-  .mobile-menu-toggle {
-    position: fixed;
-    top: 15px;
-    left: 15px;
-    z-index: 98;
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    cursor: pointer;
-    box-shadow: var(--shadow);
-  }
-}
+/* Movido al final */
 
 /* === Prioridad visual === */
 .sidebar {
-  position: fixed;
+  position: sticky;
+  /* En lugar de fixed, para que fluya con Flexbox en escritorio */
   top: 0;
   left: 0;
   z-index: 1000;
+  height: 100vh;
 }
 
 .main-content {
-  margin-left: var(--sidebar-width-expanded);
   position: relative;
   z-index: 1;
+  width: 100%;
 }
 
 .auth-wrapper,
@@ -334,12 +281,7 @@
 
 /* Ajuste automático del contenido al colapsar */
 .main-content {
-  margin-left: var(--sidebar-width-expanded);
   transition: var(--transition);
-}
-
-.sidebar.collapsed ~ .main-content {
-  margin-left: var(--sidebar-width-collapsed);
 }
 
 /* ====================
@@ -401,10 +343,11 @@
   padding: 8px 12px;
   min-width: 180px;
   z-index: 2000;
-  display: none; /* oculto por defecto */
+  display: none;
+  /* oculto por defecto */
 }
 
-.sidebar.collapsed li:hover > .submenu,
+.sidebar.collapsed li:hover>.submenu,
 .sidebar.collapsed li .submenu.open {
   display: block;
 }
@@ -419,4 +362,103 @@
   opacity: 1;
   width: auto;
   margin-left: 8px;
+}
+
+/* ====================
+   📱 Responsive - Móviles (AL FINAL PARA EVITAR OVERRIDES)
+==================== */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed !important;
+    /* En movil si debe ser fixed para ocultarse */
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s ease !important;
+    width: 250px !important;
+    /* El sidebar siempre debe verse completo al abrirse en movil */
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0) !important;
+    box-shadow: var(--shadow) !important;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+    padding-top: 60px !important;
+    /* Espacio para el header flotante/hamburguesa */
+  }
+
+  .sidebar.collapsed~.main-content {
+    margin-left: 0 !important;
+  }
+
+  /* El botón hamburguesa visible solo en móvil */
+  .mobile-menu-toggle {
+    display: flex !important;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 1001;
+    /* Sobre todo */
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+  }
+
+  /* Overlay para cerrar el sidebar */
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    display: block !important;
+  }
+
+  /* Forzar que el sidebar muestre el texto en móvil, ignorando la clase .collapsed */
+  .sidebar.collapsed .nav-text {
+    opacity: 1 !important;
+    width: auto !important;
+    margin-left: 12px !important;
+  }
+
+  .sidebar.collapsed .sidebar-nav li a {
+    justify-content: flex-start !important;
+    padding: 12px 20px !important;
+  }
+
+  .sidebar.collapsed .user-info-sidebar {
+    opacity: 1 !important;
+    width: auto !important;
+  }
+
+  .sidebar.collapsed .user-profile-sidebar {
+    justify-content: flex-start !important;
+    padding: 20px !important;
+  }
+
+  .sidebar.collapsed .avatar-sidebar {
+    margin-right: 12px !important;
+  }
+
+  .sidebar.collapsed .logo {
+    font-size: 1.5rem !important;
+    text-align: left !important;
+    width: auto !important;
+  }
+
+  /* Ocultar el botón de colapsar nativo del sidebar en móvil */
+  .sidebar-header .toggle-btn {
+    display: none !important;
+  }
 }

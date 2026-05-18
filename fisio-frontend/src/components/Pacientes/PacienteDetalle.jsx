@@ -3,7 +3,7 @@ import CardPaciente from "../pacientes/CardPaciente.jsx";
 import { useNavigate, useParams } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import api from "../../api.js";
-import { FaEye } from "react-icons/fa";
+import { FaEye, FaEdit } from "react-icons/fa";
 import LoadingSpinner from "../layout/LoadingSpinner.jsx";
 
 export default function PacienteDetalle() {
@@ -11,6 +11,7 @@ export default function PacienteDetalle() {
   const [notas, setNotas] = useState([]);
   const [historialClinico, setHistorialClinico] = useState(null);
   const [paciente, setPaciente] = useState(null);
+  const [planes, setPlanes] = useState([]);
   const [cargando, setCargando] = useState(true);
 
   const navigate = useNavigate();
@@ -59,6 +60,15 @@ export default function PacienteDetalle() {
           setNotas([]);
         }
 
+        // Cargar Planes de Tratamiento
+        try {
+          const resPlanes = await api.get(`/planes/paciente/${id}`);
+          setPlanes(resPlanes.data.planes || []);
+        } catch (e) {
+          console.warn("No se encontraron planes para este paciente.");
+          setPlanes([]);
+        }
+
       } catch (err) {
         console.error("Error al cargar datos del paciente:", err);
       } finally {
@@ -98,6 +108,23 @@ export default function PacienteDetalle() {
                   >
                     Ver Historial Clínico
                   </button>
+                  {planes.length > 0 ? (
+                    <button
+                      className="save-btn"
+                      style={{ backgroundColor: "#17a2b8" }}
+                      onClick={() => navigate(`/fisioterapeuta/planes-paciente/${id}`)}
+                    >
+                      Editar planes de ejercicios
+                    </button>
+                  ) : (
+                    <button
+                      className="save-btn"
+                      style={{ backgroundColor: "#17a2b8" }}
+                      onClick={() => navigate(`/fisioterapeuta/crear-plan/${id}`)}
+                    >
+                      Crear plan de ejercicios
+                    </button>
+                  )}
                   <button
                     className="save-btn"
                     onClick={() => navigate(`/fisioterapeuta/notas`)}
@@ -149,6 +176,7 @@ export default function PacienteDetalle() {
             </table>
           )}
         </div>
+
         </>
         )}
 

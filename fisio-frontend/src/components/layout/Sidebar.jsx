@@ -66,6 +66,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           { icon: "⚙️", text: "Configuración", children: [
             { icon: '⌚', text: "Bloquear días", path: "/fisioterapeuta/bloquear" },
             { icon: '🗒️', text: "Antecedentes", path: "/fisioterapeuta/antecedentes" },
+            { icon: '🏋️‍♂️', text: "Ejercicios", path: "/fisioterapeuta/ejercicios" },
           ]
         }
         ];
@@ -87,7 +88,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const sidebarClasses = [
     'sidebar',
     collapsed ? 'collapsed' : '',
-    isMobile && sidebarOpen ? 'open' : ''
+    isMobile && sidebarOpen ? 'mobile-open' : ''
   ].filter(Boolean).join(' ');
 
   // Función robusta para resaltar item activo
@@ -104,6 +105,12 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     <>
       {isMobile && sidebarOpen && (
         <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}></div>
+      )}
+      
+      {isMobile && !sidebarOpen && (
+        <button className="mobile-menu-toggle" onClick={() => setSidebarOpen(true)}>
+          ≡
+        </button>
       )}
 
       <aside className={sidebarClasses}>

@@ -10,6 +10,9 @@ import pacientesRoutes from "./routes/pacientes.router.js";
 import notasRoutes from "./routes/notas.route.js";
 import historialNotasRoutes from "./routes/historial-notas.route.js";
 import configuracionRoutes from "./routes/configuracion.routes.js";
+import ejerciciosRoutes from "./routes/ejercicios.routes.js";
+import planesRoutes from "./routes/planes.routes.js";
+import path from "path";
 
 const app = express();
 
@@ -21,6 +24,9 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+// Servir archivos estáticos para las imágenes
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
 app.use("/api/auth", authRoutes);
 app.use("/api/citas", citasRoutes);
 app.use("/api/horarios", horariosRoutes);
@@ -28,6 +34,8 @@ app.use("/api/pacientes", pacientesRoutes);
 app.use("/api/notas", notasRoutes);
 app.use("/api/historial-notas", historialNotasRoutes);
 app.use("/api/configuracion", configuracionRoutes);
+app.use("/api/ejercicios", ejerciciosRoutes);
+app.use("/api/planes", planesRoutes);
 
 
 export default app;

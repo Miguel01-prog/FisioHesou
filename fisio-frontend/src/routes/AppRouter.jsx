@@ -17,6 +17,9 @@ import AgendaCitas from '../components/layout/AgendarCitas.jsx';
 // Componentes Pacientes
 import PacienteDetalle from '../components/Pacientes/PacienteDetalle.jsx';
 import ListaPacientes from '../components/Pacientes/Pacientes.jsx';
+import ConstructorPlan from '../components/pacientes/ConstructorPlan.jsx';
+import PlanDocumento from '../components/pacientes/PlanDocumento.jsx';
+import ListaPlanesPaciente from '../components/pacientes/ListaPlanesPaciente.jsx';
 
 //Historiales
 import FormularioHistorial from '../components/historial/FormularioHistorial.jsx';
@@ -32,6 +35,7 @@ import InformacionClinica from '../components/layout/InformacionClinica.jsx';
 
 //configuraciones 
 import Antecedentes from '../components/layout/Antecedentes.jsx';
+import ConfiguracionEjercicios from '../components/layout/ConfiguracionEjercicios.jsx';
 
 
 export default function AppRouter() {
@@ -65,12 +69,17 @@ export default function AppRouter() {
         <Route path="bloquear" element={<BloquearHorarioFisio/>} />
         <Route path="paciente/:id" element={<PacienteDetalle/>} />
         <Route path="pacientes" element={<ListaPacientes/>} />
+        <Route path="planes-paciente/:id" element={<ListaPlanesPaciente/>} />
+        <Route path="crear-plan/:id" element={<ConstructorPlan/>} />
+        <Route path="editar-plan/:idPlan" element={<ConstructorPlan/>} />
+        <Route path="plan-documento/:id" element={<PlanDocumento/>} />
         <Route path="creacion-historial" element={<FormularioHistorial/>} />
         <Route path="historial-detalle/:id" element={<VistaHistorial/>} />
         <Route path="notas" element={<Notas/>} />
         <Route path="nota-detalle/:id" element={<NotaDetalle/>} />
         <Route path="informacion-clinica" element={<InformacionClinica/>}/>
         <Route path="antecedentes" element={<Antecedentes/>}/>
+        <Route path="ejercicios" element={<ConfiguracionEjercicios/>}/>
       </Route>
 
       {/* Nutrióloga */}
