@@ -22,6 +22,7 @@ export const crearCita = async (req, res) => {
 
     // 1. Verificar si el paciente ya existe
     const pacienteExiste = await Paciente.findOne({ identificadorPaciente });
+    const esNuevoPaciente = !pacienteExiste;
 
     // 2. Si no existe → crear paciente
     if (!pacienteExiste) {
@@ -51,11 +52,16 @@ export const crearCita = async (req, res) => {
       horaCita,
       area,
       identificadorPaciente,
+      esNuevoPaciente
     });
 
     await nuevaCita.save();
 
-    res.status(201).json({ message: "Cita creada correctamente", cita: nuevaCita });
+    res.status(201).json({ 
+      message: esNuevoPaciente ? "Cita y paciente creados correctamente" : "Cita creada correctamente", 
+      cita: nuevaCita,
+      pacienteNuevo: esNuevoPaciente 
+    });
   } catch (err) {
     console.error(" Error al crear cita:", err);
     res.status(500).json({ message: "Error al crear la cita", error: err.message });

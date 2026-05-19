@@ -12,6 +12,7 @@ const citaSchema = new mongoose.Schema({
     area: {type: String, required: true},
     fechaCreado: { type: Date, default: Date.now },
     identificadorPaciente: { type: String, required: true},
+    esNuevoPaciente: { type: Boolean, default: false }
 
 
 });

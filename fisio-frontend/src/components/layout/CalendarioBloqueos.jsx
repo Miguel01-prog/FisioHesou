@@ -3,6 +3,7 @@ import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import api from "../../api";
 import "../../styles/calendary.css";
+import LoadingSpinner from "./LoadingSpinner";
 
 const WORK_HOURS = [
   "08:00", "09:00", "10:00", "11:00",
@@ -114,8 +115,8 @@ const CalendarioBloqueo = ({ role }) => {
 
   return (
     <div className="auth-wrapper-content">
-      <div className="auth-card card flex flex-col items-center justify-center p-6">
-        <h2 className="logo-agendar mb-2">Control de horarios</h2>
+      <div className="auth-card" style={{ maxWidth: '600px' }}>
+        <h2 className="logo-agendar mb-2" style={{ textAlign: 'center' }}>Control de horarios</h2>
 
         <Calendar
           onClickDay={handleDayClick}
@@ -154,15 +155,15 @@ const CalendarioBloqueo = ({ role }) => {
               })}
             </div>
 
-            <button className="save-btn mt-3" onClick={saveHours}>
-              Guardar horas
+            <button className="save-btn mt-3" onClick={saveHours} disabled={loading} style={{ minWidth: '160px', height: '45px' }}>
+              {loading ? <LoadingSpinner size="small" color="#fff" /> : "Guardar horas"}
             </button>
           </div>
         )}
 
-        {loading && (
-          <div className="loading-overlay">
-            <div className="spinner">Cargando...</div>
+        {loading && !selectedDay && (
+          <div className="spinner-overlay" style={{ borderRadius: 'var(--radius)' }}>
+            <LoadingSpinner size="large" />
           </div>
         )}
       </div>

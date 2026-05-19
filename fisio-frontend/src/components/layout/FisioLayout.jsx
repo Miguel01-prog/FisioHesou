@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Sidebar from './Sidebar.jsx'; 
+import Sidebar from './Sidebar.jsx';
 import Header from './Header.jsx';
 import { Outlet } from 'react-router-dom';
 
@@ -13,10 +13,10 @@ export default function NutriologaLayout() {
         <Header isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
         <main
           className="main-content"
-          style={{marginLeft: isCollapsed ? 'var(--sidebar-width-collapsed)'
-              : 'var(--sidebar-width-expanded)',
+          style={{
             transition: 'var(--transition)',
             minHeight: 'calc(100vh - var(--header-height))',
+            width: '100%'
           }}
         >
           <Outlet />

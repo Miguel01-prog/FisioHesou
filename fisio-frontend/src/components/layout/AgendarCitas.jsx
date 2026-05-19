@@ -12,12 +12,9 @@ export default function AgendaCitas() {
   const [citasDelDia, setCitasDelDia] = useState([]);
   const [blockedDatesAdmin, setBlockedDatesAdmin] = useState([]);
   const [blockedDatesPaciente, setBlockedDatesPaciente] = useState([]);
-  const [pacientesNuevos, setPacientesNuevos] = useState(new Set());
-
   const user = JSON.parse(localStorage.getItem("user"));
   const rolUsuario = getUsuarioRol(user);
   const hoyStr = toLocalISODate(new Date());
-  const fetchedOnce = useRef(false);
   const navigate = useNavigate();
 
   const normalizar = (str) =>
@@ -50,29 +47,6 @@ export default function AgendaCitas() {
     };
     fetchCitas();
   }, [rolUsuario]);
-
-  // Validar pacientes solo una vez
-  useEffect(() => {
-    const fetchPacientes = async () => {
-      if (fetchedOnce.current) return;
-      fetchedOnce.current = true;
-      try {
-        const { data } = await api.get("/citas/validar-pacientes");
-        const lista = data.nuevosPacientes || [];
-
-        const nuevos = new Set(
-          lista.map(p =>
-            `${normalizar(p.nombres)}-${normalizar(p.apellidos)}-${p.telefono}`
-          )
-        );
-        setPacientesNuevos(nuevos);
-      } catch (err) {
-        console.error("Error al validar pacientes:", err);
-      }
-    };
-
-    fetchPacientes();
-  }, []);
 
   
   const handleDayClick = (date) => {
@@ -131,11 +105,10 @@ export default function AgendaCitas() {
                 citasDelDia.length > 0 ? (
                   <div className="appointments-list">
                     {citasDelDia.map((cita, i) => {
-                      const idPaciente = `${normalizar(cita.nombres)}-${normalizar(cita.apellidos)}-${cita.telefono}`;
-                      const esNuevo = pacientesNuevos.has(idPaciente);
+                      const esNuevo = cita.esNuevoPaciente;
 
                       return (
-                        <div key={cita._id || i} className="appointment-card"  
+                        <div key={cita._id || i} className={`appointment-card ${esNuevo ? "nuevo-paciente-card" : ""}`}  
                           onClick={() => navigate(`/fisioterapeuta/paciente/${cita.identificadorPaciente}`)}
                           style={{ cursor: "pointer" }}
                         >

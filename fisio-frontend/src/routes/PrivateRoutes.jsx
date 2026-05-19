@@ -2,11 +2,18 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import LoadingSpinner from '../components/layout/LoadingSpinner';
 
 export default function PrivateRoute({ children, allowedRoles = [] }) {
   const { token, user, loading } = useAuth();
 
-  if (loading) return <div>Cargando...</div>; // Espera que se restaure el usuario
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>
+        <LoadingSpinner size="large" />
+      </div>
+    );
+  }
 
   if (!token) {
     return <Navigate to="/login" replace />;
