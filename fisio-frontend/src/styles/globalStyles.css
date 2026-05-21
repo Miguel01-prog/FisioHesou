@@ -579,9 +579,10 @@ html, body, #root, .auth-wrapper, .auth-wrapper::before {
 }
 
 .btn-add-icon:hover,
-.btn-icon-delete:hover , 
+.btn-icon-delete:hover, 
 .save-btn:hover {
-  transform: scale(1.15);    /* efecto suave SOLO al pasar el mouse */
+  filter: brightness(0.85);
+  transform: none;
 }
 
 .btn-add-icon svg {

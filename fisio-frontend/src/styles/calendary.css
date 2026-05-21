@@ -5,7 +5,7 @@
   background: #f7f7f7;
   border-radius: 10px;
   padding: 10px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   font-family: Arial, sans-serif;
 }
 
@@ -41,8 +41,10 @@
   border-radius: 10px;
 
   /* Separación entre tiles */
-  margin: 4px;             /* 4px es suficiente para separar visualmente */
-  box-shadow: 0 0 0 1px white; /* halo blanco alrededor */
+  margin: 4px;
+  /* 4px es suficiente para separar visualmente */
+  box-shadow: 0 0 0 1px white;
+  /* halo blanco alrededor */
 }
 
 .blocked:hover {
@@ -53,11 +55,13 @@
 
 /* Día seleccionado */
 .react-calendar__tile--active {
-  background: #8c8bc252 !important; /* tu primary-600 */
+  background: #8c8bc252 !important;
+  /* tu primary-600 */
   color: white !important;
   font-weight: bold;
   border-radius: 10px;
 }
+
 .react-calendar__tile--active:hover {
   background: #5a59b149 !important;
   color: white !important;
@@ -72,11 +76,12 @@
 
 /* Día con citas de pacientes */
 .react-calendar__tile.blocked-paciente {
-  
+
   background-color: #fff3cd !important;
   color: #856404 !important;
   border-radius: 6px;
 }
+
 .blocked-admin {
   background-color: rgba(255, 99, 71, 0.3);
   border-radius: 50%;
@@ -132,6 +137,19 @@
   background: #ffffff;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+}
+
+.agenda-right-citas {
+  flex: 0 0 45%;
+  padding: 15px;
+  max-height: 520px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  background: #ffffff;
+  border-radius: 10px;
+
   display: flex;
   flex-direction: column;
 }
@@ -206,14 +224,50 @@
 }
 
 /* ====== RESPONSIVE ====== */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .agenda-columns {
-    flex-direction: column;
+    gap: 20px;
   }
-
-  .agenda-left,
-  .agenda-right {
-    flex: 1 1 100%;
+  .agenda-left {
+    flex: 0 0 50%;
+  }
+  .agenda-right,
+  .agenda-right-citas {
+    flex: 0 0 50%;
   }
 }
 
+@media (max-width: 900px) {
+  .agenda-columns {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .agenda-left {
+    flex: 1 1 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .agenda-right,
+  .agenda-right-citas {
+    flex: 1 1 100%;
+    width: 100%;
+    max-height: 450px;
+  }
+}
+
+@media (max-width: 600px) {
+  .react-calendar {
+    padding: 10px;
+    margin: 10px auto;
+  }
+  .agenda-columns {
+    gap: 15px;
+  }
+  .agenda-right,
+  .agenda-right-citas {
+    padding: 10px;
+  }
+}

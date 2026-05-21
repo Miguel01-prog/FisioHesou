@@ -48,7 +48,7 @@ export default function AgendaCitas() {
     fetchCitas();
   }, [rolUsuario]);
 
-  
+
   const handleDayClick = (date) => {
     const iso = toLocalISODate(date);
     const hoy = toLocalISODate(new Date());
@@ -63,9 +63,9 @@ export default function AgendaCitas() {
   return (
     <div className="auth-wrapper-content">
       <div className="auth-card">
-       
+
         <h2 className="logo-agendar mb-4">Agenda de citas</h2>
-        
+
 
         <div className="agenda-columns">
           {/* Calendario */}
@@ -89,7 +89,7 @@ export default function AgendaCitas() {
           </div>
 
           {/* Citas del día */}
-          <div className="agenda-right" style={{ marginTop: "20px" }}>
+          <div className="agenda-right-citas" style={{ marginTop: "20px" }}>
             <div className="text-muted text-center">
               <h4>
                 {selectedDay
@@ -108,13 +108,13 @@ export default function AgendaCitas() {
                       const esNuevo = cita.esNuevoPaciente;
 
                       return (
-                        <div key={cita._id || i} className={`appointment-card ${esNuevo ? "nuevo-paciente-card" : ""}`}  
+                        <div key={cita._id || i} className={`appointment-card ${esNuevo ? "nuevo-paciente-card" : ""}`}
                           onClick={() => navigate(`/fisioterapeuta/paciente/${cita.identificadorPaciente}`)}
                           style={{ cursor: "pointer" }}
                         >
                           <div className="appointment-time">🕒 {cita.horaCita}</div>
                           <div className="appointment-info">
-                            <div className="appointment-name">
+                            <div className="appointment-name" style={{ textTransform: 'capitalize' }}>
                               <strong>{cita.nombres} {cita.apellidos}</strong>
                             </div>
                             <div className="appointment-area">Área: {cita.area}</div>

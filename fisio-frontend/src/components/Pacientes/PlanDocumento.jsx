@@ -13,7 +13,7 @@ const PlanDocumento = () => {
   const [plan, setPlan] = useState(null);
   const [paciente, setPaciente] = useState(null);
   const [cargando, setCargando] = useState(true);
-  
+
   const componentRef = useRef(null);
 
   const handlePrint = useReactToPrint({
@@ -65,7 +65,7 @@ const PlanDocumento = () => {
   if (cargando) {
     return (
       <div className="auth-wrapper-content" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <LoadingSpinner size="large" color="#42133B"/>
+        <LoadingSpinner size="large" color="#42133B" />
       </div>
     );
   }
@@ -75,35 +75,150 @@ const PlanDocumento = () => {
   }
 
   return (
-    <div className="auth-wrapper-content" style={{ padding: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', maxWidth: '800px', margin: '0 auto' }}>
-        <button className="btn" onClick={() => navigate(-1)} style={{ background: '#f8f9fa', border: '1px solid #ddd', padding: '10px 20px', borderRadius: '5px', cursor: 'pointer' }}>
-          <FaArrowLeft /> Volver
+    <div className="auth-wrapper-content" style={{ padding: '40px 20px 120px 20px', flexDirection: 'column', alignItems: 'center' }}>
+      
+      {/* BARRA FLOTANTE DE ACCIONES (NO SE IMPRIME) */}
+      <div 
+        className="no-print"
+        style={{ 
+          position: 'fixed',
+          bottom: '40px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex', 
+          alignItems: 'center',
+          gap: '15px',
+          padding: '15px 25px',
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(15px)',
+          borderRadius: '50px',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+          border: '1px solid rgba(255,255,255,0.6)',
+          zIndex: 1000
+        }}
+      >
+        <button 
+          onClick={handleShareWhatsApp} 
+          style={{ 
+            border: 'none',
+            padding: '12px 20px', 
+            borderRadius: '30px', 
+            cursor: 'pointer',
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px', 
+            backgroundColor: '#25D366',
+            color: 'white',
+            fontWeight: '600',
+            fontSize: '14px',
+            boxShadow: '0 4px 10px rgba(37, 211, 102, 0.3)',
+            transition: 'all 0.2s ease'
+          }} 
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          title="Compartir por WhatsApp"
+        >
+          <FaWhatsapp size={20} />
+          <span>WhatsApp</span>
         </button>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button className="save-btn" onClick={handleShareWhatsApp} style={{ width: 'auto', padding: '0 15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', backgroundColor: '#25D366' }} title="Compartir por WhatsApp">
-            <FaWhatsapp size={18} />
-          </button>
-          <button className="save-btn" onClick={handleShareEmail} style={{ width: 'auto', padding: '0 15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', backgroundColor: '#EA4335' }} title="Compartir por Correo">
-            <FaEnvelope size={18} />
-          </button>
-          <button className="save-btn" onClick={handlePrint} style={{ width: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-            <FaPrint /> Imprimir / PDF
-          </button>
-        </div>
+        
+        <button 
+          onClick={handleShareEmail} 
+          style={{ 
+            border: 'none',
+            padding: '12px 20px', 
+            borderRadius: '30px', 
+            cursor: 'pointer',
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px', 
+            backgroundColor: '#EA4335',
+            color: 'white',
+            fontWeight: '600',
+            fontSize: '14px',
+            boxShadow: '0 4px 10px rgba(234, 67, 53, 0.3)',
+            transition: 'all 0.2s ease'
+          }} 
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          title="Compartir por Correo"
+        >
+          <FaEnvelope size={20} />
+          <span>Correo</span>
+        </button>
+        
+        <div style={{ width: '1px', height: '30px', background: '#ddd', margin: '0 5px' }}></div>
+
+        <button 
+          onClick={handlePrint} 
+          style={{ 
+            border: 'none',
+            padding: '12px 24px', 
+            borderRadius: '30px', 
+            cursor: 'pointer',
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '10px',
+            backgroundColor: '#42133B',
+            color: 'white',
+            fontWeight: '600',
+            fontSize: '14px',
+            boxShadow: '0 4px 12px rgba(66, 19, 59, 0.3)',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+        >
+          <FaPrint size={18} /> 
+          <span>Imprimir / PDF</span>
+        </button>
+      </div>
+
+      {/* BOTÓN VOLVER */}
+      <div className="no-print" style={{ width: '100%', maxWidth: '800px', margin: '0 auto 20px auto', display: 'flex' }}>
+        <button 
+          onClick={() => navigate(-1)} 
+          style={{ 
+            background: 'white', 
+            border: 'none', 
+            padding: '10px 20px', 
+            borderRadius: '8px', 
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            color: '#42133B',
+            fontWeight: '600',
+            fontSize: '14px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.05)';
+          }}
+        >
+          <FaArrowLeft /> Volver al Historial
+        </button>
       </div>
 
       {/* DOCUMENTO A IMPRIMIR */}
-      <div 
-        ref={componentRef} 
-        style={{ 
-          background: 'white', 
-          maxWidth: '800px', 
-          margin: '0 auto', 
-          padding: '40px', 
-          borderRadius: '8px', 
-          boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
-          color: '#333'
+      <div
+        ref={componentRef}
+        style={{
+          background: 'white',
+          width: '100%',
+          maxWidth: '800px',
+          margin: '0 auto',
+          padding: '60px',
+          borderRadius: '12px',
+          boxShadow: '0 8px 30px rgba(0,0,0,0.1)',
+          color: '#333',
+          minHeight: '1056px' /* Tamaño aproximado A4 para darle aspecto de hoja real */
         }}
       >
         {/* Encabezado Profesional */}
@@ -131,22 +246,22 @@ const PlanDocumento = () => {
           {plan.ejercicios.map((item, index) => (
             <div key={index} style={{ display: 'flex', gap: '20px', borderBottom: '1px solid #eee', paddingBottom: '20px' }}>
               {item.ejercicio?.imagenUrl ? (
-                <img 
-                  src={`http://localhost:5000${item.ejercicio.imagenUrl}`} 
-                  alt={item.ejercicio.nombre} 
-                  style={{ width: '180px', height: '180px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }} 
+                <img
+                  src={`http://localhost:5000${item.ejercicio.imagenUrl}`}
+                  alt={item.ejercicio.nombre}
+                  style={{ width: '180px', height: '180px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }}
                 />
               ) : (
                 <div style={{ width: '180px', height: '180px', background: '#f0f0f0', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
                   Sin imagen
                 </div>
               )}
-              
+
               <div style={{ flex: 1 }}>
                 <h3 style={{ margin: '0 0 10px 0', color: '#42133B', fontSize: '18px' }}>
                   {index + 1}. {item.ejercicio?.nombre || "Ejercicio Desconocido"}
                 </h3>
-                
+
                 <p style={{ margin: '0 0 15px 0', fontSize: '14px', color: '#555', lineHeight: '1.5' }}>
                   {item.ejercicio?.descripcion}
                 </p>
@@ -164,7 +279,7 @@ const PlanDocumento = () => {
                     <span style={{ display: 'block', fontSize: '11px', color: '#888', textTransform: 'uppercase' }}>Frecuencia</span>
                     <strong style={{ fontSize: '15px' }}>{item.frecuencia || "-"}</strong>
                   </div>
-                  
+
                   {item.notas && (
                     <div style={{ gridColumn: '1 / -1', marginTop: '10px', borderTop: '1px solid #ddd', paddingTop: '10px' }}>
                       <span style={{ display: 'block', fontSize: '11px', color: '#888', textTransform: 'uppercase' }}>Nota específica</span>

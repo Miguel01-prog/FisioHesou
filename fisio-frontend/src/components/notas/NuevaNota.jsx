@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import ModalAgendarCita from "../layout/ModalAgendarCita.jsx";
 import api from "../../api.js";
 import { showSuccess, showError } from "../../utils/alerts.js";
 import { IoCaretDown, IoCaretUp } from "react-icons/io5";
 
 export default function CrearNota() {
+  const navigate = useNavigate();
   const [paciente, setPaciente] = useState(null);
   const [ultimaNota, setUltimaNota] = useState(null);
   const [openUltimaNota, setOpenUltimaNota] = useState(false);
+  const [showModalCita, setShowModalCita] = useState(false);
 
   const [form, setForm] = useState({
     idNota: "",
@@ -40,7 +44,7 @@ export default function CrearNota() {
     if (window.innerWidth >= 1024) {
       setOpenUltimaNota(true);
     }
-    
+
     const init = async () => {
       const datos = JSON.parse(localStorage.getItem("dataPaciente"));
       if (!datos) return;
@@ -102,13 +106,13 @@ export default function CrearNota() {
         ...form,
         idHistoricoFk: form.idNota
       };
-      
+
       const { data } = await api.post("/notas", payload);
       showSuccess("Nota creada", "La nota del paciente se guardó correctamente.");
 
       // La nota recién creada se convierte en la última nota
       setUltimaNota(data.nota || payload);
-      
+
       // Actualizar ID para la siguiente nota
       const nuevoID = await generarIdNotaFront(paciente, form.mesAñoNota);
 
@@ -131,12 +135,12 @@ export default function CrearNota() {
   return (
     <div className="auth-wrapper-content">
       <div className="cards-column">
-        
+
         {ultimaNota && (
           <div className="auth-card auth-card-detail accordion" style={{ marginBottom: "20px" }}>
-            <button 
-              type="button" 
-              className={`accordion-header ${openUltimaNota ? "open" : ""}`} 
+            <button
+              type="button"
+              className={`accordion-header ${openUltimaNota ? "open" : ""}`}
               onClick={() => setOpenUltimaNota(!openUltimaNota)}
             >
               <span className="form-label" style={{ margin: 0, fontWeight: "bold" }}>
@@ -183,8 +187,18 @@ export default function CrearNota() {
         )}
 
         <div className="auth-card auth-card-detail">
-          <h2 className="title_card">Añadir Nueva Nota</h2>
-          <hr />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h2 className="title_card" style={{ margin: 0 }}>Añadir Nueva Nota</h2>
+            <button 
+              type="button" 
+              className="save-btn" 
+              style={{ width: "auto", minWidth: "140px", height: "35px", padding: "0 15px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontSize: "14px" }}
+              onClick={() => setShowModalCita(true)}
+            >
+              📅 Agendar Cita
+            </button>
+          </div>
+          <hr style={{ marginTop: "15px" }} />
           <form onSubmit={handleSubmit} className="form">
             <div className="form-row">
               <div className="col">
@@ -192,7 +206,7 @@ export default function CrearNota() {
               </div>
 
               <div className="col">
-                <label className="form-label">Mes-Año: <strong>{form.mesAñoNota}</strong></label> 
+                <label className="form-label">Mes-Año: <strong>{form.mesAñoNota}</strong></label>
               </div>
             </div>
 
@@ -260,6 +274,13 @@ export default function CrearNota() {
           </form>
         </div>
       </div>
+      
+      {showModalCita && paciente && (
+        <ModalAgendarCita 
+          paciente={paciente} 
+          onClose={() => setShowModalCita(false)} 
+        />
+      )}
     </div>
   );
 }
