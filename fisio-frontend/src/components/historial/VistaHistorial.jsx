@@ -17,7 +17,7 @@ const VistaHistorial = () => {
   // Estados similares al formulario pero solo para leer
   const [formData, setFormData] = useState({});
   const [openLesiones, setOpenLesiones] = useState(false);
-  
+
   const [lesiones, setLesiones] = useState({
     caidas: { activo: false, detalle: "" },
     accidentes: { activo: false, detalle: "" },
@@ -56,7 +56,7 @@ const VistaHistorial = () => {
         const { data } = await api.get(`/historial-notas/${id}`);
         if (data && data.ok) {
           setFormData(data.historial);
-          
+
           // Populate arrays or nested objects if they come from backend
           if (data.historial.lesiones) setLesiones(data.historial.lesiones);
           if (data.historial.obser) setObser(data.historial.obser);
@@ -96,13 +96,13 @@ const VistaHistorial = () => {
 
         <div className="auth-card auth-card-detail">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h2 className="title_card" style={{ marginTop: "-10px" }}>Historial Clínico (Solo Lectura)</h2>
+            <h2 className="title_card" style={{ marginTop: "-10px" }}>Historial Clínico </h2>
             <button className="save-btn" onClick={() => navigate(-1)} style={{ marginTop: "-20px" }}>
               ⬅ Volver
             </button>
           </div>
           <hr />
-          
+
           <div className="tabs">
             <button type="button" className={`tab ${activeTab === "datosPersonales" ? "active" : ""}`} onClick={() => setActiveTab("datosPersonales")}>Datos personales</button>
             <button type="button" className={`tab ${activeTab === "AnaAnte" ? "active" : ""}`} onClick={() => setActiveTab("AnaAnte")}>Anamnesis y Antecedentes</button>

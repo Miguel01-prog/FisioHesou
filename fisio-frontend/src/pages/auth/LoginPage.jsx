@@ -18,10 +18,10 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const res = await api.post('/auth/login', { email, password });
-      login(res.data.token, { role: res.data.role, name: res.data.name });  
-      
+      login(res.data.token, { role: res.data.role, name: res.data.name });
+
       localStorage.setItem("user", JSON.stringify({ rol: res.data.role, nombre: res.data.name, token: res.data.token }));
-      
+
       if (res.data.role === 'fisioterapeuta') {
         navigate('/fisioterapeuta');
       } else if (res.data.role === 'nutriologa') {
@@ -48,7 +48,7 @@ export default function LoginPage() {
         <form className="form" onSubmit={handleSubmit}>
           <div style={{ position: 'relative' }}>
             {loading && <div className="spinner-overlay" style={{ borderRadius: 'var(--radius)' }}><LoadingSpinner /></div>}
-            
+
             <label htmlFor="email" className="form-label">Correo electrónico</label>
             <input
               id="email"
@@ -78,7 +78,7 @@ export default function LoginPage() {
             </button>
           </div>
         </form>
-        
+
         <div className="text-center mt-3" style={{ marginTop: '1.5rem' }}>
           <p className="text-muted" style={{ fontSize: '0.9rem' }}>
             ¿No tienes cuenta? <Link to="/register" style={{ color: 'var(--primary-color)', fontWeight: '600' }}>Regístrate aquí</Link>

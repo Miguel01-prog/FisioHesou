@@ -171,7 +171,7 @@
   margin-bottom: 5px;
 }
 
-.sidebar-nav li a {
+.sidebar-nav li > .nav-link {
   display: flex;
   align-items: center;
   padding: 12px 20px;
@@ -181,13 +181,19 @@
   border-radius: 0;
 }
 
-.sidebar-nav li a:hover {
+.sidebar-nav li > .nav-link:hover,
+.sidebar-nav li > .submenu-toggle:hover {
   background-color: var(--primary-light);
   color: var(--primary-dark);
 }
 
-.sidebar-nav li.active a {
+.sidebar-nav li.active > .nav-link {
   background-color: var(--primary-color);
+  color: white;
+}
+
+.sidebar-nav li.active > .submenu-toggle {
+  background-color: var(--secondary-color);
   color: white;
 }
 
@@ -291,27 +297,38 @@
   width: 100%;
   background: none;
   border: none;
-  padding: 10px;
+  padding: 12px 20px;
   display: flex;
   align-items: center;
   cursor: pointer;
-  color: inherit;
+  color: var(--text-color);
+  transition: var(--transition);
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.submenu-toggle:hover {
+  background-color: var(--primary-light);
+  color: var(--primary-dark);
 }
 
 .submenu {
-  margin-left: 20px;
-  padding-left: 10px;
-  border-left: 2px solid #ddd;
+  margin-left: 0;
+  padding-left: 0;
+  background: rgba(0,0,0,0.02);
 }
 
 .submenu-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 0;
+  padding: 12px 20px;
+  padding-left: 45px; /* Identación para submenu */
   color: var(--text-color);
+  transition: var(--transition);
   text-decoration: none;
-  font-size: 0.9rem;
+  border-radius: 0;
+  font-size: 1rem;
 }
 
 .submenu li {
@@ -319,7 +336,13 @@
 }
 
 .submenu-item:hover {
-  color: var(--primary-color);
+  background-color: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+.submenu-item.active {
+  background-color: var(--primary-color);
+  color: white;
 }
 
 /* ====================
@@ -420,7 +443,8 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(3px);
     z-index: 999;
     display: block !important;
   }

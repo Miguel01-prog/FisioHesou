@@ -4,7 +4,7 @@ import '../../styles/sidebar.css';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { IoMdClose } from 'react-icons/io';
 import { FaArrowLeftLong } from "react-icons/fa6";
-import { FiCalendar} from "react-icons/fi";
+import { FiCalendar, FiMenu, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 
 const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
@@ -20,7 +20,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       const mobile = window.innerWidth <= 768;
       setIsMobile(mobile);
 
-      if (window.innerWidth <= 1020 && window.innerWidth > 768) {
+      if (window.innerWidth <= 1025 && window.innerWidth > 768) {
         setCollapsed(true);
         setIsCollapsed(true);
         localStorage.setItem('sidebarState', 'collapsed');
@@ -63,12 +63,13 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
           { icon: '📊', text: 'Dashboard', path: '/fisioterapeuta' },
           { icon: '📅', text: 'Citas', path: '/fisioterapeuta/agenda' },
           { icon: '🙋', text: 'Pacientes', path: '/fisioterapeuta/pacientes' },
-          { icon: "⚙️", text: "Configuración", children: [
-            { icon: '⌚', text: "Bloquear días", path: "/fisioterapeuta/bloquear" },
-            { icon: '🗒️', text: "Antecedentes", path: "/fisioterapeuta/antecedentes" },
-            { icon: '🏋️‍♂️', text: "Ejercicios", path: "/fisioterapeuta/ejercicios" },
-          ]
-        }
+          {
+            icon: "⚙️", text: "Configuración", children: [
+              { icon: '⌚', text: "Bloquear días", path: "/fisioterapeuta/bloquear" },
+              { icon: '🗒️', text: "Antecedentes", path: "/fisioterapeuta/antecedentes" },
+              { icon: '🏋️‍♂️', text: "Ejercicios", path: "/fisioterapeuta/ejercicios" },
+            ]
+          }
         ];
       case 'nutriologa':
         return [
@@ -93,12 +94,32 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 
   // Función robusta para resaltar item activo
   const isActive = (path) => {
+    if (!path) return false;
+
     // Dashboard solo se activa en su ruta exacta
     if (['/admin', '/fisioterapeuta', '/nutriologa'].includes(path)) {
       return location.pathname === path;
     }
+
+    // Si estamos en cualquier ruta de paciente (detalle, historial, notas, planes), 
+    // mantenemos activo el botón de "Pacientes"
+    if (path.endsWith('/pacientes') && (
+      location.pathname.includes('/paciente') ||
+      location.pathname.includes('/historial') ||
+      location.pathname.includes('/nota') ||
+      location.pathname.includes('/plan')
+    )) {
+      return true;
+    }
+
     // Otros items se activan si la ruta actual empieza con el path
     return location.pathname.startsWith(path);
+  };
+
+  const isItemActive = (item) => {
+    if (item.path && isActive(item.path)) return true;
+    if (item.children && item.children.some(child => isActive(child.path))) return true;
+    return false;
   };
 
   return (
@@ -106,7 +127,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       {isMobile && sidebarOpen && (
         <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}></div>
       )}
-      
+
       {isMobile && !sidebarOpen && (
         <button className="mobile-menu-toggle" onClick={() => setSidebarOpen(true)}>
           ≡
@@ -115,64 +136,75 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 
       <aside className={sidebarClasses}>
         <div className="sidebar-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h2 className="logo">{collapsed ? '' : 'Hesou'}</h2>
+          <h2 className="logo" style={{ margin: 0, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+            {collapsed ? 'H' : 'Hesou'}
+          </h2>
           <button className={`btn toggle-btn ${collapsed ? 'collapsed' : 'expanded'}`} onClick={toggleSidebar}
-            aria-label="Toggle sidebar">
+            aria-label="Toggle sidebar"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px', minWidth: '32px' }}>
             {isMobile
-              ? (sidebarOpen ? <IoMdClose size={20}/> : <FaArrowLeftLong size={20} color="#3e3a8e"/>)
+              ? (sidebarOpen ? <IoMdClose size={24} color="#3e3a8e" /> : <FiMenu size={24} color="#3e3a8e" />)
               : (collapsed
-                  ? <h3 className="logo" style={{ marginRight: '7px', fontSize: '24px', color: '#3e3a8e', fontWeight: 'bold', lineHeight: 1 }}>H</h3>
-                  : <FaArrowLeftLong size={20} color="#3e3a8e"/>
-                )
+                ? <FiMenu size={24} color="#3e3a8e" title="Expandir menú" />
+                : <FiChevronLeft size={24} color="#3e3a8e" title="Contraer menú" />
+              )
             }
           </button>
         </div>
 
         <nav className="sidebar-nav">
-        <ul>
+          <ul>
             {navItems.map((item, index) => {
-            const hasChildren = !!item.children;
-            const isOpen = openSubmenu === index;
+              const hasChildren = !!item.children;
+              const isOpen = openSubmenu === index;
 
-            return (
-            <li 
-              key={index}
-              data-tooltip={item.text}
-              className={isActive(item.path) ? "active" : ""}
-            >
-              {!hasChildren && (
-                <Link to={item.path} className="nav-link">
-                  <span className="nav-icon">{item.icon}</span>
-                  <span className="nav-text">{item.text}</span>
-                </Link>
-              )}
-             {hasChildren && (
-              <>
-                <button
-                  type="button"
-                  className="submenu-toggle"
-                  onClick={() => setOpenSubmenu(isOpen ? null : index)}
+              return (
+                <li
+                  key={index}
+                  data-tooltip={item.text}
+                  className={isItemActive(item) ? "active" : ""}
                 >
-                  <span className="nav-icon">{item.icon}</span>
-                  <span className="nav-text">{item.text}</span>
-                </button>
+                  {!hasChildren && (
+                    <Link to={item.path} className="nav-link">
+                      <span className="nav-icon">{item.icon}</span>
+                      <span className="nav-text">{item.text}</span>
+                    </Link>
+                  )}
+                  {hasChildren && (
+                    <>
+                      <button
+                        type="button"
+                        className="submenu-toggle"
+                        onClick={() => {
+                          setOpenSubmenu(isOpen ? null : index);
+                          if (collapsed && !isMobile) {
+                            setIsCollapsed(false);
+                          }
+                        }}
+                      >
+                        <span className="nav-icon">{item.icon}</span>
+                        <span className="nav-text">{item.text}</span>
+                      </button>
 
-                {isOpen && (
-                  <ul className={`submenu ${isOpen ? "open" : ""}`}>
-                    {item.children.map((sub, j) => (
-                      <li key={j}>
-                        <Link to={sub.path} className="submenu-item">
-                          <span className="nav-icon">{sub.icon}</span>
-                          <span className="nav-text">{sub.text}</span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </>
-            )}
-            </li>
-            );
+                      {isOpen && (
+                        <ul className={`submenu ${isOpen ? "open" : ""}`}>
+                          {item.children.map((sub, j) => (
+                            <li key={j}>
+                              <Link
+                                to={sub.path}
+                                className={`submenu-item ${isActive(sub.path) ? "active" : ""}`}
+                              >
+                                <span className="nav-icon">{sub.icon}</span>
+                                <span className="nav-text">{sub.text}</span>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </>
+                  )}
+                </li>
+              );
             })}
           </ul>
         </nav>
