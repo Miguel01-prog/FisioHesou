@@ -194,6 +194,9 @@ export default function ModalAgendarCita({ paciente, onClose }) {
             </button>
           </div>
         )}
+        
+        {/* Spacer para asegurar scroll completo en móviles */}
+        <div style={{ height: '20px', width: '100%' }}></div>
       </div>
     </div>
   );

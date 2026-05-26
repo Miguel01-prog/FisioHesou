@@ -85,99 +85,102 @@ export default function PacienteDetalle() {
 
         {cargando ? (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-            <LoadingSpinner size="large" color="#42133B"/>
+            <LoadingSpinner size="large" color="#42133B" />
           </div>
         ) : (
           <>
             {/* Tarjeta del paciente */}
             {paciente && <CardPaciente paciente={paciente} />}
 
-        <div className="auth-card auth-card-detail">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h2 className="title_card" style={{ marginTop: "-10px" }}>
-              Historial del paciente
-            </h2>
+            <div className="auth-card auth-card-detail">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <h2 className="title_card" style={{ marginTop: "-10px" }}>
+                  Historial del paciente
+                </h2>
 
-            <div style={{ display: "flex", gap: "10px", marginTop: "-55px", marginRight: "-2px" }}>
-              {historialClinico ? (
-                <>
-                  <button
-                    className="save-btn"
-                    style={{ backgroundColor: "#6c757d" }}
-                    onClick={() => navigate(`/fisioterapeuta/historial-detalle/${historialClinico._id}`)}
-                  >
-                    Ver Historial Clínico
-                  </button>
-                  {planes.length > 0 ? (
-                    <button
-                      className="save-btn"
-                      style={{ backgroundColor: "#17a2b8" }}
-                      onClick={() => navigate(`/fisioterapeuta/planes-paciente/${id}`)}
-                    >
-                      Editar planes de ejercicios
-                    </button>
+                <div style={{ display: "flex", gap: "10px", marginTop: "-55px", marginRight: "-2px" }}>
+                  {historialClinico ? (
+                    <>
+                      <button
+                        className="save-btn"
+                        style={{ backgroundColor: "#6c757d" }}
+                        onClick={() => navigate(`/fisioterapeuta/historial-detalle/${historialClinico._id}`)}
+                      >
+                        Ver Historial Clínico
+                      </button>
+
+                      {planes.length > 0 ? (
+                        <button
+                          className="save-btn"
+                          style={{ backgroundColor: "#17a2b8" }}
+                          onClick={() => navigate(`/fisioterapeuta/planes-paciente/${id}`)}
+                        >
+                          Editar planes de ejercicios
+                        </button>
+                      ) : (
+                        <button
+                          className="save-btn"
+                          style={{ backgroundColor: "#17a2b8" }}
+                          onClick={() => navigate(`/fisioterapeuta/crear-plan/${id}`)}
+                        >
+                          Crear plan de ejercicios
+                        </button>
+                      )}
+                      <button
+                        className="save-btn"
+                        onClick={() => navigate(`/fisioterapeuta/notas`)}
+                      >
+                        Añadir Nota SOAP
+                      </button>
+                    </>
                   ) : (
                     <button
                       className="save-btn"
-                      style={{ backgroundColor: "#17a2b8" }}
-                      onClick={() => navigate(`/fisioterapeuta/crear-plan/${id}`)}
+                      onClick={() => navigate(`/fisioterapeuta/creacion-historial`)}
                     >
-                      Crear plan de ejercicios
+                      Crear Historial
                     </button>
                   )}
-                  <button
-                    className="save-btn"
-                    onClick={() => navigate(`/fisioterapeuta/notas`)}
-                  >
-                    Añadir Nota SOAP
-                  </button>
-                </>
+                </div>
+              </div>
+
+              <hr />
+
+              {notas.length === 0 ? (
+                <p>No hay notas registradas para este paciente.</p>
               ) : (
-                <button
-                  className="save-btn"
-                  onClick={() => navigate(`/fisioterapeuta/creacion-historial`)}
-                >
-                  Crear Historial
-                </button>
+                <div style={{ width: '100%', overflowX: 'auto' }}>
+                  <table className="tabla-pacientes">
+                    <thead>
+                      <tr>
+                        <th>ID Nota</th>
+                        <th>Fecha</th>
+                        <th>Ver nota</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {notas.map((item) => (
+                        <tr key={item._id}>
+                          <td>{item.idHistoricoFk || item._id}</td>
+                          <td>{formatDateDDMMYYYY(item.fechaNota || item.createdAt)}</td>
+                          <td style={{ display: 'flex', justifyContent: 'center' }}>
+                            <button
+                              className="btn-eye"
+                              onClick={() => navigate(`/fisioterapeuta/nota-detalle/${item._id}`)}
+                            >
+                              <FaEye />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
-          </div>
 
-          <hr />
-
-          {notas.length === 0 ? (
-            <p>No hay notas registradas para este paciente.</p>
-          ) : (
-            <table className="tabla-pacientes">
-              <thead>
-                <tr>
-                  <th>ID Nota</th>
-                  <th>Fecha</th>
-                  <th>Ver</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {notas.map((item) => (
-                  <tr key={item._id}>
-                    <td>{item.idHistoricoFk || item._id}</td>
-                    <td>{formatDateDDMMYYYY(item.fechaNota || item.createdAt)}</td>
-                    <td>
-                      <button
-                        className="btn-eye"
-                        onClick={() => navigate(`/fisioterapeuta/nota-detalle/${item._id}`)}
-                      >
-                        <FaEye />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-
-        </>
+          </>
         )}
 
       </div>

@@ -6,29 +6,29 @@ import api from "../../api";
 import LoadingSpinner from "../layout/LoadingSpinner";
 
 export default function ListaPacientes() {
-    const [pacientes, setPacientes] = useState([]);
-    const [cargando, setCargando] = useState(true);
-    const navigate = useNavigate();
-    useEffect(() => {
-        obtenerPacientes();
-    }, []);
+  const [pacientes, setPacientes] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const navigate = useNavigate();
+  useEffect(() => {
+    obtenerPacientes();
+  }, []);
 
-    const obtenerPacientes = async () => {
-        try {
-        const { data } = await api.get("/pacientes");
-        setPacientes(data);
-          localStorage.setItem("listaPacientes", JSON.stringify(data));
-        } catch (error) {
-        console.error("Error al cargar pacientes:", error);
-        } finally {
-        setCargando(false);
-        }
-    };
+  const obtenerPacientes = async () => {
+    try {
+      const { data } = await api.get("/pacientes");
+      setPacientes(data);
+      localStorage.setItem("listaPacientes", JSON.stringify(data));
+    } catch (error) {
+      console.error("Error al cargar pacientes:", error);
+    } finally {
+      setCargando(false);
+    }
+  };
 
   return (
     <div className="auth-wrapper-content">
-      <div className="auth-card" style={{ width: "900px", marginTop: '20%'}}>
-        <h2 className="title_card" style={{marginTop: '-10px'}}>Pacientes</h2>
+      <div className="auth-card" style={{ marginTop: '5%' }}>
+        <h2 className="title_card" style={{ marginTop: '-10px' }}>Pacientes</h2>
         <hr />
 
         {cargando && (
@@ -42,36 +42,38 @@ export default function ListaPacientes() {
         )}
 
         {!cargando && pacientes.length > 0 && (
-          <table className="tabla-pacientes">
-            <thead>
-              <tr>
-                <th>Nombre completo</th>
-                <th>Teléfono</th>
-                <th>Ver historial</th>
-              </tr>
-            </thead>
+          <div style={{ width: '100%', overflowX: 'auto' }}>
+            <table className="tabla-pacientes">
+              <thead>
+                <tr>
+                  <th>Nombre completo</th>
+                  <th>Teléfono</th>
+                  <th>Ver historial</th>
+                </tr>
+              </thead>
 
-            <tbody>
-              {pacientes.map((p) => (
-                <tr key={p.identificadorPaciente}>
-                  <td>
-                    {capitalizeWords(p.nombres)} {capitalizeWords(p.apellidos)}
-                  </td>
-                  <td>{p.telefono}</td>
-                  <td>
-                    <button className="btn-eye" onClick={() => {localStorage.setItem("dataPaciente", JSON.stringify(p));
-                    console.log("Paciente seleccionado:", p.identificadorPaciente);
+              <tbody>
+                {pacientes.map((p) => (
+                  <tr key={p.identificadorPaciente}>
+                    <td>
+                      {capitalizeWords(p.nombres)} {capitalizeWords(p.apellidos)}
+                    </td>
+                    <td>{p.telefono}</td>
+                    <td style={{ display: 'flex', justifyContent: 'center' }}>
+                      <button className="btn-eye" onClick={() => {
+                        localStorage.setItem("dataPaciente", JSON.stringify(p));
+                        console.log("Paciente seleccionado:", p.identificadorPaciente);
                         navigate(`/fisioterapeuta/paciente/${p.identificadorPaciente}`);
                       }}
                       >
-                        <FaEye/>
+                        <FaEye />
                       </button>
-
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

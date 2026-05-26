@@ -114,7 +114,7 @@ export default function AgendaCitas() {
                         >
                           <div className="appointment-time">🕒 {cita.horaCita}</div>
                           <div className="appointment-info">
-                            <div className="appointment-name" style={{ textTransform: 'capitalize' }}>
+                            <div className="appointment-name">
                               <strong>{cita.nombres} {cita.apellidos}</strong>
                             </div>
                             <div className="appointment-area">Área: {cita.area}</div>
@@ -123,6 +123,8 @@ export default function AgendaCitas() {
                         </div>
                       );
                     })}
+                    {/* Spacer para scroll */}
+                    <div style={{ height: '15px' }}></div>
                   </div>
                 ) : (
                   <p className="no-appointments">No hay citas registradas este día.</p>

@@ -59,44 +59,46 @@ const ListaPlanesPaciente = () => {
           ) : planes.length === 0 ? (
             <p>No hay planes de tratamiento registrados para este paciente.</p>
           ) : (
-            <table className="tabla-pacientes">
-              <thead>
-                <tr>
-                  <th>Fecha de Creación</th>
-                  <th>Ejercicios Asignados</th>
-                  <th>Ver / Imprimir</th>
-                  <th>Editar Plan</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {planes.map((item) => (
-                  <tr key={item._id}>
-                    <td>{formatDateDDMMYYYY(item.fechaCreacion)}</td>
-                    <td>{item.ejercicios?.length || 0} ejercicios</td>
-                    <td>
-                      <button
-                        className="btn-eye"
-                        onClick={() => navigate(`/fisioterapeuta/plan-documento/${item._id}`)}
-                        title="Ver Documento"
-                      >
-                        <FaEye />
-                      </button>
-                    </td>
-                    <td>
-                      <button
-                        className="btn-eye"
-                        style={{ color: '#17a2b8' }}
-                        onClick={() => navigate(`/fisioterapeuta/editar-plan/${item._id}`)}
-                        title="Editar Ejercicios"
-                      >
-                        <FaEdit />
-                      </button>
-                    </td>
+            <div style={{ width: '100%', overflowX: 'auto' }}>
+              <table className="tabla-pacientes">
+                <thead>
+                  <tr>
+                    <th>Fecha de Creación</th>
+                    <th>Ejercicios Asignados</th>
+                    <th>Ver / Imprimir</th>
+                    <th>Editar Plan</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+
+                <tbody>
+                  {planes.map((item) => (
+                    <tr key={item._id}>
+                      <td>{formatDateDDMMYYYY(item.fechaCreacion)}</td>
+                      <td>{item.ejercicios?.length || 0} ejercicios</td>
+                      <td>
+                        <button
+                          className="btn-eye"
+                          onClick={() => navigate(`/fisioterapeuta/plan-documento/${item._id}`)}
+                          title="Ver Documento"
+                        >
+                          <FaEye />
+                        </button>
+                      </td>
+                      <td>
+                        <button
+                          className="btn-eye"
+                          style={{ color: '#17a2b8' }}
+                          onClick={() => navigate(`/fisioterapeuta/editar-plan/${item._id}`)}
+                          title="Editar Ejercicios"
+                        >
+                          <FaEdit />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>
