@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import api from '../api';
 
 const AuthContext = createContext();
 
@@ -9,29 +10,38 @@ export const AuthProvider = ({ children }) => {
 
   
   useEffect(() => {
-  const savedToken = localStorage.getItem('token');
-  const savedUser = localStorage.getItem('user');
-  if (savedToken && savedUser) {
-    setToken(savedToken);
-    setUser(JSON.parse(savedUser));
-  }
-  setLoading(false); // ← muy importante
-}, []);
+    const fetchUser = async () => {
+      try {
+        const res = await api.get('/auth/me');
+        setUser({ name: res.data.name, role: res.data.role });
+        localStorage.setItem('user', JSON.stringify({ role: res.data.role, nombre: res.data.name }));
+      } catch (err) {
+        setUser(null);
+        localStorage.removeItem('user');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
+  }, []);
 
 
   // 🔐 Iniciar sesión
-  const login = (token, userData) => {
-    setToken(token);
+  const login = (userData) => {
+    // The backend already set the token in HttpOnly cookie
     setUser(userData);
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData)); // Guarda { role, name, ... }
+    localStorage.setItem('user', JSON.stringify({ rol: userData.role, nombre: userData.name })); 
   };
 
   // 🚪 Cerrar sesión
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (err) {
+      console.error("Error al cerrar sesión", err);
+    }
     setToken(null);
     setUser(null);
-    localStorage.removeItem('token');
     localStorage.removeItem('user');
   };
 

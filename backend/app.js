@@ -16,6 +16,19 @@ import path from "path";
 
 const app = express();
 
+import helmet from "helmet";
+import mongoSanitize from "express-mongo-sanitize";
+import rateLimit from "express-rate-limit";
+
+app.use(helmet());
+app.use(mongoSanitize());
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // Limita cada IP a 100 solicitudes por `window` (aquí, por 15 minutos)
+  message: "Demasiadas solicitudes desde esta IP, por favor intente de nuevo después de 15 minutos"
+});
+app.use(limiter);
 app.use(cors({
   origin: "http://localhost:5173",
   credentials: true
