@@ -3,6 +3,7 @@ import User from '../models/user.model.js';
 import bcrypt from 'bcryptjs'; 
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
+import { verifyToken, checkRole } from '../libs/auth.middleware.js';
 
 console.log('[auth.routes.js] cargado correctamente');
 
@@ -57,20 +58,43 @@ router.post('/login', async (req, res) => {
     if (!isMatch) return res.status(401).json({ message: 'Contraseña incorrecta' });
 
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { id: user._id, role: user.role, name: user.name },
       SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: '12h' }
     );
 
-    res.json({ token, role: user.role, name: user.name });
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 12 * 60 * 60 * 1000 // 12 hours
+    });
+
+    res.json({ role: user.role, name: user.name });
     console.log("Usuario logueado exitosamente:", user.email);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Reset Password Simple (por ID)
-router.put('/reset-password/:id', async (req, res) => {
+// Logout
+router.post('/logout', (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  });
+  res.json({ message: 'Sesión cerrada correctamente' });
+});
+
+// Obtener datos del usuario actual
+router.get('/me', verifyToken, (req, res) => {
+  // req.user viene del token decodificado por el middleware verifyToken
+  res.json({ role: req.user.role, name: req.user.name, id: req.user.id });
+});
+
+// Reset Password Simple (por ID) - Protegido solo para superadmin
+router.put('/reset-password/:id', verifyToken, checkRole('superadmin'), async (req, res) => {
   try {
     const { id } = req.params;
     const { newPassword } = req.body;

@@ -1,8 +1,11 @@
 import jwt from 'jsonwebtoken';
-const SECRET = 'mi_secreto_superseguro'; // usa variable de entorno
+import dotenv from 'dotenv';
+dotenv.config();
+
+const SECRET = process.env.JWT_SECRET || 'mi_secreto_superseguro'; 
 
 export const verifyToken = (req, res, next) => {
-  const token = req.headers['authorization']?.split(' ')[1];
+  const token = req.cookies?.token;
   if (!token) return res.status(401).json({ message: 'No token provided' });
 
   jwt.verify(token, SECRET, (err, decoded) => {
