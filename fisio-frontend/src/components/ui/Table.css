@@ -1,0 +1,105 @@
+/* ==========================================================================
+   🧱 ULTRA-RESPONSIVE TABLE - STYLING
+   ========================================================================== */
+
+.responsive-table-container {
+  width: 100%;
+}
+
+/* 1. Desktop HTML Table Styles (Visible >= 1025px) */
+.desktop-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 10px; /* Elegant gap between rows */
+  margin-top: -10px; /* Offset the spacing for alignment */
+  display: table;
+}
+
+.desktop-table th {
+  color: var(--text-muted);
+  font-family: var(--font-family-display);
+  font-weight: 600;
+  text-align: left;
+  padding: 1rem 1.5rem;
+  font-size: 0.9rem;
+  border-bottom: 2px solid var(--border-light);
+}
+
+.desktop-table-row {
+  background: var(--card-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.desktop-table-row:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme="dark"] .desktop-table-row:hover {
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.desktop-table td {
+  padding: 1.25rem 1.5rem;
+  color: var(--text-main);
+  font-size: 0.95rem;
+  vertical-align: middle;
+}
+
+/* Rounded borders for individual rows since we use border-spacing */
+.desktop-table-row td:first-child {
+  border-top-left-radius: var(--radius-sm);
+  border-bottom-left-radius: var(--radius-sm);
+  border-left: 1px solid var(--card-border);
+}
+
+.desktop-table-row td:last-child {
+  border-top-right-radius: var(--radius-sm);
+  border-bottom-right-radius: var(--radius-sm);
+  border-right: 1px solid var(--card-border);
+}
+
+/* 2. Mobile/Tablet Card Layout (Hidden on Desktop) */
+.mobile-table-cards {
+  display: none;
+}
+
+.table-empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: var(--text-muted);
+}
+
+/* 3. iPad/Tablet Media Query (768px to 1024px) */
+@media (max-width: 1024px) {
+  .desktop-table {
+    display: none !important; /* Hide traditional table on tablets/iPads */
+  }
+
+  .mobile-table-cards {
+    display: grid !important; /* Turn into a grid on iPads */
+    grid-template-columns: repeat(2, 1fr); /* 2 Columns of Cards looks incredible on iPad screen widths! */
+    gap: 1rem;
+  }
+
+  .mobile-row-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.25rem;
+    transition: transform var(--transition-fast);
+    text-align: left;
+  }
+}
+
+/* 4. Small Mobile Screen Sizes (<= 640px) */
+@media (max-width: 640px) {
+  .mobile-table-cards {
+    grid-template-columns: 1fr !important; /* Single column layout on small phones */
+  }
+}

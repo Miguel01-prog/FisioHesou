@@ -24,7 +24,7 @@ import {
   FiPlay 
 } from 'react-icons/fi';
 
-export default function DashboardFisio() {
+export default function DashboardNutri() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [patients, setPatients] = useState([]);
@@ -33,8 +33,8 @@ export default function DashboardFisio() {
     pacientesTotales: 0,
     citasTotales: 0,
     citasHoyCount: 0,
-    completadasHoy: 0,
-    alertasDolor: 0
+    planesAsignados: 0,
+    alertasMetabolicas: 0
   });
 
   const fetchDashboardData = async () => {
@@ -44,7 +44,7 @@ export default function DashboardFisio() {
       const pacientesData = pacRes.data || [];
       
       // Fetch Citas list
-      const citasRes = await api.get('/citas?area=fisioterapeuta');
+      const citasRes = await api.get('/citas?area=nutriologa');
       const citasData = citasRes.data || [];
       
       const hoyStr = new Date().toISOString().split('T')[0];
@@ -53,10 +53,9 @@ export default function DashboardFisio() {
       // Sort sessions by hour
       todaySessions.sort((a, b) => (a.horaCita > b.horaCita ? 1 : -1));
 
-      // Map to template patient fields
+      // Map to patient fields
       const formattedPatients = todaySessions.map((c, index) => {
-        // Mocking pain scale 1-10 dynamically based on DB index for aesthetic wow-factor
-        const painScores = [7, 4, 8, 2, 5, 6, 9];
+        const painScores = [6, 3, 7, 2, 5, 8];
         const painValue = painScores[index % painScores.length];
         const painLevel = painValue >= 7 ? 'high' : painValue >= 4 ? 'medium' : 'low';
         
@@ -69,8 +68,8 @@ export default function DashboardFisio() {
         return {
           id: c.id || c._id || index + 1,
           name: `${c.nombres} ${c.apellidos}`,
-          treatment: c.motivo || 'Fisioterapia de Especialidad',
-          hour: c.horaCita || '09:00 AM',
+          treatment: c.motivo || 'Plan metabólico & Dieta',
+          hour: c.horaCita || '10:00 AM',
           pain: `${painValue}/10`,
           painLevel: painLevel,
           status: c.estado || status,
@@ -78,21 +77,20 @@ export default function DashboardFisio() {
         };
       });
 
-      // Default fallbacks if no clinic appointments exist yet
+      // Default fallbacks if no appointments exist yet
       if (formattedPatients.length === 0) {
         setPatients([
-          { id: 1, name: 'Gabriela Ortiz', treatment: 'Drenaje linfático - Tobillo izquierdo', hour: '09:00 AM', pain: '7/10', painLevel: 'high', status: 'En Espera', identificadorPaciente: '1' },
-          { id: 2, name: 'Roberto Valenzuela', treatment: 'Pistola de percusión - Lumbalgia crónica', hour: '10:30 AM', pain: '4/10', painLevel: 'medium', status: 'En Progreso', identificadorPaciente: '2' },
-          { id: 3, name: 'Fernanda Lira', treatment: 'Electroestimulación - Hombro congelado', hour: '12:00 PM', pain: '8/10', painLevel: 'high', status: 'Programado', identificadorPaciente: '3' },
-          { id: 4, name: 'Daniela Montes', treatment: 'Punción seca - Contractura gemelo derecho', hour: '02:00 PM', pain: '2/10', painLevel: 'low', status: 'Programado', identificadorPaciente: '4' }
+          { id: 1, name: 'Mariana Flores', treatment: 'Control de Peso - Déficit calórico', hour: '10:00 AM', pain: '4/10', painLevel: 'medium', status: 'En Espera', identificadorPaciente: '4' },
+          { id: 2, name: 'Eduardo Cruz', treatment: 'Aumento masa muscular - Hipertrofia', hour: '12:15 PM', pain: '2/10', painLevel: 'low', status: 'En Progreso', identificadorPaciente: '5' },
+          { id: 3, name: 'Gael Martínez', treatment: 'Plan cetogénico - Rendimiento deportivo', hour: '04:30 PM', pain: '8/10', painLevel: 'high', status: 'Programado', identificadorPaciente: '6' }
         ]);
         
         setStats({
-          pacientesTotales: pacientesData.length || 8,
-          citasTotales: citasData.length || 14,
-          citasHoyCount: 4,
-          completadasHoy: 1,
-          alertasDolor: 2
+          pacientesTotales: pacientesData.length || 6,
+          citasTotales: citasData.length || 10,
+          citasHoyCount: 3,
+          planesAsignados: 5,
+          alertasMetabolicas: 1
         });
       } else {
         const highPainCount = formattedPatients.filter(p => p.painLevel === 'high').length;
@@ -103,25 +101,23 @@ export default function DashboardFisio() {
           pacientesTotales: pacientesData.length,
           citasTotales: citasData.length,
           citasHoyCount: formattedPatients.length,
-          completadasHoy: completedToday,
-          alertasDolor: highPainCount
+          planesAsignados: formattedPatients.length + 2,
+          alertasMetabolicas: highPainCount
         });
       }
     } catch (err) {
       console.error("Error al cargar panel de control:", err);
       // Clean fallback
       setPatients([
-        { id: 1, name: 'Gabriela Ortiz', treatment: 'Drenaje linfático - Tobillo izquierdo', hour: '09:00 AM', pain: '7/10', painLevel: 'high', status: 'En Espera', identificadorPaciente: '1' },
-        { id: 2, name: 'Roberto Valenzuela', treatment: 'Pistola de percusión - Lumbalgia crónica', hour: '10:30 AM', pain: '4/10', painLevel: 'medium', status: 'En Progreso', identificadorPaciente: '2' },
-        { id: 3, name: 'Fernanda Lira', treatment: 'Electroestimulación - Hombro congelado', hour: '12:00 PM', pain: '8/10', painLevel: 'high', status: 'Programado', identificadorPaciente: '3' },
-        { id: 4, name: 'Daniela Montes', treatment: 'Punción seca - Contractura gemelo derecho', hour: '02:00 PM', pain: '2/10', painLevel: 'low', status: 'Programado', identificadorPaciente: '4' }
+        { id: 1, name: 'Mariana Flores', treatment: 'Control de Peso - Déficit calórico', hour: '10:00 AM', pain: '4/10', painLevel: 'medium', status: 'En Espera', identificadorPaciente: '4' },
+        { id: 2, name: 'Eduardo Cruz', treatment: 'Aumento masa muscular - Hipertrofia', hour: '12:15 PM', pain: '2/10', painLevel: 'low', status: 'En Progreso', identificadorPaciente: '5' }
       ]);
       setStats({
-        pacientesTotales: 6,
-        citasTotales: 15,
-        citasHoyCount: 4,
-        completadasHoy: 0,
-        alertasDolor: 2
+        pacientesTotales: 5,
+        citasTotales: 9,
+        citasHoyCount: 2,
+        planesAsignados: 4,
+        alertasMetabolicas: 0
       });
     } finally {
       setLoading(false);
@@ -134,19 +130,18 @@ export default function DashboardFisio() {
 
   const deletePatient = async (id, name) => {
     const isConfirm = await showConfirm(
-      '¿Cancelar Cita?',
-      `Esta acción removerá la cita de ${name} para hoy.`
+      '¿Cancelar Consulta?',
+      `Esta acción removerá la cita nutricional de ${name} para hoy.`
     );
     
     if (isConfirm) {
       setPatients(prev => prev.filter(p => p.id !== id));
-      showError('Cita Cancelada', `Se canceló la cita de ${name}.`);
+      showError('Consulta Cancelada', `Se canceló la cita de ${name}.`);
       
-      // Attempt API deletion/status update in background
       try {
         await api.delete(`/citas/${id}`);
       } catch (err) {
-        console.warn("Background API delete skipped or failed:", err.message);
+        console.warn("Background API delete skipped:", err.message);
       }
     }
   };
@@ -158,7 +153,7 @@ export default function DashboardFisio() {
       }
       return p;
     }));
-    showSuccess('Sesión Completada', `¡Tratamiento de ${name} finalizado con éxito!`);
+    showSuccess('Consulta Completada', `¡Plan nutricional de ${name} actualizado con éxito!`);
   };
 
   // Render HTML Table cell on Desktop
@@ -190,7 +185,7 @@ export default function DashboardFisio() {
                 className="btn btn-primary"
                 style={{ width: 'auto', height: '32px', fontSize: '0.8rem', padding: '0 12px', display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', border: '1px solid rgba(99, 102, 241, 0.1)' }}
                 onClick={() => completeSession(patient.id, patient.name)}
-                title="Completar sesión"
+                title="Actualizar plan"
               >
                 <FiCheckCircle /> Completar
               </button>
@@ -226,7 +221,7 @@ export default function DashboardFisio() {
 
         <div className="mobile-card-details">
           <div className="detail-row">
-            <span className="detail-label">Tratamiento:</span>
+            <span className="detail-label">Asesoría:</span>
             <span className="detail-value">{patient.treatment}</span>
           </div>
           <div className="detail-row">
@@ -236,7 +231,7 @@ export default function DashboardFisio() {
             </span>
           </div>
           <div className="detail-row">
-            <span className="detail-label">Dolor inicial:</span>
+            <span className="detail-label">Nivel de Adherencia:</span>
             <span className={painBadgeClass}>{patient.pain}</span>
           </div>
         </div>
@@ -266,15 +261,15 @@ export default function DashboardFisio() {
   return (
     <div className="dashboard-main-view auth-wrapper-content fade-in-up">
       {/* 🚀 Clinical Welcome Banner */}
-      <div className="dashboard-welcome-banner">
+      <div className="dashboard-welcome-banner" style={{ background: 'linear-gradient(135deg, hsla(174, 62%, 47%, 0.95), hsla(249, 47%, 47%, 0.85))' }}>
         <div className="welcome-banner-info">
-          <h1>Hesou Fisioterapia</h1>
-          <p>Bienvenido al panel clínico. Administra las citas terapéuticas de hoy y evalúa los niveles de dolor de los pacientes de forma responsiva.</p>
+          <h1>Hesou Nutrición</h1>
+          <p>Bienvenido al panel de bienestar. Diseña dietas, controla el progreso de masa muscular y grasa de tus pacientes de forma súper adaptativa.</p>
         </div>
         <div className="welcome-banner-actions">
           <button 
             className="btn btn-glass btn-size-md hover-grow"
-            onClick={() => navigate('/fisioterapeuta/agenda')}
+            onClick={() => navigate('/nutriologa/agenda')}
           >
             <FiPlus /> Nueva Consulta
           </button>
@@ -292,57 +287,57 @@ export default function DashboardFisio() {
             
             {/* Card 1: Patients Today */}
             <div className="auth-card dashboard-metric-card hover-grow">
-              <div className="dashboard-metric-icon" style={{ background: 'rgba(16, 185, 129, 0.08)', color: 'var(--success)' }}>
+              <div className="dashboard-metric-icon" style={{ background: 'rgba(13, 148, 136, 0.08)', color: 'var(--accent)' }}>
                 <FiUsers />
               </div>
               <div className="dashboard-metric-info">
-                <span className="form-label dashboard-metric-label">Pacientes Hoy</span>
+                <span className="form-label dashboard-metric-label">Consultas Hoy</span>
                 <strong className="dashboard-metric-value">
                   {stats.citasHoyCount}
                 </strong>
-                <span className="text-muted dashboard-metric-meta">+15% vs ayer</span>
+                <span className="text-muted dashboard-metric-meta">Pacientes metabólicos</span>
               </div>
             </div>
 
-            {/* Card 2: Completed Sessions */}
+            {/* Card 2: Plans Assigned */}
             <div className="auth-card dashboard-metric-card hover-grow">
               <div className="dashboard-metric-icon" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
                 <FiCheckCircle />
               </div>
               <div className="dashboard-metric-info">
-                <span className="form-label dashboard-metric-label">Completadas</span>
+                <span className="form-label dashboard-metric-label">Planes Asignados</span>
                 <strong className="dashboard-metric-value">
-                  {patients.filter(p => p.status === 'Completado').length}/{stats.citasHoyCount}
+                  {stats.planesAsignados}
                 </strong>
-                <span className="text-muted dashboard-metric-meta">Sesiones clínicas</span>
+                <span className="text-muted dashboard-metric-meta">Dietas metabólicas activas</span>
               </div>
             </div>
 
-            {/* Card 3: Average Progress */}
+            {/* Card 3: Avg Kcal */}
             <div className="auth-card dashboard-metric-card hover-grow">
-              <div className="dashboard-metric-icon" style={{ background: 'rgba(6, 182, 212, 0.08)', color: 'var(--info)' }}>
+              <div className="dashboard-metric-icon" style={{ background: 'rgba(245, 158, 11, 0.08)', color: 'var(--warning)' }}>
                 <FiActivity />
               </div>
               <div className="dashboard-metric-info">
-                <span className="form-label dashboard-metric-label">Progreso Gral.</span>
+                <span className="form-label dashboard-metric-label">Kcal Promedio</span>
                 <strong className="dashboard-metric-value">
-                  94.2%
+                  2,150
                 </strong>
-                <span className="text-muted dashboard-metric-meta">+2.4% este mes</span>
+                <span className="text-muted dashboard-metric-meta">Diario por paciente</span>
               </div>
             </div>
 
-            {/* Card 4: Pain Alerts */}
+            {/* Card 4: Metabolic Alerts */}
             <div className="auth-card dashboard-metric-card hover-grow">
               <div className="dashboard-metric-icon" style={{ background: 'var(--danger-bg)', color: 'var(--danger)' }}>
                 <FiAlertCircle />
               </div>
               <div className="dashboard-metric-info">
-                <span className="form-label dashboard-metric-label">Alertas de Dolor</span>
+                <span className="form-label dashboard-metric-label">Alertas Dietas</span>
                 <strong className="dashboard-metric-value">
-                  {patients.filter(p => p.painLevel === 'high').length}
+                  {stats.alertasMetabolicas}
                 </strong>
-                <span className="text-muted dashboard-metric-meta">Dolor mayor a 7/10</span>
+                <span className="text-muted dashboard-metric-meta">Baja adherencia & glucosa</span>
               </div>
             </div>
 
@@ -357,7 +352,7 @@ export default function DashboardFisio() {
                 <h2 className="glass-card-title">
                   <FiActivity /> Pacientes Citados de Hoy
                 </h2>
-                <span className="clinical-table-subtitle">{patients.length} pacientes programados</span>
+                <span className="clinical-table-subtitle">{patients.length} consultas nutricionales</span>
               </div>
 
               {patients.length > 0 ? (
@@ -370,7 +365,7 @@ export default function DashboardFisio() {
                         <th>Paciente</th>
                         <th>Tratamiento</th>
                         <th>Hora de Cita</th>
-                        <th>Dolor Inicial</th>
+                        <th>Adherencia</th>
                         <th>Estado</th>
                         <th style={{ textAlign: 'right' }}>Acciones</th>
                       </tr>
@@ -388,7 +383,7 @@ export default function DashboardFisio() {
                 </div>
               ) : (
                 <div className="table-empty-state">
-                  <p>No tienes pacientes agendados para el día de hoy.</p>
+                  <p>No tienes citas de nutrición programadas para hoy.</p>
                 </div>
               )}
             </div>
@@ -403,34 +398,34 @@ export default function DashboardFisio() {
 
               {/* Toast Notification Trigger Catalog */}
               <div className="catalog-section">
-                <h3 className="catalog-subtitle">Notificaciones Clínicas</h3>
+                <h3 className="catalog-subtitle">Notificaciones de Nutrición</h3>
                 <p className="catalog-desc">Dispara alertas con animaciones fluidas utilizando el motor de diseño unificado:</p>
                 <div className="catalog-btn-grid vertical-buttons">
                   <button 
                     className="btn btn-primary w-100" 
                     style={{ justifyContent: 'center', height: '36px', fontSize: '0.85rem' }}
-                    onClick={() => showSuccess('Sesión Agendada', 'La ficha de fisioterapia ha sido guardada en la base de datos.')}
+                    onClick={() => showSuccess('Plan Guardado', 'El plan nutricional hipercalórico ha sido guardado con éxito.')}
                   >
                     Lanzar Éxito
                   </button>
                   <button 
                     className="btn btn-secondary w-100" 
                     style={{ justifyContent: 'center', height: '36px', fontSize: '0.85rem', color: 'var(--primary)', background: 'var(--primary-light)', border: '1px solid var(--border-light)' }}
-                    onClick={() => showInfo('Ficha Actualizada', 'Los datos antropométricos del paciente se guardaron.')}
+                    onClick={() => showInfo('Medidas Registradas', 'Se guardó el porcentaje de grasa corporal (14.2%).')}
                   >
                     Lanzar Información
                   </button>
                   <button 
                     className="btn w-100" 
                     style={{ justifyContent: 'center', height: '36px', fontSize: '0.85rem', color: 'var(--warning)', background: 'var(--warning-bg)', border: '1px solid rgba(245, 158, 11, 0.2)' }}
-                    onClick={() => showInfo('Evaluación Pendiente', 'Falta registrar el rango de movimiento articular.')}
+                    onClick={() => showInfo('Ayuno Pendiente', 'Falta registrar el examen de laboratorio metabólico.')}
                   >
                     Lanzar Advertencia
                   </button>
                   <button 
                     className="btn w-100" 
                     style={{ justifyContent: 'center', height: '36px', fontSize: '0.85rem', color: 'var(--danger)', background: 'var(--danger-bg)', border: '1px solid rgba(239, 68, 68, 0.2)' }}
-                    onClick={() => showError('Cita Cancelada', 'El paciente canceló su sesión por dolor agudo.')}
+                    onClick={() => showError('Alerta Glucosa', 'Glucosa en ayuno reportó niveles fuera de rango.')}
                   >
                     Lanzar Peligro
                   </button>
@@ -439,27 +434,14 @@ export default function DashboardFisio() {
 
               <hr className="catalog-divider" />
 
-              {/* Button sizes showcase */}
-              <div className="catalog-section">
-                <h3 className="catalog-subtitle">Catálogo de Botones</h3>
-                <p className="catalog-desc">Demostración de tamaños y variantes súper responsivas:</p>
-                <div className="catalog-btn-grid flex-buttons">
-                  <button className="btn btn-primary" style={{ padding: '0 10px', height: '30px', fontSize: '0.75rem', width: 'auto' }}>Botón Chico</button>
-                  <button className="btn btn-primary" style={{ padding: '0 15px', height: '36px', fontSize: '0.85rem', width: 'auto' }}>Botón Mediano</button>
-                  <button className="btn btn-primary" style={{ padding: '0 20px', height: '44px', fontSize: '0.95rem', width: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FiActivity /> Grande</button>
-                </div>
-              </div>
-
-              <hr className="catalog-divider" />
-
               {/* Heatmap anatomy pulser */}
               <div className="catalog-section-clinical-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <h3 className="catalog-subtitle">Mapa de Dolor Fisiológico</h3>
-                <div className="pain-anatomy-graphic">
-                  <div className="graphic-sphere pain-high-pulse" style={{ top: '35%', left: '48%' }} title="Hombro Congelado: 8/10" onClick={() => showInfo("Evaluación Hombro", "Hombro Congelado del paciente registra dolor 8/10.")}></div>
-                  <div className="graphic-sphere pain-medium-pulse" style={{ top: '60%', left: '50%' }} title="Lumbago Agudo: 4/10" onClick={() => showInfo("Evaluación Lumbar", "Lumbago Crónico registra dolor moderado 4/10.")}></div>
-                  <div className="graphic-sphere pain-low-pulse" style={{ top: '85%', left: '52%' }} title="Tendón Aquiles: 2/10" onClick={() => showInfo("Evaluación Tendón", "Tendinitis Aquiliana registra dolor leve 2/10.")}></div>
-                  <span className="anatomy-caption">Ubicaciones de Lesiones Frecuentes de Hoy</span>
+                <h3 className="catalog-subtitle">Mapa de Medición de Grasa</h3>
+                <div className="pain-anatomy-graphic" style={{ background: 'rgba(13, 148, 136, 0.02)', border: '1px dashed rgba(13, 148, 136, 0.15)' }}>
+                  <div className="graphic-sphere pain-high-pulse" style={{ top: '45%', left: '50%', backgroundColor: 'var(--accent)' }} title="Pliegue Abdominal: 18mm" onClick={() => showInfo("Pliegue Abdominal", "Medición de grasa subcutánea abdominal: 18mm.")}></div>
+                  <div className="graphic-sphere pain-medium-pulse" style={{ top: '30%', left: '49%', backgroundColor: 'var(--primary)' }} title="Pliegue Tricipital: 10mm" onClick={() => showInfo("Pliegue Bazo/Tríceps", "Medición de grasa subcutánea tríceps: 10mm.")}></div>
+                  <div className="graphic-sphere pain-low-pulse" style={{ top: '75%', left: '51%', backgroundColor: 'var(--warning)' }} title="Pliegue Muslo: 12mm" onClick={() => showInfo("Pliegue de Muslo", "Medición de grasa subcutánea muslo anterior: 12mm.")}></div>
+                  <span className="anatomy-caption" style={{ color: 'var(--accent)' }}>Pliegues Antropométricos Frecuentes</span>
                 </div>
               </div>
 

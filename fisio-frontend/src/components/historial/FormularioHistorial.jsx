@@ -443,7 +443,7 @@ const FormularioHistorial = () => {
                 <div className="form-row">
                   <div className="form-col small-width" >
                     <label className="form-label">Correo electrónico:</label>
-                    <input type="text" name="correo" className="input" value={formData.correoElectronico}
+                    <input type="text" name="correoElectronico" className="input" value={formData.correoElectronico}
                       onChange={handleInputChange}
                     />
                   </div>
@@ -524,8 +524,8 @@ const FormularioHistorial = () => {
                       </select>
                       {formData.sensacion === "otra" && (
                         <input type="text" className="input mt-2"
-                          value={formData.tipoOtra || ""}
-                          onChange={(e) => setFormData({ ...formData, tipoOtra: e.target.value })}
+                          value={formData.sensacionOtra || ""}
+                          onChange={(e) => setFormData({ ...formData, sensacionOtra: e.target.value })}
                           placeholder="Especifique" style={{ marginTop: "8px" }}
                         />
                       )}
