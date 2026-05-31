@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FaEye } from "react-icons/fa";
 import api from "../../api";
 import { IoIosAddCircle } from "react-icons/io";
+import { createPortal } from "react-dom";
 
 const Antecedentes = () => {
   const [categorias, setCategorias] = useState([]);
@@ -30,7 +31,6 @@ const Antecedentes = () => {
 
     try {
       const res = await api.get(`/configuracion/item/${categoria.clave}`);
-
       setItems(Array.isArray(res.data.items) ? res.data.items : []);
     } catch (err) {
       console.error(err);
@@ -60,58 +60,96 @@ const Antecedentes = () => {
   };
 
   return (
-    <div className="auth-wrapper-content">
-      <div className="cards-column">
-        <div className="auth-card auth-card-detail">
-          <h2 className="title_card">Antecedentes</h2>
-          <hr />
+    <div className="container" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+      <div style={{ width: '100%', maxWidth: '900px', padding: '1rem 0' }}>
+        
+        {/* Main interactive glass card */}
+        <div className="glass-card" style={{ width: '100%' }}>
+          <div className="glass-card-header">
+            <h2 className="glass-card-title">Configuración de Antecedentes</h2>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              {categorias.length} categorías de registro
+            </span>
+          </div>
 
-          {categorias.map((c) => (
-            <div key={c._id} className="input-dynamic">
-              <input
-                className="input dynamic-input"
-                value={c.descripcion}
-                readOnly
-              />
-              <button className="btn-eye" onClick={() => abrirModal(c)}>
-                <FaEye />
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {mostrarModal && (
-        <div className="modal-backdrop">
-          <div className="modal-content">
-            <button className="close-btn" onClick={cerrarModal}>✕</button>
-
-            <h2 className="title_card">{categoriaActual?.descripcion}</h2>
-            <hr />
-
-            {items.length === 0 && (
-              <p className="text-muted">No hay antecedentes registrados</p>
-            )}
-
-            {items.length > 0 && items.map((i, idx) => (
-              <div key={idx} className="input-dynamic">
-                <input className="input dynamic-input" value={i.valor} readOnly />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
+            {categorias.map((c) => (
+              <div key={c._id} className="input-dynamic">
+                <input
+                  className="dynamic-input"
+                  value={c.descripcion}
+                  readOnly
+                  style={{ cursor: 'default', fontWeight: 600 }}
+                />
+                <button 
+                  className="btn-eye" 
+                  onClick={() => abrirModal(c)}
+                  title={`Ver antecedentes de ${c.descripcion}`}
+                  aria-label={`Ver antecedentes de ${c.descripcion}`}
+                >
+                  <FaEye />
+                </button>
               </div>
             ))}
+          </div>
+        </div>
 
-            <div className="input-dynamic d-flex">
+      </div>
+
+      {/* Centered responsive modal portal */}
+      {mostrarModal && createPortal(
+        <div className="hesou-modal-overlay" onClick={cerrarModal}>
+          <div className="hesou-modal-card" onClick={(e) => e.stopPropagation()}>
+            <button className="close-btn" onClick={cerrarModal} aria-label="Cerrar modal">✕</button>
+
+            <div className="glass-card-header" style={{ borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem', marginBottom: '0.5rem' }}>
+              <h2 className="title_card">{categoriaActual?.descripcion}</h2>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxHeight: '320px', overflowY: 'auto', paddingRight: '4px' }}>
+              {items.length === 0 && (
+                <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '1.5rem 0', fontSize: '0.9rem' }}>
+                  No hay antecedentes registrados en esta categoría.
+                </p>
+              )}
+
+              {items.length > 0 && items.map((i, idx) => (
+                <div key={idx} className="input-dynamic">
+                  <input 
+                    className="dynamic-input" 
+                    value={i.valor} 
+                    readOnly 
+                    style={{ background: 'rgba(94, 80, 161, 0.02)', cursor: 'default' }}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <hr />
+
+            {/* Input row to register a new entry */}
+            <div className="input-dynamic" style={{ marginTop: '0.5rem' }}>
               <input
-                className="input flex-grow-1"
-                placeholder="Nuevo antecedente"
+                className="dynamic-input"
+                placeholder="Registrar nuevo antecedente..."
                 value={nuevoItem}
                 onChange={(e) => setNuevoItem(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') agregarItem();
+                }}
               />
-              <button className="btn-add-icon" onClick={agregarItem}>
+              <button 
+                className="btn-add-icon" 
+                onClick={agregarItem}
+                title="Agregar antecedente"
+                aria-label="Agregar antecedente"
+              >
                 <IoIosAddCircle />
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

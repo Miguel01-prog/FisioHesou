@@ -2,23 +2,39 @@ import React, { useState } from 'react';
 import Sidebar from './Sidebar.jsx';
 import Header from './Header.jsx';
 import { Outlet } from 'react-router-dom';
+import './FisioLayout.css';
 
-export default function NutriologaLayout() {
+/**
+ * Premium structural layout wrapper for clinic views
+ */
+export default function FisioLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Header isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
-        <main
-          className="main-content"
-          style={{
-            transition: 'var(--transition)',
-            minHeight: 'calc(100vh - var(--header-height))',
-            width: '100%'
-          }}
-        >
+    <div className="layout-app-wrapper">
+      {/* 🧭 Sidebar (collapsible / mobile drawer) */}
+      <Sidebar 
+        isCollapsed={isCollapsed} 
+        setIsCollapsed={setIsCollapsed}
+        mobileOpen={mobileOpen}
+        setMobileOpen={setMobileOpen}
+      />
+
+      {/* 🖥️ Main Right side content container */}
+      <div 
+        className={`layout-main-panel ${isCollapsed ? 'sidebar-collapsed-layout' : ''}`}
+      >
+        {/* 🔝 Floating glass header */}
+        <Header 
+          isCollapsed={isCollapsed}
+          setIsCollapsed={setIsCollapsed}
+          mobileOpen={mobileOpen}
+          setMobileOpen={setMobileOpen}
+        />
+
+        {/* 🧱 Dynamic main content body */}
+        <main className="layout-content-view">
           <Outlet />
         </main>
       </div>

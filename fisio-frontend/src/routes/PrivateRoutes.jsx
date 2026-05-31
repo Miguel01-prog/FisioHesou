@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/layout/LoadingSpinner';
 
 export default function PrivateRoute({ children, allowedRoles = [] }) {
-  const { token, user, loading } = useAuth();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -15,7 +15,7 @@ export default function PrivateRoute({ children, allowedRoles = [] }) {
     );
   }
 
-  if (!token) {
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 

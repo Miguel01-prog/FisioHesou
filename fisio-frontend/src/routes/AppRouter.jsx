@@ -10,7 +10,10 @@ import NutriologaLayout from '../components/layout/NutriologaLayout';
 
 // Páginas
 import Dashboard from '../pages/admin/Dashboard';
+import UsersPage from '../pages/admin/UsersPage';
 import AppointmentForm from '../pages/public/AppointmentForm.jsx';
+import DashboardFisio from '../pages/fisioterapeuta/Dashboard-fisio.jsx';
+import DashboardNutri from '../pages/nutriologa/Dashboard-nutri.jsx';
 import BloquearHorarioFisio from '../pages/fisioterapeuta/BloquearHorario.jsx';
 import BloquearHorarioNutri from '../pages/nutriologa/BloquearHorario.jsx';
 import AgendaCitas from '../components/layout/AgendarCitas.jsx';
@@ -54,7 +57,10 @@ export default function AppRouter() {
             <AdminLayout />
           </PrivateRoute>
         }
-      />
+      >
+        <Route index element={<Dashboard />} />
+        <Route path="users" element={<UsersPage />} />
+      </Route>
 
       {/* Fisioterapeuta */}
       <Route
@@ -65,6 +71,7 @@ export default function AppRouter() {
           </PrivateRoute>
         }
       >
+        <Route index element={<DashboardFisio />} />
         <Route path="agenda" element={<AgendaCitas/>} />
         <Route path="bloquear" element={<BloquearHorarioFisio/>} />
         <Route path="paciente/:id" element={<PacienteDetalle/>} />
@@ -90,6 +97,7 @@ export default function AppRouter() {
           </PrivateRoute>
         }
       >
+        <Route index element={<DashboardNutri />} />
         <Route path="agenda" element={<AgendaCitas />} />
         <Route path="bloquear" element={<BloquearHorarioNutri />} />
         <Route path="paciente/:id" element={<PacienteDetalle />} />

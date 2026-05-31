@@ -159,7 +159,7 @@ export default function ModalAgendarCita({ paciente, onClose }) {
               Horas disponibles para el {formatDateDDMMYYYY(selectedDate)}
             </h4>
             {availableHours.length > 0 ? (
-              <div className="grid grid-cols-3 gap-2 mt-3">
+              <div className="hours-grid-modern">
                 {allHours.map((hour) => {
                   const isBlockedAdmin = blockedHoursAdmin[selectedDate]?.includes(hour);
                   const isBlockedPaciente = blockedHoursCitas[selectedDate]?.includes(hour);

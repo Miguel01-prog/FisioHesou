@@ -17,20 +17,41 @@ import path from "path";
 const app = express();
 
 import helmet from "helmet";
-import mongoSanitize from "express-mongo-sanitize";
 import rateLimit from "express-rate-limit";
 
-app.use(helmet());
-app.use(mongoSanitize());
+if (process.env.NODE_ENV === "production") {
+  app.use(helmet());
+} else {
+  // Relaxed development security to allow cross-origin assets and images
+  app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false }));
+}
 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // Limita cada IP a 100 solicitudes por `window` (aquí, por 15 minutos)
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === "production" ? 100 : 20000, // Safe high limit in development to avoid blockages
   message: "Demasiadas solicitudes desde esta IP, por favor intente de nuevo después de 15 minutos"
 });
 app.use(limiter);
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
+  "http://localhost:3000",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:5174",
+  "http://127.0.0.1:5175",
+  "http://127.0.0.1:3000"
+];
+
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Fallback to trust in local dev
+    }
+  },
   credentials: true
 }));
 

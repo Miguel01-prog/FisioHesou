@@ -3,8 +3,9 @@ import CardPaciente from "../pacientes/CardPaciente.jsx";
 import { useNavigate, useParams } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import api from "../../api.js";
-import { FaEye, FaEdit } from "react-icons/fa";
+import { FaEye, FaFolderOpen, FaNotesMedical, FaPlus } from "react-icons/fa";
 import LoadingSpinner from "../layout/LoadingSpinner.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 export default function PacienteDetalle() {
   const { id } = useParams();
@@ -13,14 +14,16 @@ export default function PacienteDetalle() {
   const [paciente, setPaciente] = useState(null);
   const [planes, setPlanes] = useState([]);
   const [cargando, setCargando] = useState(true);
-
+  const { user } = useAuth();
   const navigate = useNavigate();
+
+  const rolePath = user?.role || 'fisioterapeuta';
 
   // 📌 Cargar historial y notas del paciente
   useEffect(() => {
     const fetchDatos = async () => {
       try {
-        // Cargar detalles del paciente (usamos la misma lógica anterior para obtener la info)
+        // Cargar detalles del paciente
         const resCitas = await api.get(`/citas/detalles-paciente/${id}`);
         if (resCitas.data.historial && resCitas.data.historial.length > 0) {
           const p = resCitas.data.historial[0];
@@ -92,91 +95,123 @@ export default function PacienteDetalle() {
             {/* Tarjeta del paciente */}
             {paciente && <CardPaciente paciente={paciente} />}
 
-            <div className="auth-card auth-card-detail">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h2 className="title_card" style={{ marginTop: "-10px" }}>
-                  Historial del paciente
-                </h2>
+            <div className="auth-card auth-card-detail" style={{ marginTop: 0 }}>
+              <div className="profile-actions-header">
+                <h3 className="profile-actions-title">
+                  Historial Clínico del Paciente
+                </h3>
 
-                <div style={{ display: "flex", gap: "10px", marginTop: "-55px", marginRight: "-2px" }}>
+                <div className="profile-actions-button-group">
                   {historialClinico ? (
                     <>
                       <button
                         className="save-btn"
-                        style={{ backgroundColor: "#6c757d" }}
-                        onClick={() => navigate(`/fisioterapeuta/historial-detalle/${historialClinico._id}`)}
+                        style={{ backgroundColor: "var(--primary)" }}
+                        onClick={() => navigate(`/${rolePath}/historial-detalle/${historialClinico._id}`)}
                       >
-                        Ver Historial Clínico
+                        <FaFolderOpen /> Ver Historial Completo
                       </button>
 
                       {planes.length > 0 ? (
                         <button
                           className="save-btn"
                           style={{ backgroundColor: "#17a2b8" }}
-                          onClick={() => navigate(`/fisioterapeuta/planes-paciente/${id}`)}
+                          onClick={() => navigate(`/${rolePath}/planes-paciente/${id}`)}
                         >
-                          Editar planes de ejercicios
+                          <FaNotesMedical /> Planes de Ejercicio ({planes.length})
                         </button>
                       ) : (
                         <button
                           className="save-btn"
                           style={{ backgroundColor: "#17a2b8" }}
-                          onClick={() => navigate(`/fisioterapeuta/crear-plan/${id}`)}
+                          onClick={() => navigate(`/${rolePath}/crear-plan/${id}`)}
                         >
-                          Crear plan de ejercicios
+                          <FaPlus /> Crear Plan de Ejercicio
                         </button>
                       )}
+                      
                       <button
                         className="save-btn"
-                        onClick={() => navigate(`/fisioterapeuta/notas`)}
+                        onClick={() => navigate(`/${rolePath}/notas`)}
                       >
-                        Añadir Nota SOAP
+                        <FaPlus /> Añadir Nota SOAP
                       </button>
                     </>
                   ) : (
                     <button
                       className="save-btn"
-                      onClick={() => navigate(`/fisioterapeuta/creacion-historial`)}
+                      onClick={() => navigate(`/${rolePath}/creacion-historial`)}
                     >
-                      Crear Historial
+                      <FaPlus /> Registrar Historial Médico
                     </button>
                   )}
                 </div>
               </div>
 
-              <hr />
+              <hr style={{ margin: '1rem 0' }} />
 
               {notas.length === 0 ? (
-                <p>No hay notas registradas para este paciente.</p>
+                <p className="text-muted">No hay notas SOAP registradas para este paciente.</p>
               ) : (
-                <div style={{ width: '100%', overflowX: 'auto' }}>
-                  <table className="tabla-pacientes">
-                    <thead>
-                      <tr>
-                        <th>ID Nota</th>
-                        <th>Fecha</th>
-                        <th>Ver nota</th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {notas.map((item) => (
-                        <tr key={item._id}>
-                          <td>{item.idHistoricoFk || item._id}</td>
-                          <td>{formatDateDDMMYYYY(item.fechaNota || item.createdAt)}</td>
-                          <td style={{ display: 'flex', justifyContent: 'center' }}>
-                            <button
-                              className="btn-eye"
-                              onClick={() => navigate(`/fisioterapeuta/nota-detalle/${item._id}`)}
-                            >
-                              <FaEye />
-                            </button>
-                          </td>
+                <>
+                  {/* Desktop Table View */}
+                  <div className="desktop-table-container" style={{ width: '100%', overflowX: 'auto' }}>
+                    <table className="tabla-pacientes">
+                      <thead>
+                        <tr>
+                          <th>ID Nota</th>
+                          <th>Fecha de Registro</th>
+                          <th style={{ textAlign: 'center' }}>Acción</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+
+                      <tbody>
+                        {notas.map((item) => (
+                          <tr key={item._id}>
+                            <td>{item.idHistoricoFk || item._id}</td>
+                            <td>{formatDateDDMMYYYY(item.fechaNota || item.createdAt)}</td>
+                            <td style={{ display: 'flex', justifyContent: 'center' }}>
+                              <button
+                                className="btn-eye"
+                                onClick={() => navigate(`/${rolePath}/nota-detalle/${item._id}`)}
+                                title="Ver nota SOAP"
+                              >
+                                <FaEye />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile Tactical Cards List (Perfect for small screens) */}
+                  <div className="mobile-notes-grid-cards">
+                    {notas.map((item) => (
+                      <div key={item._id} className="mobile-note-card">
+                        <div className="mobile-note-card-header">
+                          <div className="mobile-note-card-icon">
+                            <FaNotesMedical />
+                          </div>
+                          <div className="mobile-note-card-meta">
+                            <span className="mobile-note-card-title">
+                              Nota SOAP: {item.idHistoricoFk ? item.idHistoricoFk.substring(0, 12) : item._id.substring(0, 8)}
+                            </span>
+                            <span className="mobile-note-card-date">
+                              Registrado el: {formatDateDDMMYYYY(item.fechaNota || item.createdAt)}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          className="mobile-note-card-view-btn"
+                          onClick={() => navigate(`/${rolePath}/nota-detalle/${item._id}`)}
+                        >
+                          <FaEye /> Ver detalles de nota
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
 

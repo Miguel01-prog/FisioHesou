@@ -1,52 +1,117 @@
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { GiHamburgerMenu } from 'react-icons/gi';
-import { IoMdClose } from 'react-icons/io';
+import './Header.css';
+import { FiMenu, FiBell, FiChevronDown, FiActivity, FiUser } from 'react-icons/fi';
 import { RxExit } from "react-icons/rx";
-import { GrTextAlignLeft } from "react-icons/gr";
 
-export default function Header({ isCollapsed, setIsCollapsed }) {
+export default function Header({
+  isCollapsed,
+  setIsCollapsed,
+  mobileOpen,
+  setMobileOpen
+}) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [bellOpen, setBellOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const toggleSidebar = () => {
-    setIsCollapsed(prev => !prev);
-    // opcional: persistir estado
-    localStorage.setItem('sidebarState', !isCollapsed ? 'collapsed' : 'expanded');
+  const getBreadcrumbs = () => {
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    if (pathParts.length === 0) {
+      return { parent: 'Clínica', current: 'Dashboard' };
+    }
+    
+    const parent = pathParts[0] ? pathParts[0].charAt(0).toUpperCase() + pathParts[0].slice(1) : 'Personal';
+    const current = pathParts[1] ? pathParts[1].charAt(0).toUpperCase() + pathParts[1].slice(1) : 'Resumen';
+    return { parent, current };
   };
 
-  const toggleTheme = () => {
-    const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', current === 'dark' ? 'dark' : '');
-    localStorage.setItem('theme', current);
-  };
+  const { parent, current } = getBreadcrumbs();
 
   return (
-    <header
-      className="header"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 12,
-        backgroundImage:
-          'linear-gradient(to bottom, #ffffffff 0%, #ffffffff 100%)'
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <header className="header-container">
+      {/* 1. Left Block: Mobile hamburger & breadcrumbs */}
+      <div className="header-left-block">
+        <button 
+          className="mobile-hamburger-btn"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label="Abrir menú"
+          style={{ display: 'flex' }}
+        >
+          <FiMenu size={20} />
+        </button>
+
+        <div className="header-breadcrumbs">
+          <span className="breadcrumb-parent">{parent}</span>
+          <span className="breadcrumb-divider">/</span>
+          <span className="breadcrumb-current">{current}</span>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ textAlign: 'right', marginRight: 8 }}>
-          <div style={{ fontSize: 13, color: "#3e3a8e" }}>{user?.name ?? 'Usuario'}</div>
-          <div className="text-muted" style={{ fontSize: 12 }}>{user?.role}</div>
+      {/* 2. Right Block: Notification Bell & Profile Controls */}
+      <div className="header-right-block">
+        
+        {/* Floating Bell Trigger */}
+        <div className="notifications-bell-dropdown-wrapper">
+          <button 
+            className="header-action-icon-btn" 
+            onClick={() => setBellOpen(!bellOpen)}
+            aria-label="Notificaciones"
+          >
+            <FiBell size={18} />
+          </button>
+
+          {bellOpen && (
+            <div className="bell-dropdown-card glass-card">
+              <div className="bell-dropdown-header">
+                <span className="bell-dropdown-title">Avisos del Consultorio</span>
+                <button className="bell-clear-btn" onClick={() => setBellOpen(false)}>Cerrar</button>
+              </div>
+              <ul className="bell-notifications-list">
+                <li className="bell-notification-item">
+                  <div className="bell-item-icon-wrapper">
+                    <FiActivity size={14} />
+                  </div>
+                  <div className="bell-item-content">
+                    <span className="bell-item-title">Panel Actualizado</span>
+                    <span className="bell-item-desc">Se cargó el nuevo sistema de diseño premium HSL.</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          )}
         </div>
-        <button className="btn-cerrar" onClick={handleLogout}><RxExit size={20} color="#3e3a8e" /></button>
+
+        {/* Practitioner details badge */}
+        <div className="header-practitioner-profile">
+          <div className="practitioner-profile-details">
+            <span className="profile-details-name">{user?.name ?? 'Usuario'}</span>
+            <span className="profile-details-role">{user?.role ?? 'Practicante'}</span>
+          </div>
+          <div className="practitioner-avatar-wrapper" style={{ width: 34, height: 34 }}>
+            <div className="practitioner-avatar-fallback" style={{ fontSize: '0.8rem' }}>
+              {user?.name ? user.name.substring(0, 2).toUpperCase() : 'HE'}
+            </div>
+          </div>
+        </div>
+
+        {/* Exit Button */}
+        <button 
+          className="header-action-icon-btn" 
+          onClick={handleLogout}
+          title="Cerrar Sesión"
+          aria-label="Cerrar sesión"
+          style={{ borderColor: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger)' }}
+        >
+          <RxExit size={18} />
+        </button>
+
       </div>
     </header>
   );

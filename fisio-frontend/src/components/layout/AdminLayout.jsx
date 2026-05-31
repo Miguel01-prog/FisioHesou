@@ -1,47 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Sidebar from './Sidebar.jsx';
 import Header from './Header.jsx';
 import { Outlet } from 'react-router-dom';
+import './FisioLayout.css'; // Reuse the standard structural layout css
 
+/**
+ * Premium structural layout wrapper for Admin views
+ */
 export default function AdminLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('sidebarState');
-    if (saved === 'collapsed') setIsCollapsed(true);
-    if (saved === 'expanded') setIsCollapsed(false);
-
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+    <div className="layout-app-wrapper">
+      {/* 🧭 Sidebar (collapsible / mobile drawer) */}
+      <Sidebar 
+        isCollapsed={isCollapsed} 
+        setIsCollapsed={setIsCollapsed}
+        mobileOpen={mobileOpen}
+        setMobileOpen={setMobileOpen}
+      />
 
+      {/* 🖥️ Main Right side content container */}
       <div 
-        style={{ 
-          flex: 1, 
-          display: 'flex', 
-          flexDirection: 'column',
-          marginLeft: isMobile ? '0' : (isCollapsed ? 'var(--sidebar-width-collapsed)' : 'var(--sidebar-width-expanded)'),
-          transition: 'var(--transition)',
-          minWidth: 0
-        }}
+        className={`layout-main-panel ${isCollapsed ? 'sidebar-collapsed-layout' : ''}`}
       >
-        <Header isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+        {/* 🔝 Floating glass header */}
+        <Header 
+          isCollapsed={isCollapsed}
+          setIsCollapsed={setIsCollapsed}
+          mobileOpen={mobileOpen}
+          setMobileOpen={setMobileOpen}
+        />
 
-        <main
-          className="main-content"
-          style={{
-            transition: 'var(--transition)',
-            minHeight: 'calc(100vh - var(--header-height))',
-          }}
-        >
+        {/* 🧱 Dynamic main content body */}
+        <main className="layout-content-view">
           <Outlet />
         </main>
       </div>

@@ -41,7 +41,7 @@ export default function CrearNota() {
 
   useEffect(() => {
     // Si estamos en pantallas grandes, el acordeón de la última nota se abre por defecto
-    if (window.innerWidth >= 1024) {
+    if (window.innerWidth >= 1200) {
       setOpenUltimaNota(true);
     }
 
@@ -133,11 +133,11 @@ export default function CrearNota() {
   };
 
   return (
-    <div className="auth-wrapper-content">
+    <div className="auth-wrapper-content fade-in-up">
       <div className="cards-column">
 
         {ultimaNota && (
-          <div className="auth-card auth-card-detail accordion" style={{ marginBottom: "20px" }}>
+          <div className="auth-card auth-card-detail accordion mb-4">
             <button
               type="button"
               className={`accordion-header ${openUltimaNota ? "open" : ""}`}
@@ -152,7 +152,7 @@ export default function CrearNota() {
             </button>
 
             {openUltimaNota && (
-              <div className="accordion-body form" style={{ marginTop: "15px" }}>
+              <div className="accordion-body form mt-3">
                 <div className="form-row">
                   <div className="col">
                     <label className="form-label">Contenido general:</label>
@@ -160,23 +160,23 @@ export default function CrearNota() {
                   </div>
                 </div>
 
-                <div className="form-row" style={{ display: 'flex', gap: '20px' }}>
-                  <div className="col" style={{ flex: 1 }}>
+                <div className="form-row">
+                  <div className="col">
                     <label className="form-label">S (Subjetivo):</label>
                     <textarea className="textarea" value={ultimaNota.S || ""} disabled />
                   </div>
-                  <div className="col" style={{ flex: 1 }}>
+                  <div className="col">
                     <label className="form-label">O (Objetivo):</label>
                     <textarea className="textarea" value={ultimaNota.O || ""} disabled />
                   </div>
                 </div>
 
-                <div className="form-row" style={{ display: 'flex', gap: '20px' }}>
-                  <div className="col" style={{ flex: 1 }}>
+                <div className="form-row">
+                  <div className="col">
                     <label className="form-label">A (Análisis):</label>
                     <textarea className="textarea" value={ultimaNota.A || ""} disabled />
                   </div>
-                  <div className="col" style={{ flex: 1 }}>
+                  <div className="col">
                     <label className="form-label">P (Plan):</label>
                     <textarea className="textarea" value={ultimaNota.P || ""} disabled />
                   </div>
@@ -187,18 +187,17 @@ export default function CrearNota() {
         )}
 
         <div className="auth-card auth-card-detail">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
             <h2 className="title_card" style={{ margin: 0 }}>Añadir Nueva Nota</h2>
             <button 
               type="button" 
-              className="save-btn" 
-              style={{ width: "auto", minWidth: "140px", height: "35px", padding: "0 15px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontSize: "14px" }}
+              className="btn btn-primary btn-size-sm hover-grow glow-pulse-purple" 
               onClick={() => setShowModalCita(true)}
             >
               📅 Agendar Cita
             </button>
           </div>
-          <hr style={{ marginTop: "15px" }} />
+          <hr className="mb-4" />
           <form onSubmit={handleSubmit} className="form">
             <div className="form-row">
               <div className="col">
@@ -222,10 +221,10 @@ export default function CrearNota() {
               </div>
             </div>
 
-            <h3 style={{ marginTop: "10px", color: "#6c757d" }}>Nota SOAP</h3>
+            <h3 className="mt-3 text-muted">Nota SOAP</h3>
 
-            <div className="form-row" style={{ display: 'flex', gap: '20px' }}>
-              <div className="col" style={{ flex: 1 }}>
+            <div className="form-row">
+              <div className="col">
                 <label className="form-label">S (Subjetivo):</label>
                 <textarea
                   name="S"
@@ -235,7 +234,7 @@ export default function CrearNota() {
                 />
               </div>
 
-              <div className="col" style={{ flex: 1 }}>
+              <div className="col">
                 <label className="form-label">O (Objetivo):</label>
                 <textarea
                   name="O"
@@ -246,8 +245,8 @@ export default function CrearNota() {
               </div>
             </div>
 
-            <div className="form-row" style={{ display: 'flex', gap: '20px' }}>
-              <div className="col" style={{ flex: 1 }}>
+            <div className="form-row">
+              <div className="col">
                 <label className="form-label">A (Análisis):</label>
                 <textarea
                   name="A"
@@ -257,7 +256,7 @@ export default function CrearNota() {
                 />
               </div>
 
-              <div className="col" style={{ flex: 1 }}>
+              <div className="col">
                 <label className="form-label">P (Plan):</label>
                 <textarea
                   name="P"
@@ -268,7 +267,7 @@ export default function CrearNota() {
               </div>
             </div>
 
-            <button type="submit" className="save-btn" style={{ marginTop: 20, minWidth: '160px', height: '45px' }}>
+            <button type="submit" className="btn btn-primary btn-size-lg hover-grow glow-pulse-purple mt-3">
               Guardar Nota
             </button>
           </form>

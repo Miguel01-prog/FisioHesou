@@ -1,0 +1,141 @@
+/* ==========================================================================
+   🧱 FLOATING TOAST NOTIFICATIONS - STYLING
+   ========================================================================== */
+
+/* Container to hold multiple stacked toast notifications */
+.toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 10000;
+  width: 100%;
+  max-width: 360px;
+  pointer-events: none; /* Let clicks pass through empty spaces of container */
+}
+
+/* Base Toast Style (Glassmorphic) */
+.notification-toast {
+  pointer-events: auto; /* Enable clicks inside the toast itself */
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 1.15rem;
+  width: 100%;
+  border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(31, 38, 135, 0.08);
+  animation: toastSlideIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes toastSlideIn {
+  from {
+    transform: translateX(120%) translateY(0);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Status variants with unique colors */
+.toast-success { border-left: 4px solid var(--success); }
+.toast-warning { border-left: 4px solid var(--warning); }
+.toast-danger  { border-left: 4px solid var(--danger); }
+.toast-info    { border-left: 4px solid var(--info); }
+
+/* Left icon column spacing */
+.toast-icon-side {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.toast-success .toast-icon-side { color: var(--success); }
+.toast-warning .toast-icon-side { color: var(--warning); }
+.toast-danger  .toast-icon-side { color: var(--danger); }
+.toast-info    .toast-icon-side { color: var(--info); }
+
+/* Middle text column */
+.toast-body-side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex-grow: 1;
+  padding-right: 0.75rem;
+}
+
+.toast-header-title {
+  font-family: var(--font-family-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.toast-message-text {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Close button on the right */
+.toast-close-button {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  flex-shrink: 0;
+  margin-top: -2px;
+}
+
+.toast-close-button:hover {
+  background-color: var(--border-light);
+  color: var(--text-main);
+}
+
+/* Linear timeline countdown bar at the bottom */
+.toast-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  transform-origin: left;
+  animation: toastProgress linear forwards;
+}
+
+@keyframes toastProgress {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+.toast-success .toast-progress-bar { background-color: var(--success); }
+.toast-warning .toast-progress-bar { background-color: var(--warning); }
+.toast-danger  .toast-progress-bar { background-color: var(--danger); }
+.toast-info    .toast-progress-bar { background-color: var(--info); }
+
+/* Responsive optimizations for iPads & small viewports */
+@media (max-width: 820px) {
+  .toast-container {
+    top: 16px;
+    right: 16px;
+    left: 16px;
+    max-width: calc(100% - 32px); /* Full width on tiny screens, with standard side gaps */
+  }
+  
+  .notification-toast {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+}
