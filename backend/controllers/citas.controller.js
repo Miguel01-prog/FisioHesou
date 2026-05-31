@@ -12,31 +12,67 @@ function generarIdentificadorPaciente(nombres, apellidos, telefono) {
 export const crearCita = async (req, res) => {
   console.log("- Crear cita: Creando una nueva cita...");
   try {
-    const { nombres, apellidos, edad, telefono, fechaCitaStr, horaCita, area } = req.body;
+    const { nombres, apellidoPaterno, apellidoMaterno, edad, telefono, email, fechaCitaStr, horaCita, area } = req.body;
 
-    if (!nombres || !apellidos || !edad || !telefono || !fechaCitaStr || !horaCita || !area) {
-      return res.status(400).json({ message: "Todos los campos son obligatorios" });
+    if (!nombres || !apellidoPaterno || !edad || !telefono || !fechaCitaStr || !horaCita || !area) {
+      return res.status(400).json({ message: "Todos los campos obligatorios deben ser completados" });
     }
 
-    const identificadorPaciente = generarIdentificadorPaciente(nombres, apellidos, telefono);
+    // 1. Verificar si el paciente ya existe de forma robusta por nombres, apellidos separados y teléfono, O amarrado por email
+    let pacienteExiste = null;
+    const cleanEmail = email ? email.trim().toLowerCase() : "";
 
-    // 1. Verificar si el paciente ya existe
-    const pacienteExiste = await Paciente.findOne({ identificadorPaciente });
+    if (cleanEmail !== "") {
+      pacienteExiste = await Paciente.findOne({
+        $or: [
+          {
+            nombres: { $regex: new RegExp(`^${nombres.trim()}$`, "i") },
+            apellidoPaterno: { $regex: new RegExp(`^${apellidoPaterno.trim()}$`, "i") },
+            apellidoMaterno: { $regex: new RegExp(`^${(apellidoMaterno || "").trim()}$`, "i") },
+            telefono: telefono.trim()
+          },
+          {
+            email: cleanEmail
+          }
+        ]
+      });
+    } else {
+      pacienteExiste = await Paciente.findOne({
+        nombres: { $regex: new RegExp(`^${nombres.trim()}$`, "i") },
+        apellidoPaterno: { $regex: new RegExp(`^${apellidoPaterno.trim()}$`, "i") },
+        apellidoMaterno: { $regex: new RegExp(`^${(apellidoMaterno || "").trim()}$`, "i") },
+        telefono: telefono.trim()
+      });
+    }
+
+    let identificadorPaciente;
     const esNuevoPaciente = !pacienteExiste;
 
-    // 2. Si no existe → crear paciente
+    if (pacienteExiste) {
+      // Reutilizar el identificador del expediente existente
+      identificadorPaciente = pacienteExiste.identificadorPaciente;
+      console.log(`Paciente existente detectado. ID Reutilizado: ${identificadorPaciente}`);
+    } else {
+      // Generar identificador único aleatorio para expediente nuevo
+      identificadorPaciente = crypto.randomBytes(6).toString("hex");
+      console.log(`Paciente nuevo detectado. ID Único Generado: ${identificadorPaciente}`);
+    }
+
+    // 2. Si no existe → crear paciente de forma transparente (el pre-save hook compilará 'apellidos')
     if (!pacienteExiste) {
       await Paciente.create({
         nombres,
-        apellidos,
+        apellidoPaterno,
+        apellidoMaterno: apellidoMaterno || "",
         edad,
         telefono,
+        email: cleanEmail,
         identificadorPaciente,
         area,
         esNuevo: true,
         fechaRegistro: new Date(),
       });
-      console.log("Paciente creado automáticamente");
+      console.log("Paciente nuevo creado automáticamente con apellidos separados y email único.");
     }
 
     // 3. Registrar la cita
@@ -44,9 +80,11 @@ export const crearCita = async (req, res) => {
 
     const nuevaCita = new Cita({
       nombres,
-      apellidos,
+      apellidoPaterno,
+      apellidoMaterno: apellidoMaterno || "",
       edad,
       telefono,
+      email: cleanEmail,
       fechaCita,
       fechaCitaStr,
       horaCita,
@@ -58,7 +96,7 @@ export const crearCita = async (req, res) => {
     await nuevaCita.save();
 
     res.status(201).json({ 
-      message: esNuevoPaciente ? "Cita y paciente creados correctamente" : "Cita creada correctamente", 
+      message: esNuevoPaciente ? "Cita y expediente creados correctamente" : "Cita creada correctamente", 
       cita: nuevaCita,
       pacienteNuevo: esNuevoPaciente 
     });

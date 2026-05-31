@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import './Sidebar.css';
-import { 
-  FiGrid, 
-  FiUsers, 
-  FiCalendar, 
-  FiSettings, 
-  FiChevronLeft, 
-  FiClock, 
-  FiBookOpen, 
-  FiActivity, 
-  FiLogOut 
+import {
+  FiGrid,
+  FiUsers,
+  FiCalendar,
+  FiSettings,
+  FiChevronLeft,
+  FiClock,
+  FiBookOpen,
+  FiActivity,
+  FiLogOut
 } from 'react-icons/fi';
 
 /**
@@ -93,7 +93,7 @@ export default function Sidebar({
 
   const isActive = (path) => {
     if (!path) return false;
-    
+
     // Dashboard matches exact path
     if (['/admin', '/fisioterapeuta', '/nutriologa'].includes(path)) {
       return location.pathname === path;
@@ -116,15 +116,15 @@ export default function Sidebar({
     <>
       {/* 📱 Frosted Glass Overlay for Mobile/iPad drawer */}
       {mobileOpen && (
-        <div 
-          className="sidebar-mobile-overlay" 
+        <div
+          className="sidebar-mobile-overlay"
           onClick={() => setMobileOpen(false)}
         ></div>
       )}
 
       {/* 🧭 Main Sidebar */}
       <aside className={`sidebar-container ${isCollapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
-        
+
         {/* Header - Clinic Branding */}
         <div className="sidebar-header">
           <div className="sidebar-brand-wrapper">
@@ -133,9 +133,9 @@ export default function Sidebar({
             </div>
             {!isCollapsed && <span className="brand-name">Hesou</span>}
           </div>
-          
+
           {/* Desktop Toggle Button */}
-          <button 
+          <button
             className="sidebar-collapse-toggle-btn"
             onClick={() => setIsCollapsed(!isCollapsed)}
             aria-label={isCollapsed ? "Expandir menú" : "Contraer menú"}
@@ -155,8 +155,8 @@ export default function Sidebar({
               return (
                 <li key={index} className={`menu-list-item ${itemActive ? 'active' : ''}`}>
                   {!hasChildren ? (
-                    <Link 
-                      to={item.path} 
+                    <Link
+                      to={item.path}
                       className="menu-link-anchor"
                       onClick={(e) => handleLinkClick(item.path, e)}
                     >
@@ -166,7 +166,7 @@ export default function Sidebar({
                     </Link>
                   ) : (
                     <>
-                      <button 
+                      <button
                         className={`menu-link-anchor menu-submenu-trigger ${isSubOpen ? 'submenu-expanded' : ''}`}
                         onClick={(e) => handleSubmenuToggle(index, e)}
                       >
@@ -180,8 +180,8 @@ export default function Sidebar({
                         <ul className="sidebar-submenu-list">
                           {item.children.map((subItem, childIdx) => (
                             <li key={childIdx} className={`submenu-list-item ${isActive(subItem.path) ? 'active' : ''}`}>
-                              <Link 
-                                to={subItem.path} 
+                              <Link
+                                to={subItem.path}
                                 className="submenu-link-anchor"
                                 onClick={(e) => handleLinkClick(subItem.path, e)}
                               >
@@ -200,7 +200,7 @@ export default function Sidebar({
           </ul>
         </nav>
 
-        {/* Footer - Clinic Practitioner Profile */}
+        {/* Footer - Clinic Practitioner Profile 
         <div className="sidebar-footer">
           <div className="practitioner-profile-row">
             <div className="practitioner-avatar-wrapper">
@@ -225,7 +225,7 @@ export default function Sidebar({
               </button>
             )}
           </div>
-        </div>
+        </div>*/}
 
       </aside>
     </>

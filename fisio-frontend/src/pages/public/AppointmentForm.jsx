@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
-import "../../styles/globalStyles.css";
+import "../../styles/design-system.css";
 import "../../styles/calendary.css";
 import api from "../../api.js";
 import { showSuccess, showError } from "../../utils/alerts.js";
+import { FaCalendarAlt } from "react-icons/fa";
+import { FiChevronLeft, FiClock, FiCheckCircle } from "react-icons/fi";
 
 export default function AppointmentForm() {
   const [tipoConsulta, setTipoConsulta] = useState("");
@@ -20,9 +22,11 @@ export default function AppointmentForm() {
 
   const [formData, setFormData] = useState({
     nombres: "",
-    apellidos: "",
+    apellidoPaterno: "",
+    apellidoMaterno: "",
     edad: "",
     telefono: "",
+    email: "",
   });
 
   const allHours = [
@@ -60,8 +64,7 @@ export default function AppointmentForm() {
     fetchBlockedDates();
   }, [tipoConsulta]);
 
-  const handleTipoChange = (e) => {
-    const tipo = e.target.value;
+  const handleTipoChange = (tipo) => {
     if (tipoConsulta === tipo) {
       setTipoConsulta("");
       setShowCalendar(false);
@@ -126,15 +129,17 @@ export default function AppointmentForm() {
   const handleSaveCita = async () => {
     if (!selectedDate || !selectedHour)
       return showError("Campos incompletos", "Selecciona fecha y hora antes de guardar.");
-    if (!formData.nombres || !formData.apellidos || !formData.edad || !formData.telefono)
-      return showError("Campos vacíos", "Completa todos los datos del formulario.");
+    if (!formData.nombres || !formData.apellidoPaterno || !formData.edad || !formData.telefono || !formData.email)
+      return showError("Campos vacíos", "Completa todos los campos obligatorios del formulario (incluyendo correo electrónico).");
 
     try {
       const { data } = await api.post("/citas", {
         nombres: formData.nombres,
-        apellidos: formData.apellidos,
+        apellidoPaterno: formData.apellidoPaterno,
+        apellidoMaterno: formData.apellidoMaterno || "",
         edad: formData.edad,
         telefono: formData.telefono,
+        email: formData.email,
         fechaCitaStr: selectedDate,
         horaCita: selectedHour,
         area: tipoConsulta,
@@ -142,26 +147,22 @@ export default function AppointmentForm() {
 
       if (data.pacienteNuevo) {
         showSuccess(
-          "Cita guardada",
-          `Tu cita para ${formatDateDDMMYYYY(selectedDate)} a las ${selectedHour} se ha registrado. Se ha creado tu expediente nuevo exitosamente.`
+          "¡Cita y Expediente Creados!",
+          `Tu cita para ${formatDateDDMMYYYY(selectedDate)} a las ${selectedHour} se ha registrado con éxito. ¡Se ha creado tu nuevo expediente clínico en FisioHesou!`
         );
       } else {
         showSuccess(
-          "Cita guardada",
-          `Tu cita para ${formatDateDDMMYYYY(selectedDate)} a las ${selectedHour} se ha registrado.`
+          "Cita agendada con éxito",
+          `Tu cita para ${formatDateDDMMYYYY(selectedDate)} a las ${selectedHour} ha sido agendada correctamente.`
         );
       }
 
       // Limpiar y recargar bloqueos
       setSelectedDate(null);
       setSelectedHour(null);
-      setFormData({ nombres: "", apellidos: "", edad: "", telefono: "" });
+      setFormData({ nombres: "", apellidoPaterno: "", apellidoMaterno: "", edad: "", telefono: "", email: "" });
+      setTipoConsulta("");
 
-      const resHorarios = await api.get(`/horarios/${tipoConsulta}`);
-      setBlockedDatesAdmin(resHorarios.data.blockedDatesAdmin || []);
-      setBlockedHoursAdmin(resHorarios.data.blockedHoursAdmin || {});
-      setBlockedDatesPaciente(resHorarios.data.blockedDatesPaciente || []);
-      setBlockedHoursCitas(resHorarios.data.blockedHoursCitas || {});
     } catch (err) {
       console.error(err);
       showError("Error", "No se pudo guardar la cita. Intenta nuevamente.");
@@ -177,171 +178,232 @@ export default function AppointmentForm() {
   };
 
   return (
-    <div className="auth-wrapper-public">
-      <div className="auth-card card" style={{ maxWidth: "600px", width: "100%" }}>
-        <h2 className="logo-agendar mb-2">Agendar Cita</h2>
-        <p className="text-muted text-center">
-          Llena el formulario para agendar tu cita
-        </p>
-
-        <form className="form">
-          <div className="form-row">
-            <div className="col">
-              <label className="form-label">Nombre(s)</label>
-              <input
-                type="text"
-                name="nombres"
-                className="input"
-                placeholder="Nombre(s)"
-                value={formData.nombres}
-                onChange={handleInputChange}
-              />
+    <>
+      <div className="auth-wrapper-public fade-in-up">
+        <div className="auth-card card" style={{ maxWidth: "620px", width: "90%", padding: "2.5rem" }}>
+          
+          <div className="text-center mb-4">
+            <div className="brand-logo-sphere" style={{ margin: "0 auto 1rem auto", width: "50px", height: "50px", fontSize: "1.4rem" }}>
+              <span>H</span>
             </div>
-            <div className="col">
-              <label className="form-label">Apellido(s)</label>
-              <input
-                type="text"
-                name="apellidos"
-                className="input"
-                placeholder="Apellido(s)"
-                value={formData.apellidos}
-                onChange={handleInputChange}
-              />
+            <h2 className="logo-agendar mb-1" style={{ color: "var(--primary)" }}>Hesou Citas</h2>
+            <p className="text-muted">Completa tus datos para agendar tu consulta</p>
+          </div>
+
+          <form className="form" onSubmit={(e) => e.preventDefault()}>
+            <div className="form-row mb-3">
+              <div className="col">
+                <label className="form-label">Nombre(s)</label>
+                <input
+                  type="text"
+                  name="nombres"
+                  className="input"
+                  placeholder="Ej. Juan"
+                  value={formData.nombres}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-row mb-3">
+              <div className="col">
+                <label className="form-label">Apellido paterno</label>
+                <input
+                  type="text"
+                  name="apellidoPaterno"
+                  className="input"
+                  placeholder="Ej. Pérez"
+                  value={formData.apellidoPaterno}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="col">
+                <label className="form-label">Apellido materno</label>
+                <input
+                  type="text"
+                  name="apellidoMaterno"
+                  className="input"
+                  placeholder="Ej. Ruiz (Opcional)"
+                  value={formData.apellidoMaterno}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+
+            <div className="form-row mb-3">
+              <div className="col">
+                <label className="form-label">Edad</label>
+                <input
+                  type="number"
+                  name="edad"
+                  className="input"
+                  placeholder="Ej. 28"
+                  value={formData.edad}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="col">
+                <label className="form-label">Teléfono</label>
+                <input
+                  type="tel"
+                  name="telefono"
+                  className="input"
+                  placeholder="Ej. 5512345678"
+                  value={formData.telefono}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-row mb-4">
+              <div className="col">
+                <label className="form-label">Correo electrónico (Amarre de expediente único)</label>
+                <input
+                  type="email"
+                  name="email"
+                  className="input"
+                  placeholder="Ej. juan.perez@correo.com"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+            </div>
+          </form>
+
+          <h3 className="form-label mb-2" style={{ fontSize: "1rem", fontWeight: "600" }}>Área de consulta</h3>
+          
+          {/* Modern Interactive Specialty Option Cards */}
+          <div className="specialty-selector-grid mb-4">
+            <div 
+              className={`specialty-card-glass ${tipoConsulta === "fisioterapia" ? "active" : ""}`}
+              onClick={() => handleTipoChange("fisioterapia")}
+            >
+              <div className="specialty-card-icon">🦽</div>
+              <div className="specialty-card-info">
+                <span className="specialty-title">Fisioterapia</span>
+                <span className="specialty-desc">Rehabilitación y terapia física</span>
+              </div>
+              {tipoConsulta === "fisioterapia" && <FiCheckCircle className="check-icon-active" />}
+            </div>
+
+            <div 
+              className={`specialty-card-glass ${tipoConsulta === "nutriologa" ? "active" : ""}`}
+              onClick={() => handleTipoChange("nutriologa")}
+            >
+              <div className="specialty-card-icon">🍎</div>
+              <div className="specialty-card-info">
+                <span className="specialty-title">Nutrición</span>
+                <span className="specialty-desc">Planes y asesoría alimenticia</span>
+              </div>
+              {tipoConsulta === "nutriologa" && <FiCheckCircle className="check-icon-active" />}
             </div>
           </div>
 
-          <div className="form-row">
-            <div className="col">
-              <label className="form-label">Edad</label>
-              <input
-                type="text"
-                name="edad"
-                className="input"
-                placeholder="Edad"
-                value={formData.edad}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="col">
-              <label className="form-label">Teléfono</label>
-              <input
-                type="text"
-                name="telefono"
-                className="input"
-                placeholder="Teléfono"
-                value={formData.telefono}
-                onChange={handleInputChange}
-              />
-            </div>
-          </div>
-        </form>
-
-        <h3 style={{ color: "#6c757d", marginTop: "10px" }}>Tipo de consulta</h3>
-        <div className="form-row">
-          <label className="checkbox">
-            <input
-              type="radio"
-              name="tipo-consulta"
-              value="fisioterapia"
-              checked={tipoConsulta === "fisioterapia"}
-              onChange={handleTipoChange}
-            />
-            <span style={{ color: "#6c757d" }}>Fisioterapia</span>
-          </label>
-          <label className="checkbox">
-            <input
-              type="radio"
-              name="tipo-consulta"
-              value="nutriologa"
-              checked={tipoConsulta === "nutriologa"}
-              onChange={handleTipoChange}
-            />
-            <span style={{ color: "#6c757d" }}>Nutrición</span>
-          </label>
-        </div>
-
-        {selectedDate && selectedHour && (
-          <div className="form-row" style={{ marginTop: "10px" }}>
-            <div className="col">
-              <label className="form-label">Fecha seleccionada:</label>
-              <input className="input" value={formatDateDDMMYYYY(selectedDate)} readOnly />
-            </div>
-            <div className="col">
-              <label className="form-label">Hora seleccionada:</label>
-              <input className="input" value={selectedHour} readOnly />
-            </div>
-          </div>
-        )}
-
-        {formData.nombres && formData.apellidos && formData.edad && formData.telefono && selectedDate && selectedHour && (
-          <button className="save-btn mt-2" onClick={handleSaveCita}>
-            Guardar cita
-          </button>
-        )}
-
-        {showCalendar && (
-          <div className="modal-backdrop">
-            <div className="modal-content">
-              <button className="close-btn" onClick={() => setShowCalendar(false)}>X</button>
-              <h4 className="logo-agendar">
-                Selecciona una fecha para: <strong>{tipoConsulta}</strong>
+          {selectedDate && selectedHour && (
+            <div className="selection-confirmation-box mb-4">
+              <h4 className="selection-confirmation-title">
+                <FaCalendarAlt /> Resumen de tu cita
               </h4>
-
-              <Calendar
-                onClickDay={handleDateSelect}
-                tileDisabled={({ date }) => {
-                  const iso = toLocalISODate(date);
-                  const hoy = toLocalISODate(new Date());
-                  return iso < hoy || isDayFullyBlocked(iso);
-                }}
-                tileClassName={({ date }) => {
-                  const iso = toLocalISODate(date);
-                  const hoy = toLocalISODate(new Date());
-                  if (iso < hoy) return "past-day";
-
-                  if (blockedDatesAdmin.includes(iso)) return "blocked-admin";
-                  if (blockedDatesPaciente.includes(iso)) return "blocked-paciente";
-                  return null;
-                }}
-              />
-
-
-              {showHours && selectedDate && (
-                <div style={{ marginTop: "20px", textAlign: "center" }}>
-                  <h4 className="text-muted mb-2">
-                    Horas disponibles para {formatDateDDMMYYYY(selectedDate)}
-                  </h4>
-                  {availableHours.length > 0 ? (
-                    <div className="grid grid-cols-3 gap-2 mt-3">
-                      {allHours.map((hour) => {
-                        const isBlockedAdmin = blockedHoursAdmin[selectedDate]?.includes(hour);
-                        const isBlockedPaciente = blockedHoursCitas[selectedDate]?.includes(hour);
-                        const isAvailable = availableHours.includes(hour);
-
-                        return (
-                          <button
-                            key={hour}
-                            className={`hour-btn 
-                              ${isBlockedAdmin ? "blocked-admin-hour" : ""} 
-                              ${isBlockedPaciente ? "blocked-paciente-hour" : ""} 
-                              ${isAvailable ? "" : "disabled"}`}
-                            disabled={!isAvailable}
-                            onClick={() => isAvailable && handleHourSelect(hour)}
-                          >
-                            {hour}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p style={{ color: "#888" }}>No hay horas disponibles para esta fecha.</p>
-                  )}
+              <div className="form-row mt-2">
+                <div className="col">
+                  <span className="summary-label">Fecha</span>
+                  <span className="summary-value">{formatDateDDMMYYYY(selectedDate)}</span>
                 </div>
-              )}
+                <div className="col">
+                  <span className="summary-label">Horario</span>
+                  <span className="summary-value">{selectedHour} hrs</span>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {formData.nombres && formData.apellidoPaterno && formData.edad && formData.telefono && formData.email && selectedDate && selectedHour && (
+            <button 
+              type="button"
+              className="btn btn-primary btn-size-lg w-100 hover-grow glow-pulse-purple" 
+              onClick={handleSaveCita}
+              style={{ height: "50px", fontSize: "1.05rem" }}
+            >
+              Confirmar y Agendar Cita
+            </button>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Calendar Modal rendered at absolute viewport root sibling level to ensure perfect centering */}
+      {showCalendar && (
+        <div className="modal-backdrop">
+          <div className="modal-content glass-modal" style={{ maxWidth: "480px" }}>
+            <button className="close-btn" onClick={() => setShowCalendar(false)}>X</button>
+            
+            <h4 className="logo-agendar mb-3">
+              Seleccionar Fecha y Hora
+            </h4>
+            <p className="text-muted text-center mb-3" style={{ fontSize: "0.85rem", textTransform: "capitalize" }}>
+              Especialidad: <strong>{tipoConsulta}</strong>
+            </p>
+
+            <Calendar
+              onClickDay={handleDateSelect}
+              tileDisabled={({ date }) => {
+                const iso = toLocalISODate(date);
+                const hoy = toLocalISODate(new Date());
+                return iso < hoy || isDayFullyBlocked(iso);
+              }}
+              tileClassName={({ date }) => {
+                const iso = toLocalISODate(date);
+                const hoy = toLocalISODate(new Date());
+                if (iso < hoy) return "past-day";
+
+                if (blockedDatesAdmin.includes(iso)) return "blocked-admin";
+                if (blockedDatesPaciente.includes(iso)) return "blocked-paciente";
+                return null;
+              }}
+            />
+
+            {showHours && selectedDate && (
+              <div style={{ marginTop: "20px", textAlign: "center" }}>
+                <h4 className="text-muted mb-3" style={{ fontSize: "0.9rem", fontWeight: "600" }}>
+                  Horarios para el {formatDateDDMMYYYY(selectedDate)}
+                </h4>
+                {availableHours.length > 0 ? (
+                  <div className="hours-grid-modern">
+                    {allHours.map((hour) => {
+                      const isBlockedAdmin = blockedHoursAdmin[selectedDate]?.includes(hour);
+                      const isBlockedPaciente = blockedHoursCitas[selectedDate]?.includes(hour);
+                      const isAvailable = availableHours.includes(hour);
+                      const isSelected = selectedHour === hour;
+
+                      return (
+                        <button
+                          key={hour}
+                          type="button"
+                          className={`hour-btn 
+                            ${isBlockedAdmin ? "blocked-admin-hour" : ""} 
+                            ${isBlockedPaciente ? "blocked-paciente-hour" : ""} 
+                            ${isAvailable ? "" : "disabled"}
+                            ${isSelected ? "selected-hour" : ""}`}
+                          disabled={!isAvailable}
+                          onClick={() => isAvailable && handleHourSelect(hour)}
+                        >
+                          {hour}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-muted mt-2" style={{ fontSize: "0.85rem" }}>No hay horarios disponibles en esta fecha.</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

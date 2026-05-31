@@ -256,9 +256,9 @@
 }
 
 /* ==========================================================================
-   📱 3. iPad/Tablet & Mobile Responsive optimizations (<= 1024px)
+   📱 3. iPad/Tablet & Mobile Responsive optimizations (<= 1200px)
    ========================================================================== */
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
   .header-container {
     padding: 0 1.25rem;
   }

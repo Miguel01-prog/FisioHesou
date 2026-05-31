@@ -335,9 +335,9 @@
 }
 
 /* ==========================================================================
-   📱 4. iPad/Tablet & Mobile Responsive styling (<= 1024px)
+   📱 4. iPad/Tablet & Mobile Responsive styling (<= 1200px)
    ========================================================================== */
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
   .sidebar-collapse-toggle-btn {
     display: none !important; /* Hide collapse chevron on tablets/phones */
   }

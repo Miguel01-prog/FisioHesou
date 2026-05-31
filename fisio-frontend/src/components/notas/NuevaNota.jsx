@@ -41,7 +41,7 @@ export default function CrearNota() {
 
   useEffect(() => {
     // Si estamos en pantallas grandes, el acordeón de la última nota se abre por defecto
-    if (window.innerWidth >= 1024) {
+    if (window.innerWidth >= 1200) {
       setOpenUltimaNota(true);
     }
 

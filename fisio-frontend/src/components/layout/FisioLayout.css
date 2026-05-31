@@ -33,11 +33,20 @@
 }
 
 /* ==========================================================================
-   📱 Tablet & Mobile Layout Adaptations (<= 1024px)
+   📱 Tablet & Mobile Layout Adaptations (<= 1200px)
    ========================================================================== */
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
+  .layout-app-wrapper {
+    height: auto !important;
+    min-height: 100vh;
+    overflow: visible !important;
+  }
+
   .layout-main-panel,
   .layout-main-panel.sidebar-collapsed-layout {
     margin-left: 0 !important; /* Sidebar becomes overlay, so content takes 100% viewport space! */
+    height: auto !important;
+    min-height: 100vh;
+    overflow: visible !important;
   }
 }

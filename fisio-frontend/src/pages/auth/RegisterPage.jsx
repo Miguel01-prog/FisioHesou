@@ -32,7 +32,7 @@ export default function RegisterPage() {
   return (
     <div className="auth-wrapper-public">
       <div className="auth-card" style={{ maxWidth: '420px', width: '90%' }}>
-        <h2 className="text-center mb-1" style={{ color: 'var(--primary-color)' }}>Crear Cuenta</h2>
+        <h2 className="text-center mb-1" style={{ color: 'var(--primary)' }}>Crear Cuenta</h2>
         <p className="text-muted text-center mb-2">Únete a FisioHesou</p>
 
         <form className="form" onSubmit={handleSubmit}>
@@ -83,7 +83,7 @@ export default function RegisterPage() {
 
         <div className="text-center mt-3" style={{ marginTop: '1.5rem' }}>
           <p className="text-muted" style={{ fontSize: '0.9rem' }}>
-            ¿Ya tienes cuenta? <Link to="/login" style={{ color: 'var(--primary-color)', fontWeight: '600' }}>Inicia sesión</Link>
+            ¿Ya tienes cuenta? <Link to="/login" style={{ color: 'var(--primary)', fontWeight: '600' }}>Inicia sesión</Link>
           </p>
         </div>
       </div>

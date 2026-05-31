@@ -42,7 +42,7 @@ export default function LoginPage() {
   return (
     <div className="auth-wrapper-public">
       <div className="auth-card" style={{ maxWidth: '420px', width: '90%' }}>
-        <h2 className="text-center mb-1" style={{ color: 'var(--primary-color)' }}>Bienvenido</h2>
+        <h2 className="text-center mb-1" style={{ color: 'var(--primary)' }}>Bienvenido</h2>
         <p className="text-muted text-center mb-2">Ingresa tus credenciales para continuar</p>
 
         <form className="form" onSubmit={handleSubmit}>
@@ -81,7 +81,7 @@ export default function LoginPage() {
 
         <div className="text-center mt-3" style={{ marginTop: '1.5rem' }}>
           <p className="text-muted" style={{ fontSize: '0.9rem' }}>
-            ¿No tienes cuenta? <Link to="/register" style={{ color: 'var(--primary-color)', fontWeight: '600' }}>Regístrate aquí</Link>
+            ¿No tienes cuenta? <Link to="/register" style={{ color: 'var(--primary)', fontWeight: '600' }}>Regístrate aquí</Link>
           </p>
         </div>
       </div>
