@@ -37,6 +37,19 @@ export default function DashboardFisio() {
     alertasDolor: 0
   });
 
+  const handleAction = (patient, path) => {
+    if (patient.rawPatientData) {
+      localStorage.setItem("dataPaciente", JSON.stringify(patient.rawPatientData));
+    } else {
+      localStorage.setItem("dataPaciente", JSON.stringify({
+        identificadorPaciente: patient.identificadorPaciente,
+        nombres: patient.name.split(' ')[0],
+        apellidos: patient.name.split(' ').slice(1).join(' ')
+      }));
+    }
+    navigate(path);
+  };
+
   const fetchDashboardData = async () => {
     try {
       // Fetch Pacientes list to get count
@@ -66,25 +79,36 @@ export default function DashboardFisio() {
         if (index === 0) status = 'En Espera';
         else if (index === 1) status = 'En Progreso';
         
+        const patientDetails = pacientesData.find(p => p.identificadorPaciente === c.identificadorPaciente);
+        const rawPatientData = patientDetails || {
+          identificadorPaciente: c.identificadorPaciente || '1',
+          nombres: c.nombres,
+          apellidos: c.apellidos || `${c.apellidoPaterno} ${c.apellidoMaterno || ''}`.trim(),
+          telefono: c.telefono,
+          edad: c.edad,
+          email: c.email || ""
+        };
+
         return {
           id: c.id || c._id || index + 1,
-          name: `${c.nombres} ${c.apellidos}`,
+          name: `${c.nombres} ${c.apellidos || ''}`,
           treatment: c.motivo || 'Fisioterapia de Especialidad',
           hour: c.horaCita || '09:00 AM',
           pain: `${painValue}/10`,
           painLevel: painLevel,
           status: c.estado || status,
-          identificadorPaciente: c.identificadorPaciente || c.pacienteId || '1'
+          identificadorPaciente: c.identificadorPaciente || c.pacienteId || '1',
+          rawPatientData: rawPatientData
         };
       });
 
       // Default fallbacks if no clinic appointments exist yet
       if (formattedPatients.length === 0) {
         setPatients([
-          { id: 1, name: 'Gabriela Ortiz', treatment: 'Drenaje linfático - Tobillo izquierdo', hour: '09:00 AM', pain: '7/10', painLevel: 'high', status: 'En Espera', identificadorPaciente: '1' },
-          { id: 2, name: 'Roberto Valenzuela', treatment: 'Pistola de percusión - Lumbalgia crónica', hour: '10:30 AM', pain: '4/10', painLevel: 'medium', status: 'En Progreso', identificadorPaciente: '2' },
-          { id: 3, name: 'Fernanda Lira', treatment: 'Electroestimulación - Hombro congelado', hour: '12:00 PM', pain: '8/10', painLevel: 'high', status: 'Programado', identificadorPaciente: '3' },
-          { id: 4, name: 'Daniela Montes', treatment: 'Punción seca - Contractura gemelo derecho', hour: '02:00 PM', pain: '2/10', painLevel: 'low', status: 'Programado', identificadorPaciente: '4' }
+          { id: 1, name: 'Gabriela Ortiz', treatment: 'Drenaje linfático - Tobillo izquierdo', hour: '09:00 AM', pain: '7/10', painLevel: 'high', status: 'En Espera', identificadorPaciente: '1', rawPatientData: { identificadorPaciente: '1', nombres: 'Gabriela', apellidos: 'Ortiz', edad: 28, telefono: '5551234567' } },
+          { id: 2, name: 'Roberto Valenzuela', treatment: 'Pistola de percusión - Lumbalgia crónica', hour: '10:30 AM', pain: '4/10', painLevel: 'medium', status: 'En Progreso', identificadorPaciente: '2', rawPatientData: { identificadorPaciente: '2', nombres: 'Roberto', apellidos: 'Valenzuela', edad: 42, telefono: '5557654321' } },
+          { id: 3, name: 'Fernanda Lira', treatment: 'Electroestimulación - Hombro congelado', hour: '12:00 PM', pain: '8/10', painLevel: 'high', status: 'Programado', identificadorPaciente: '3', rawPatientData: { identificadorPaciente: '3', nombres: 'Fernanda', apellidos: 'Lira', edad: 35, telefono: '5559876543' } },
+          { id: 4, name: 'Daniela Montes', treatment: 'Punción seca - Contractura gemelo derecho', hour: '02:00 PM', pain: '2/10', painLevel: 'low', status: 'Programado', identificadorPaciente: '4', rawPatientData: { identificadorPaciente: '4', nombres: 'Daniela', apellidos: 'Montes', edad: 31, telefono: '5553456789' } }
         ]);
         
         setStats({
@@ -111,10 +135,10 @@ export default function DashboardFisio() {
       console.error("Error al cargar panel de control:", err);
       // Clean fallback
       setPatients([
-        { id: 1, name: 'Gabriela Ortiz', treatment: 'Drenaje linfático - Tobillo izquierdo', hour: '09:00 AM', pain: '7/10', painLevel: 'high', status: 'En Espera', identificadorPaciente: '1' },
-        { id: 2, name: 'Roberto Valenzuela', treatment: 'Pistola de percusión - Lumbalgia crónica', hour: '10:30 AM', pain: '4/10', painLevel: 'medium', status: 'En Progreso', identificadorPaciente: '2' },
-        { id: 3, name: 'Fernanda Lira', treatment: 'Electroestimulación - Hombro congelado', hour: '12:00 PM', pain: '8/10', painLevel: 'high', status: 'Programado', identificadorPaciente: '3' },
-        { id: 4, name: 'Daniela Montes', treatment: 'Punción seca - Contractura gemelo derecho', hour: '02:00 PM', pain: '2/10', painLevel: 'low', status: 'Programado', identificadorPaciente: '4' }
+        { id: 1, name: 'Gabriela Ortiz', treatment: 'Drenaje linfático - Tobillo izquierdo', hour: '09:00 AM', pain: '7/10', painLevel: 'high', status: 'En Espera', identificadorPaciente: '1', rawPatientData: { identificadorPaciente: '1', nombres: 'Gabriela', apellidos: 'Ortiz', edad: 28, telefono: '5551234567' } },
+        { id: 2, name: 'Roberto Valenzuela', treatment: 'Pistola de percusión - Lumbalgia crónica', hour: '10:30 AM', pain: '4/10', painLevel: 'medium', status: 'En Progreso', identificadorPaciente: '2', rawPatientData: { identificadorPaciente: '2', nombres: 'Roberto', apellidos: 'Valenzuela', edad: 42, telefono: '5557654321' } },
+        { id: 3, name: 'Fernanda Lira', treatment: 'Electroestimulación - Hombro congelado', hour: '12:00 PM', pain: '8/10', painLevel: 'high', status: 'Programado', identificadorPaciente: '3', rawPatientData: { identificadorPaciente: '3', nombres: 'Fernanda', apellidos: 'Lira', edad: 35, telefono: '5559876543' } },
+        { id: 4, name: 'Daniela Montes', treatment: 'Punción seca - Contractura gemelo derecho', hour: '02:00 PM', pain: '2/10', painLevel: 'low', status: 'Programado', identificadorPaciente: '4', rawPatientData: { identificadorPaciente: '4', nombres: 'Daniela', apellidos: 'Montes', edad: 31, telefono: '5553456789' } }
       ]);
       setStats({
         pacientesTotales: 6,
@@ -142,16 +166,27 @@ export default function DashboardFisio() {
       setPatients(prev => prev.filter(p => p.id !== id));
       showError('Cita Cancelada', `Se canceló la cita de ${name}.`);
       
-      // Attempt API deletion/status update in background
-      try {
-        await api.delete(`/citas/${id}`);
-      } catch (err) {
-        console.warn("Background API delete skipped or failed:", err.message);
+      const isMock = typeof id === 'number' || (typeof id === 'string' && id.length < 20);
+      if (!isMock) {
+        try {
+          await api.delete(`/citas/${id}`);
+        } catch (err) {
+          console.warn("Background API delete skipped or failed:", err.message);
+        }
       }
     }
   };
 
-  const completeSession = (id, name) => {
+  const completeSession = async (id, name) => {
+    const isMock = typeof id === 'number' || (typeof id === 'string' && id.length < 20);
+    if (!isMock) {
+      try {
+        await api.put(`/citas/${id}/estado`, { estado: 'Completado' });
+      } catch (err) {
+        console.warn("API update status failed:", err.message);
+      }
+    }
+
     setPatients(prev => prev.map(p => {
       if (p.id === id) {
         return { ...p, status: 'Completado', pain: '1/10', painLevel: 'low' };
@@ -169,9 +204,15 @@ export default function DashboardFisio() {
     return (
       <tr key={patient.id} className="desktop-table-row">
         <td>
-          <div className="table-patient-identity">
+          <div 
+            className="table-patient-identity" 
+            style={{ cursor: "pointer" }}
+            onClick={() => handleAction(patient, `/fisioterapeuta/paciente/${patient.identificadorPaciente}`)}
+          >
             <div className="identity-avatar">{patient.name.charAt(0)}</div>
-            <span className="identity-name">{patient.name}</span>
+            <span className="identity-name" style={{ borderBottom: "1px dashed rgba(99, 102, 241, 0.4)", display: "inline-block" }}>
+              {patient.name}
+            </span>
           </div>
         </td>
         <td><span className="table-treatment-text">{patient.treatment}</span></td>
@@ -185,10 +226,26 @@ export default function DashboardFisio() {
         <td><span className={statusBadgeClass}>{patient.status}</span></td>
         <td>
           <div className="table-row-actions">
+            <button 
+              className="btn btn-secondary"
+              style={{ width: 'auto', height: '32px', fontSize: '0.8rem', padding: '0 10px', display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(139, 92, 246, 0.1)', color: 'var(--accent)', border: '1px solid rgba(139, 92, 246, 0.1)' }}
+              onClick={() => handleAction(patient, `/fisioterapeuta/paciente/${patient.identificadorPaciente}`)}
+              title="Ver Ficha Clínica y Notas"
+            >
+              <FiInfo /> Ficha
+            </button>
+            <button 
+              className="btn btn-primary"
+              style={{ width: 'auto', height: '32px', fontSize: '0.8rem', padding: '0 10px', display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', border: '1px solid rgba(16, 185, 129, 0.1)' }}
+              onClick={() => handleAction(patient, `/fisioterapeuta/notas`)}
+              title="Nueva Nota SOAP"
+            >
+              <FiPlus /> Nota
+            </button>
             {patient.status !== 'Completado' && (
               <button 
                 className="btn btn-primary"
-                style={{ width: 'auto', height: '32px', fontSize: '0.8rem', padding: '0 12px', display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', border: '1px solid rgba(99, 102, 241, 0.1)' }}
+                style={{ width: 'auto', height: '32px', fontSize: '0.8rem', padding: '0 10px', display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', border: '1px solid rgba(99, 102, 241, 0.1)' }}
                 onClick={() => completeSession(patient.id, patient.name)}
                 title="Completar sesión"
               >
@@ -217,9 +274,15 @@ export default function DashboardFisio() {
     return (
       <div key={patient.id} className="mobile-row-card glass-card">
         <div className="mobile-card-header">
-          <div className="table-patient-identity">
+          <div 
+            className="table-patient-identity"
+            style={{ cursor: "pointer" }}
+            onClick={() => handleAction(patient, `/fisioterapeuta/paciente/${patient.identificadorPaciente}`)}
+          >
             <div className="identity-avatar">{patient.name.charAt(0)}</div>
-            <span className="identity-name">{patient.name}</span>
+            <span className="identity-name" style={{ borderBottom: "1px dashed rgba(99, 102, 241, 0.4)" }}>
+              {patient.name}
+            </span>
           </div>
           <span className={statusBadgeClass}>{patient.status}</span>
         </div>
@@ -241,22 +304,36 @@ export default function DashboardFisio() {
           </div>
         </div>
 
-        <div className="mobile-card-footer">
+        <div className="mobile-card-footer" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <button 
+            className="btn btn-primary"
+            style={{ height: '36px', fontSize: '0.825rem', gap: '0.25rem', width: '100%', justifyContent: 'center' }}
+            onClick={() => handleAction(patient, `/fisioterapeuta/paciente/${patient.identificadorPaciente}`)}
+          >
+            <FiInfo /> Ficha Clínica
+          </button>
+          <button 
+            className="btn btn-secondary"
+            style={{ height: '36px', fontSize: '0.825rem', color: 'var(--success)', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.1)', width: '100%', justifyContent: 'center' }}
+            onClick={() => handleAction(patient, `/fisioterapeuta/notas`)}
+          >
+            <FiPlus /> Nueva Nota
+          </button>
           {patient.status !== 'Completado' && (
             <button 
               className="btn btn-primary"
-              style={{ flex: 1, height: '36px', fontSize: '0.825rem', gap: '0.25rem' }}
+              style={{ gridColumn: 'span 2', height: '36px', fontSize: '0.825rem', gap: '0.25rem', width: '100%', justifyContent: 'center' }}
               onClick={() => completeSession(patient.id, patient.name)}
             >
-              <FiCheckCircle /> Completar
+              <FiCheckCircle /> Completar Sesión
             </button>
           )}
           <button 
             className="btn btn-secondary"
-            style={{ flex: patient.status === 'Completado' ? 1 : 0.6, height: '36px', fontSize: '0.825rem', color: 'var(--danger)', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)' }}
+            style={{ gridColumn: 'span 2', height: '36px', fontSize: '0.825rem', color: 'var(--danger)', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)', width: '100%', justifyContent: 'center' }}
             onClick={() => deletePatient(patient.id, patient.name)}
           >
-            {patient.status === 'Completado' ? 'Eliminar Registro' : 'Cancelar'}
+            {patient.status === 'Completado' ? 'Eliminar Registro' : 'Cancelar Cita'}
           </button>
         </div>
       </div>

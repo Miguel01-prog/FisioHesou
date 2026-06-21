@@ -106,6 +106,55 @@ export const crearCita = async (req, res) => {
   }
 };
 
+export const crearCitaManual = async (req, res) => {
+  console.log("- Crear cita manual (paciente existente)...");
+  try {
+    const { identificadorPaciente, fechaCitaStr, horaCita, area } = req.body;
+
+    if (!identificadorPaciente || !fechaCitaStr || !horaCita || !area) {
+      return res.status(400).json({ message: "Todos los campos obligatorios deben ser completados" });
+    }
+
+    // Buscar al paciente existente por su identificadorPaciente
+    const paciente = await Paciente.findOne({ identificadorPaciente });
+    if (!paciente) {
+      return res.status(404).json({ message: "Paciente no encontrado" });
+    }
+
+    const fechaCita = new Date(fechaCitaStr);
+
+    const parts = (paciente.apellidos || "").trim().split(/\s+/);
+    const paternal = paciente.apellidoPaterno || parts[0] || "No especificado";
+    const maternal = paciente.apellidoMaterno || parts.slice(1).join(" ") || "";
+
+    const nuevaCita = new Cita({
+      nombres: paciente.nombres,
+      apellidoPaterno: paternal,
+      apellidoMaterno: maternal,
+      apellidos: paciente.apellidos || `${paternal} ${maternal}`.trim(),
+      edad: paciente.edad,
+      telefono: paciente.telefono,
+      email: paciente.email || "",
+      fechaCita,
+      fechaCitaStr,
+      horaCita,
+      area,
+      identificadorPaciente,
+      esNuevoPaciente: false
+    });
+
+    await nuevaCita.save();
+
+    res.status(201).json({ 
+      message: "Cita creada correctamente para el paciente existente", 
+      cita: nuevaCita
+    });
+  } catch (err) {
+    console.error(" Error al crear cita manual:", err);
+    res.status(500).json({ message: "Error al crear la cita", error: err.message });
+  }
+};
+
 
 
 export const obtenerCitas = async (req, res) => {
@@ -248,5 +297,71 @@ export const ObtenerDetallesPaciente = async (req, res) => {
   } catch (err) {
     console.error("Error en obtenerHistorialPaciente:", err);
     res.status(500).json({ error: "Error al obtener historial del paciente" });
+  }
+};
+
+export const actualizarEstadoCita = async (req, res) => {
+  console.log("Actualizando estado de cita...");
+  try {
+    const { id } = req.params;
+    const { estado } = req.body;
+    
+    if (!estado) {
+      return res.status(400).json({ message: "El campo 'estado' es requerido" });
+    }
+
+    const citaActualizada = await Cita.findByIdAndUpdate(
+      id,
+      { estado },
+      { new: true }
+    );
+
+    if (!citaActualizada) {
+      return res.status(404).json({ message: "Cita no encontrada" });
+    }
+
+    res.json({ message: "Estado de cita actualizado correctamente", cita: citaActualizada });
+  } catch (err) {
+    console.error("Error al actualizar estado de cita:", err);
+    res.status(500).json({ message: "Error al actualizar estado de la cita", error: err.message });
+  }
+};
+
+export const actualizarCita = async (req, res) => {
+  console.log("- Actualizando/Reagendando cita...");
+  try {
+    const { id } = req.params;
+    const { fechaCitaStr, horaCita, area } = req.body;
+
+    if (!fechaCitaStr || !horaCita) {
+      return res.status(400).json({ message: "La fecha y la hora son requeridas" });
+    }
+
+    const fechaCita = new Date(fechaCitaStr);
+
+    const updateFields = {
+      fechaCita,
+      fechaCitaStr,
+      horaCita,
+      estado: "Programado"
+    };
+    if (area) {
+      updateFields.area = area;
+    }
+
+    const citaActualizada = await Cita.findByIdAndUpdate(
+      id,
+      updateFields,
+      { new: true }
+    );
+
+    if (!citaActualizada) {
+      return res.status(404).json({ message: "Cita no encontrada" });
+    }
+
+    res.json({ message: "Cita reprogramada correctamente", cita: citaActualizada });
+  } catch (err) {
+    console.error("Error al actualizar cita:", err);
+    res.status(500).json({ message: "Error al actualizar la cita", error: err.message });
   }
 };

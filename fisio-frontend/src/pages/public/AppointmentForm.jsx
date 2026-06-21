@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import "../../styles/design-system.css";
@@ -336,10 +337,10 @@ export default function AppointmentForm() {
       </div>
 
       {/* Calendar Modal rendered at absolute viewport root sibling level to ensure perfect centering */}
-      {showCalendar && (
-        <div className="modal-backdrop">
-          <div className="modal-content glass-modal" style={{ maxWidth: "480px" }}>
-            <button className="close-btn" onClick={() => setShowCalendar(false)}>X</button>
+      {showCalendar && createPortal(
+        <div className="modal-backdrop" onClick={() => setShowCalendar(false)}>
+          <div className="modal-content glass-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "480px" }}>
+            <button className="close-btn" onClick={() => setShowCalendar(false)}>✕</button>
             
             <h4 className="logo-agendar mb-3">
               Seleccionar Fecha y Hora
@@ -402,7 +403,8 @@ export default function AppointmentForm() {
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

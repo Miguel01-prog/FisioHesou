@@ -37,6 +37,19 @@ export default function DashboardNutri() {
     alertasMetabolicas: 0
   });
 
+  const handleAction = (patient, path) => {
+    if (patient.rawPatientData) {
+      localStorage.setItem("dataPaciente", JSON.stringify(patient.rawPatientData));
+    } else {
+      localStorage.setItem("dataPaciente", JSON.stringify({
+        identificadorPaciente: patient.identificadorPaciente,
+        nombres: patient.name.split(' ')[0],
+        apellidos: patient.name.split(' ').slice(1).join(' ')
+      }));
+    }
+    navigate(path);
+  };
+
   const fetchDashboardData = async () => {
     try {
       // Fetch Pacientes list to get count
@@ -65,24 +78,35 @@ export default function DashboardNutri() {
         if (index === 0) status = 'En Espera';
         else if (index === 1) status = 'En Progreso';
         
+        const patientDetails = pacientesData.find(p => p.identificadorPaciente === c.identificadorPaciente);
+        const rawPatientData = patientDetails || {
+          identificadorPaciente: c.identificadorPaciente || '1',
+          nombres: c.nombres,
+          apellidos: c.apellidos || `${c.apellidoPaterno} ${c.apellidoMaterno || ''}`.trim(),
+          telefono: c.telefono,
+          edad: c.edad,
+          email: c.email || ""
+        };
+
         return {
           id: c.id || c._id || index + 1,
-          name: `${c.nombres} ${c.apellidos}`,
+          name: `${c.nombres} ${c.apellidos || ''}`,
           treatment: c.motivo || 'Plan metabólico & Dieta',
           hour: c.horaCita || '10:00 AM',
           pain: `${painValue}/10`,
           painLevel: painLevel,
           status: c.estado || status,
-          identificadorPaciente: c.identificadorPaciente || c.pacienteId || '1'
+          identificadorPaciente: c.identificadorPaciente || c.pacienteId || '1',
+          rawPatientData: rawPatientData
         };
       });
 
       // Default fallbacks if no appointments exist yet
       if (formattedPatients.length === 0) {
         setPatients([
-          { id: 1, name: 'Mariana Flores', treatment: 'Control de Peso - Déficit calórico', hour: '10:00 AM', pain: '4/10', painLevel: 'medium', status: 'En Espera', identificadorPaciente: '4' },
-          { id: 2, name: 'Eduardo Cruz', treatment: 'Aumento masa muscular - Hipertrofia', hour: '12:15 PM', pain: '2/10', painLevel: 'low', status: 'En Progreso', identificadorPaciente: '5' },
-          { id: 3, name: 'Gael Martínez', treatment: 'Plan cetogénico - Rendimiento deportivo', hour: '04:30 PM', pain: '8/10', painLevel: 'high', status: 'Programado', identificadorPaciente: '6' }
+          { id: 1, name: 'Mariana Flores', treatment: 'Control de Peso - Déficit calórico', hour: '10:00 AM', pain: '4/10', painLevel: 'medium', status: 'En Espera', identificadorPaciente: '4', rawPatientData: { identificadorPaciente: '4', nombres: 'Mariana', apellidos: 'Flores', edad: 28, telefono: '5551234567' } },
+          { id: 2, name: 'Eduardo Cruz', treatment: 'Aumento masa muscular - Hipertrofia', hour: '12:15 PM', pain: '2/10', painLevel: 'low', status: 'En Progreso', identificadorPaciente: '5', rawPatientData: { identificadorPaciente: '5', nombres: 'Eduardo', apellidos: 'Cruz', edad: 42, telefono: '5557654321' } },
+          { id: 3, name: 'Gael Martínez', treatment: 'Plan cetogénico - Rendimiento deportivo', hour: '04:30 PM', pain: '8/10', painLevel: 'high', status: 'Programado', identificadorPaciente: '6', rawPatientData: { identificadorPaciente: '6', nombres: 'Gael', apellidos: 'Martínez', edad: 35, telefono: '5559876543' } }
         ]);
         
         setStats({
@@ -109,8 +133,8 @@ export default function DashboardNutri() {
       console.error("Error al cargar panel de control:", err);
       // Clean fallback
       setPatients([
-        { id: 1, name: 'Mariana Flores', treatment: 'Control de Peso - Déficit calórico', hour: '10:00 AM', pain: '4/10', painLevel: 'medium', status: 'En Espera', identificadorPaciente: '4' },
-        { id: 2, name: 'Eduardo Cruz', treatment: 'Aumento masa muscular - Hipertrofia', hour: '12:15 PM', pain: '2/10', painLevel: 'low', status: 'En Progreso', identificadorPaciente: '5' }
+        { id: 1, name: 'Mariana Flores', treatment: 'Control de Peso - Déficit calórico', hour: '10:00 AM', pain: '4/10', painLevel: 'medium', status: 'En Espera', identificadorPaciente: '4', rawPatientData: { identificadorPaciente: '4', nombres: 'Mariana', apellidos: 'Flores', edad: 28, telefono: '5551234567' } },
+        { id: 2, name: 'Eduardo Cruz', treatment: 'Aumento masa muscular - Hipertrofia', hour: '12:15 PM', pain: '2/10', painLevel: 'low', status: 'En Progreso', identificadorPaciente: '5', rawPatientData: { identificadorPaciente: '5', nombres: 'Eduardo', apellidos: 'Cruz', edad: 42, telefono: '5557654321' } }
       ]);
       setStats({
         pacientesTotales: 5,
@@ -138,15 +162,27 @@ export default function DashboardNutri() {
       setPatients(prev => prev.filter(p => p.id !== id));
       showError('Consulta Cancelada', `Se canceló la cita de ${name}.`);
       
-      try {
-        await api.delete(`/citas/${id}`);
-      } catch (err) {
-        console.warn("Background API delete skipped:", err.message);
+      const isMock = typeof id === 'number' || (typeof id === 'string' && id.length < 20);
+      if (!isMock) {
+        try {
+          await api.delete(`/citas/${id}`);
+        } catch (err) {
+          console.warn("Background API delete skipped or failed:", err.message);
+        }
       }
     }
   };
 
-  const completeSession = (id, name) => {
+  const completeSession = async (id, name) => {
+    const isMock = typeof id === 'number' || (typeof id === 'string' && id.length < 20);
+    if (!isMock) {
+      try {
+        await api.put(`/citas/${id}/estado`, { estado: 'Completado' });
+      } catch (err) {
+        console.warn("API update status failed:", err.message);
+      }
+    }
+
     setPatients(prev => prev.map(p => {
       if (p.id === id) {
         return { ...p, status: 'Completado', pain: '1/10', painLevel: 'low' };
@@ -164,9 +200,15 @@ export default function DashboardNutri() {
     return (
       <tr key={patient.id} className="desktop-table-row">
         <td>
-          <div className="table-patient-identity">
+          <div 
+            className="table-patient-identity" 
+            style={{ cursor: "pointer" }}
+            onClick={() => handleAction(patient, `/nutriologa/paciente/${patient.identificadorPaciente}`)}
+          >
             <div className="identity-avatar">{patient.name.charAt(0)}</div>
-            <span className="identity-name">{patient.name}</span>
+            <span className="identity-name" style={{ borderBottom: "1px dashed rgba(99, 102, 241, 0.4)", display: "inline-block" }}>
+              {patient.name}
+            </span>
           </div>
         </td>
         <td><span className="table-treatment-text">{patient.treatment}</span></td>
@@ -180,12 +222,20 @@ export default function DashboardNutri() {
         <td><span className={statusBadgeClass}>{patient.status}</span></td>
         <td>
           <div className="table-row-actions">
+            <button 
+              className="btn btn-secondary"
+              style={{ width: 'auto', height: '32px', fontSize: '0.8rem', padding: '0 10px', display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(139, 92, 246, 0.1)', color: 'var(--accent)', border: '1px solid rgba(139, 92, 246, 0.1)' }}
+              onClick={() => handleAction(patient, `/nutriologa/paciente/${patient.identificadorPaciente}`)}
+              title="Ver Ficha y Medidas"
+            >
+              <FiInfo /> Ficha
+            </button>
             {patient.status !== 'Completado' && (
               <button 
                 className="btn btn-primary"
-                style={{ width: 'auto', height: '32px', fontSize: '0.8rem', padding: '0 12px', display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', border: '1px solid rgba(99, 102, 241, 0.1)' }}
+                style={{ width: 'auto', height: '32px', fontSize: '0.8rem', padding: '0 10px', display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', border: '1px solid rgba(99, 102, 241, 0.1)' }}
                 onClick={() => completeSession(patient.id, patient.name)}
-                title="Actualizar plan"
+                title="Completar consulta"
               >
                 <FiCheckCircle /> Completar
               </button>
@@ -193,8 +243,8 @@ export default function DashboardNutri() {
             <button 
               className="table-action-delete-btn" 
               onClick={() => deletePatient(patient.id, patient.name)}
-              title="Cancelar cita"
-              aria-label={`Cancelar cita de ${patient.name}`}
+              title="Cancelar consulta"
+              aria-label={`Cancelar consulta de ${patient.name}`}
             >
               <FiTrash2 size={16} />
             </button>
@@ -212,9 +262,15 @@ export default function DashboardNutri() {
     return (
       <div key={patient.id} className="mobile-row-card glass-card">
         <div className="mobile-card-header">
-          <div className="table-patient-identity">
+          <div 
+            className="table-patient-identity"
+            style={{ cursor: "pointer" }}
+            onClick={() => handleAction(patient, `/nutriologa/paciente/${patient.identificadorPaciente}`)}
+          >
             <div className="identity-avatar">{patient.name.charAt(0)}</div>
-            <span className="identity-name">{patient.name}</span>
+            <span className="identity-name" style={{ borderBottom: "1px dashed rgba(99, 102, 241, 0.4)" }}>
+              {patient.name}
+            </span>
           </div>
           <span className={statusBadgeClass}>{patient.status}</span>
         </div>
@@ -236,22 +292,29 @@ export default function DashboardNutri() {
           </div>
         </div>
 
-        <div className="mobile-card-footer">
+        <div className="mobile-card-footer" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <button 
+            className="btn btn-primary"
+            style={{ height: '36px', fontSize: '0.825rem', gap: '0.25rem', width: '100%', justifyContent: 'center' }}
+            onClick={() => handleAction(patient, `/nutriologa/paciente/${patient.identificadorPaciente}`)}
+          >
+            <FiInfo /> Ficha Clínica
+          </button>
           {patient.status !== 'Completado' && (
             <button 
               className="btn btn-primary"
-              style={{ flex: 1, height: '36px', fontSize: '0.825rem', gap: '0.25rem' }}
+              style={{ gridColumn: 'span 2', height: '36px', fontSize: '0.825rem', gap: '0.25rem', width: '100%', justifyContent: 'center' }}
               onClick={() => completeSession(patient.id, patient.name)}
             >
-              <FiCheckCircle /> Completar
+              <FiCheckCircle /> Completar Consulta
             </button>
           )}
           <button 
             className="btn btn-secondary"
-            style={{ flex: patient.status === 'Completado' ? 1 : 0.6, height: '36px', fontSize: '0.825rem', color: 'var(--danger)', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)' }}
+            style={{ gridColumn: 'span 2', height: '36px', fontSize: '0.825rem', color: 'var(--danger)', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)', width: '100%', justifyContent: 'center' }}
             onClick={() => deletePatient(patient.id, patient.name)}
           >
-            {patient.status === 'Completado' ? 'Eliminar Registro' : 'Cancelar'}
+            {patient.status === 'Completado' ? 'Eliminar Registro' : 'Cancelar Cita'}
           </button>
         </div>
       </div>

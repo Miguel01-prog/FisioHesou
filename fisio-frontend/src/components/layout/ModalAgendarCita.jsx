@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import api from "../../api.js";
 import { showSuccess, showError } from "../../utils/alerts.js";
 
-export default function ModalAgendarCita({ paciente, onClose }) {
+export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = null }) {
   const [blockedDatesAdmin, setBlockedDatesAdmin] = useState([]);
   const [blockedHoursAdmin, setBlockedHoursAdmin] = useState({});
   const [blockedDatesPaciente, setBlockedDatesPaciente] = useState([]);
   const [blockedHoursCitas, setBlockedHoursCitas] = useState({});
   
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedHour, setSelectedHour] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(citaAReagendar ? citaAReagendar.fechaCitaStr : null);
+  const [selectedHour, setSelectedHour] = useState(citaAReagendar ? citaAReagendar.horaCita : null);
   const [availableHours, setAvailableHours] = useState([]);
-  const [showHours, setShowHours] = useState(false);
+  const [showHours, setShowHours] = useState(!!citaAReagendar);
 
   const allHours = [
     "08:00", "09:00", "10:00", "11:00", "12:00",
@@ -33,47 +34,16 @@ export default function ModalAgendarCita({ paciente, onClose }) {
     return `${day}/${month}/${year}`;
   };
 
-  useEffect(() => {
-    if (!paciente || !paciente.area) return;
-    const fetchBlockedDates = async () => {
-      try {
-        const { data } = await api.get(`/horarios/${paciente.area}`);
-        setBlockedDatesAdmin(data.blockedDatesAdmin || []);
-        setBlockedHoursAdmin(data.blockedHoursAdmin || {});
-        setBlockedDatesPaciente(data.blockedDatesPaciente || []);
-        setBlockedHoursCitas(data.blockedHoursCitas || {});
-      } catch (err) {
-        console.error("Error al obtener bloqueos:", err);
-      }
-    };
-    fetchBlockedDates();
-  }, [paciente]);
-
-  const isDayFullyBlocked = (iso) => {
+  const calculateAvailableHours = (iso) => {
     const bloqueadasAdmin = blockedHoursAdmin[iso] || [];
     const bloqueadasPacientes = blockedHoursCitas[iso] || [];
-    const bloqueadas = [...new Set([...bloqueadasAdmin, ...bloqueadasPacientes])];
-    return bloqueadas.length >= allHours.length;
-  };
-
-  const handleDateSelect = (date) => {
-    const iso = toLocalISODate(date);
-    const hoy = toLocalISODate(new Date());
-
-    if (iso < hoy) {
-      showError("Fecha inválida", "No puedes seleccionar fechas anteriores a hoy.");
-      return;
-    }
-
-    setSelectedDate(iso);
-    setSelectedHour(null);
-    setShowHours(true);
-
-    const bloqueadasAdmin = blockedHoursAdmin[iso] || [];
-    const bloqueadasPacientes = blockedHoursCitas[iso] || [];
-    const bloqueadas = [...new Set([...bloqueadasAdmin, ...bloqueadasPacientes])];
+    const bloqueadasPacientesFiltered = citaAReagendar && citaAReagendar.fechaCitaStr === iso
+      ? bloqueadasPacientes.filter(h => h !== citaAReagendar.horaCita)
+      : bloqueadasPacientes;
+    const bloqueadas = [...new Set([...bloqueadasAdmin, ...bloqueadasPacientesFiltered])];
 
     const ahora = new Date();
+    const hoy = toLocalISODate(ahora);
     const esHoy = iso === hoy;
 
     const disponibles = allHours.filter((h) => {
@@ -91,24 +61,97 @@ export default function ModalAgendarCita({ paciente, onClose }) {
     setAvailableHours(disponibles);
   };
 
+  useEffect(() => {
+    if (!paciente || !paciente.area) return;
+    const fetchBlockedDates = async () => {
+      try {
+        const { data } = await api.get(`/horarios/${paciente.area}`);
+        setBlockedDatesAdmin(data.blockedDatesAdmin || []);
+        setBlockedHoursAdmin(data.blockedHoursAdmin || {});
+        setBlockedDatesPaciente(data.blockedDatesPaciente || []);
+        setBlockedHoursCitas(data.blockedHoursCitas || {});
+      } catch (err) {
+        console.error("Error al obtener bloqueos:", err);
+      }
+    };
+    fetchBlockedDates();
+  }, [paciente]);
+
+  useEffect(() => {
+    if (selectedDate && Object.keys(blockedHoursAdmin).length >= 0) {
+      calculateAvailableHours(selectedDate);
+    }
+  }, [selectedDate, blockedHoursAdmin, blockedHoursCitas]);
+
+  const isDayFullyBlocked = (iso) => {
+    const bloqueadasAdmin = blockedHoursAdmin[iso] || [];
+    const bloqueadasPacientes = blockedHoursCitas[iso] || [];
+    const bloqueadasPacientesFiltered = citaAReagendar && citaAReagendar.fechaCitaStr === iso
+      ? bloqueadasPacientes.filter(h => h !== citaAReagendar.horaCita)
+      : bloqueadasPacientes;
+    const bloqueadas = [...new Set([...bloqueadasAdmin, ...bloqueadasPacientesFiltered])];
+    return bloqueadas.length >= allHours.length;
+  };
+
+  const handleDateSelect = (date) => {
+    const iso = toLocalISODate(date);
+    const hoy = toLocalISODate(new Date());
+
+    if (iso < hoy) {
+      showError("Fecha inválida", "No puedes seleccionar fechas anteriores a hoy.");
+      return;
+    }
+
+    setSelectedDate(iso);
+    setSelectedHour(null);
+    setShowHours(true);
+  };
+
   const handleGuardarCita = async () => {
     if (!selectedDate || !selectedHour) {
       return showError("Campos incompletos", "Selecciona fecha y hora antes de guardar.");
     }
 
     try {
-      const payload = {
-        nombres: paciente.nombres,
-        apellidos: paciente.apellidos,
-        edad: paciente.edad,
-        telefono: paciente.telefono,
-        fechaCitaStr: selectedDate,
-        horaCita: selectedHour,
-        area: paciente.area
-      };
+      if (citaAReagendar) {
+        const payload = {
+          fechaCitaStr: selectedDate,
+          horaCita: selectedHour,
+          area: paciente.area
+        };
+        await api.put(`/citas/${citaAReagendar._id}`, payload);
+        showSuccess("Cita reprogramada", `Se reagendó la cita para el ${formatDateDDMMYYYY(selectedDate)} a las ${selectedHour}.`);
+      } else if (paciente.identificadorPaciente) {
+        // Usar la nueva función manual para evitar duplicar pacientes existentes
+        const payload = {
+          identificadorPaciente: paciente.identificadorPaciente,
+          fechaCitaStr: selectedDate,
+          horaCita: selectedHour,
+          area: paciente.area
+        };
+        await api.post("/citas/manual", payload);
+        showSuccess("Cita guardada", `Se agendó la cita para el ${formatDateDDMMYYYY(selectedDate)} a las ${selectedHour}.`);
+      } else {
+        const parts = (paciente.apellidos || "").trim().split(/\s+/);
+        const paternal = paciente.apellidoPaterno || parts[0] || "";
+        const maternal = paciente.apellidoMaterno || parts.slice(1).join(" ") || "";
 
-      await api.post("/citas", payload);
-      showSuccess("Cita guardada", `Se agendó la cita para el ${formatDateDDMMYYYY(selectedDate)} a las ${selectedHour}.`);
+        const payload = {
+          nombres: paciente.nombres,
+          apellidoPaterno: paternal,
+          apellidoMaterno: maternal,
+          apellidos: paciente.apellidos || `${paternal} ${maternal}`.trim(),
+          edad: paciente.edad,
+          telefono: paciente.telefono,
+          email: paciente.email || "",
+          fechaCitaStr: selectedDate,
+          horaCita: selectedHour,
+          area: paciente.area
+        };
+        await api.post("/citas", payload);
+        showSuccess("Cita guardada", `Se agendó la cita para el ${formatDateDDMMYYYY(selectedDate)} a las ${selectedHour}.`);
+      }
+
       onClose();
     } catch (err) {
       console.error(err);
@@ -116,64 +159,91 @@ export default function ModalAgendarCita({ paciente, onClose }) {
     }
   };
 
-  return (
-    <div className="modal-backdrop">
-      <div className="modal-content">
+  return createPortal(
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "550px", width: "100%" }}>
         <button 
           className="close-btn" 
           onClick={onClose} 
+          aria-label="Cerrar modal"
         >
-          X
+          ✕
         </button>
         
-        <h4 className="logo-agendar">
-          Agendar Nueva Cita
+        <h4 className="logo-agendar" style={{ marginBottom: "1.5rem" }}>
+          {citaAReagendar ? "Reprogramar Cita" : "Agendar Nueva Cita"}
         </h4>
+        <hr style={{ marginBottom: "1.5rem" }} />
         
-        <p className="text-muted text-center mb-2">
+        <p className="text-muted text-center mb-2" style={{ fontSize: '0.95rem', lineHeight: '1.5' }}>
           Paciente: <strong>{paciente?.nombres} {paciente?.apellidos}</strong><br/>
-          Área: <strong style={{ textTransform: 'capitalize' }}>{paciente?.area}</strong>
+          Área: <strong style={{ textTransform: 'capitalize', color: 'var(--primary)' }}>{paciente?.area}</strong>
         </p>
+        <hr style={{ marginBottom: "1.5rem" }} />
 
-        <Calendar
-          onClickDay={handleDateSelect}
-          value={selectedDate ? new Date(selectedDate + "T12:00:00") : null}
-          tileDisabled={({ date }) => {
-            const iso = toLocalISODate(date);
-            const hoy = toLocalISODate(new Date());
-            return iso < hoy || isDayFullyBlocked(iso);
-          }}
-          tileClassName={({ date }) => {
-            const iso = toLocalISODate(date);
-            const hoy = toLocalISODate(new Date());
-            if (iso < hoy) return "past-day";
-            if (blockedDatesAdmin.includes(iso)) return "blocked-admin";
-            if (blockedDatesPaciente.includes(iso)) return "blocked-paciente";
-            return null;
-          }}
-        />
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+          <Calendar
+            onClickDay={handleDateSelect}
+            value={selectedDate ? new Date(selectedDate + "T12:00:00") : null}
+            tileDisabled={({ date }) => {
+              const iso = toLocalISODate(date);
+              const hoy = toLocalISODate(new Date());
+              return iso < hoy || isDayFullyBlocked(iso);
+            }}
+            tileClassName={({ date }) => {
+              const iso = toLocalISODate(date);
+              const hoy = toLocalISODate(new Date());
+              if (iso < hoy) return "past-day";
+              if (blockedDatesAdmin.includes(iso)) return "blocked-admin";
+              if (blockedDatesPaciente.includes(iso)) return "blocked-paciente";
+              return null;
+            }}
+          />
+        </div>
 
         {showHours && selectedDate && (
           <div style={{ marginTop: "20px", textAlign: "center" }}>
-            <h4 className="text-muted mb-2">
+            <h4 className="text-muted mb-2" style={{ fontSize: '1rem', fontWeight: 600 }}>
               Horas disponibles para el {formatDateDDMMYYYY(selectedDate)}
             </h4>
+            <hr style={{ marginBottom: "1rem" }} />
             {availableHours.length > 0 ? (
-              <div className="hours-grid-modern">
+              <div className="hours-grid-modern" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '1.5rem' }}>
                 {allHours.map((hour) => {
                   const isBlockedAdmin = blockedHoursAdmin[selectedDate]?.includes(hour);
                   const isBlockedPaciente = blockedHoursCitas[selectedDate]?.includes(hour);
                   const isAvailable = availableHours.includes(hour);
+                  const isSelected = selectedHour === hour;
 
                   return (
                     <button
                       key={hour}
+                      type="button"
                       className={`hour-btn 
                         ${isBlockedAdmin ? "blocked-admin-hour" : ""} 
                         ${isBlockedPaciente ? "blocked-paciente-hour" : ""} 
                         ${isAvailable ? "" : "disabled"}
-                        ${selectedHour === hour ? "selected-hour" : ""}`}
+                        ${isSelected ? "selected-hour" : ""}`}
                       disabled={!isAvailable}
+                      style={{
+                        padding: '0.6rem 0.5rem',
+                        fontSize: '0.85rem',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-light, #e2e8f0)',
+                        background: isSelected 
+                          ? 'var(--primary, #5e50a1)' 
+                          : !isAvailable 
+                            ? 'rgba(226, 232, 240, 0.4)' 
+                            : 'transparent',
+                        color: isSelected 
+                          ? '#ffffff' 
+                          : !isAvailable 
+                            ? 'var(--text-muted, #94a3b8)' 
+                            : 'var(--text-main)',
+                        cursor: !isAvailable ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s',
+                        fontWeight: isSelected ? '600' : 'normal',
+                      }}
                       onClick={() => isAvailable && setSelectedHour(hour)}
                     >
                       {hour}
@@ -182,22 +252,33 @@ export default function ModalAgendarCita({ paciente, onClose }) {
                 })}
               </div>
             ) : (
-              <p className="text-muted mt-2">No hay horas disponibles para esta fecha.</p>
+              <p className="text-muted mt-2" style={{ fontSize: '0.9rem' }}>No hay horas disponibles para esta fecha.</p>
             )}
           </div>
         )}
 
         {selectedDate && selectedHour && (
-          <div style={{ marginTop: '25px', textAlign: 'center' }}>
-            <button className="save-btn" onClick={handleGuardarCita}>
-              Confirmar Cita
+          <div style={{ marginTop: '25px', display: 'flex', gap: '0.75rem' }}>
+            <button 
+              type="button" 
+              className="save-btn" 
+              style={{ background: "#64748b", margin: 0, flex: 1 }} 
+              onClick={onClose}
+            >
+              Cancelar
+            </button>
+            <button 
+              type="button"
+              className="save-btn" 
+              onClick={handleGuardarCita}
+              style={{ margin: 0, flex: 2 }}
+            >
+              {citaAReagendar ? "Confirmar Reprogramación" : "Confirmar Cita"}
             </button>
           </div>
         )}
-        
-        {/* Spacer para asegurar scroll completo en móviles */}
-        <div style={{ height: '20px', width: '100%' }}></div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -104,10 +104,11 @@ const VistaHistorial = () => {
           <hr />
 
           <div className="tabs">
-            <button type="button" className={`tab ${activeTab === "datosPersonales" ? "active" : ""}`} onClick={() => setActiveTab("datosPersonales")}>Datos personales</button>
+            <button type="button" className={`tab ${activeTab === "datosPersonales" ? "active" : ""}`} onClick={() => setActiveTab("datosPersonales")}>Resumen</button>
             <button type="button" className={`tab ${activeTab === "AnaAnte" ? "active" : ""}`} onClick={() => setActiveTab("AnaAnte")}>Anamnesis y Antecedentes</button>
             <button type="button" className={`tab ${activeTab === "evaluacion" ? "active" : ""}`} onClick={() => setActiveTab("evaluacion")}>Evaluación</button>
             <button type="button" className={`tab ${activeTab === "soap" ? "active" : ""}`} onClick={() => setActiveTab("soap")}>Notas SOAP</button>
+            <button type="button" className={`tab ${activeTab === "consentimiento" ? "active" : ""}`} onClick={() => setActiveTab("consentimiento")}>Consentimiento Informado</button>
           </div>
 
           <form className="form">
@@ -164,6 +165,131 @@ const VistaHistorial = () => {
                     <label className="form-label">Teléfono:</label>
                     <input type="text" className="input" value={paciente.telefono} disabled />
                   </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "consentimiento" && (
+              <div className="tab-content">
+                <div className="clinical-form-section" style={{ background: "#ffffff", border: "1px solid var(--border-light)", boxShadow: "var(--shadow-md)", padding: "2.5rem", borderRadius: "16px", color: "#1e293b", fontFamily: "var(--font-family-display, inherit)", lineHeight: "1.6" }}>
+                  
+                  <div style={{ textAlign: "center", marginBottom: "2.5rem", borderBottom: "2px double var(--primary-light)", paddingBottom: "1.5rem" }}>
+                    <h2 style={{ textTransform: "uppercase", fontSize: "1.4rem", letterSpacing: "1px", fontWeight: "900", color: "var(--primary)", margin: "0 0 5px 0" }}>Consentimiento Informado</h2>
+                    <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: "600" }}>SERVICIO DE FISIOTERAPIA - FISIOHESOU</span>
+                  </div>
+
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <h4 style={{ fontWeight: "800", color: "var(--primary)", borderBottom: "1px solid var(--border-light)", paddingBottom: "4px", marginBottom: "8px", fontSize: "1rem" }}>1. Información General</h4>
+                    <p style={{ margin: 0, fontSize: "0.95rem", textAlign: "justify" }}>
+                      Yo, <strong style={{ borderBottom: "1px solid #1e293b", padding: "0 5px", color: "var(--primary)" }}>{formData.nombrePacienteFirma || (paciente && (paciente.nombres + " " + paciente.apellidos))}</strong> declaro que he sido debidamente informado/a sobre la naturaleza del tratamiento que recibiré en este consultorio, incluyendo los beneficios, riesgos y alternativas disponibles.
+                    </p>
+                  </div>
+
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <h4 style={{ fontWeight: "800", color: "var(--primary)", borderBottom: "1px solid var(--border-light)", paddingBottom: "4px", marginBottom: "8px", fontSize: "1rem" }}>2. Detalles del Tratamiento</h4>
+                    <p style={{ margin: "0 0 6px 0", fontSize: "0.95rem" }}>
+                      <strong>Tipo de tratamiento:</strong> Fisioterapia
+                    </p>
+                    <p style={{ margin: "0 0 10px 0", fontSize: "0.95rem" }}>
+                      <strong>Profesional a cargo:</strong> <strong style={{ borderBottom: "1px solid #1e293b", padding: "0 5px", color: "var(--primary)" }}>{formData.nombreProfesionalFirma || "Fisioterapeuta"}</strong>
+                    </p>
+                    <p style={{ margin: "0 0 4px 0", fontSize: "0.95rem", fontWeight: "700" }}>
+                      Descripción del procedimiento o intervención:
+                    </p>
+                    <p style={{ margin: 0, fontSize: "0.92rem", color: "#475569", background: "rgba(99, 102, 241, 0.03)", padding: "10px 15px", borderRadius: "8px", borderLeft: "3px solid var(--primary)", textAlign: "justify" }}>
+                      Aplicación de técnicas manuales, ejercicios terapéuticos, electroterapia, termoterapia, aplicación de Kinesiotape, ultrasonido.
+                    </p>
+                  </div>
+
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <h4 style={{ fontWeight: "800", color: "var(--primary)", borderBottom: "1px solid var(--border-light)", paddingBottom: "4px", marginBottom: "8px", fontSize: "1rem" }}>3. Riesgos Potenciales</h4>
+                    <p style={{ margin: 0, fontSize: "0.95rem", textAlign: "justify" }}>
+                      Se me ha informado que, aunque el tratamiento está diseñado para mejorar mi condición, pueden existir riesgos o efectos secundarios, como:
+                      <span style={{ display: "block", fontStyle: "italic", color: "#64748b", marginTop: "4px" }}>Molestias temporales, irritación en la piel, fatiga muscular, entre otros.</span>
+                    </p>
+                  </div>
+
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <h4 style={{ fontWeight: "800", color: "var(--primary)", borderBottom: "1px solid var(--border-light)", paddingBottom: "4px", marginBottom: "8px", fontSize: "1rem" }}>4. Derechos del Paciente</h4>
+                    <p style={{ margin: "0 0 6px 0", fontSize: "0.95rem" }}>Declaro que:</p>
+                    <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "0.92rem", color: "#334155" }}>
+                      <li>Tengo derecho a realizar preguntas y recibir explicaciones claras sobre mi tratamiento.</li>
+                      <li>Tengo derecho a detener el tratamiento en cualquier momento, informando al profesional a cargo.</li>
+                      <li>Mis datos personales serán tratados de manera confidencial, conforme a la Ley General de Protección de Datos Personales.</li>
+                    </ul>
+                  </div>
+
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <h4 style={{ fontWeight: "800", color: "var(--primary)", borderBottom: "1px solid var(--border-light)", paddingBottom: "4px", marginBottom: "8px", fontSize: "1rem" }}>5. Consentimiento para el Tratamiento</h4>
+                    <p style={{ margin: "0 0 6px 0", fontSize: "0.95rem" }}>Con pleno entendimiento de la información proporcionada:</p>
+                    <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "0.92rem", color: "#334155" }}>
+                      <li>Autorizo al profesional a realizar el tratamiento descrito y utilizar las técnicas y procedimientos necesarios.</li>
+                      <li>Declaro que la información que he proporcionado sobre mi historia clínica es veraz y completa.</li>
+                      <li>Acepto seguir las recomendaciones y pautas indicadas durante y después del tratamiento.</li>
+                    </ul>
+                  </div>
+
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <h4 style={{ fontWeight: "800", color: "var(--primary)", borderBottom: "1px solid var(--border-light)", paddingBottom: "4px", marginBottom: "8px", fontSize: "1rem" }}>6. Consentimiento para Uso de Información</h4>
+                    <p style={{ margin: 0, fontSize: "0.95rem", textAlign: "justify" }}>
+                      Autorizo el uso de mi información de forma anónima para fines educativos, estadísticos o de mejora de servicios.
+                    </p>
+                  </div>
+
+                  <div style={{ marginBottom: "2.5rem" }}>
+                    <h4 style={{ fontWeight: "800", color: "var(--primary)", borderBottom: "1px solid var(--border-light)", paddingBottom: "4px", marginBottom: "8px", fontSize: "1rem" }}>7. Declaración del Paciente</h4>
+                    <p style={{ margin: "0 0 6px 0", fontSize: "0.95rem" }}>Declaro que:</p>
+                    <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "0.92rem", color: "#334155" }}>
+                      <li>He leído y comprendido el presente documento.</li>
+                      <li>Todas mis preguntas han sido respondidas satisfactoriamente.</li>
+                      <li>Firmo este documento de manera libre y consciente.</li>
+                    </ul>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem", borderTop: "1px dashed var(--border-light)", paddingTop: "2rem" }}>
+                    <div style={{ border: "1px solid rgba(139, 92, 246, 0.15)", borderRadius: "12px", padding: "1.25rem", background: "var(--card-bg)" }}>
+                      <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)", marginBottom: "0.5rem", display: "block" }}>✍️ Firma del Paciente</label>
+                      <div style={{ background: "#ffffff", border: "1px solid var(--border-light)", borderRadius: "8px", height: "160px", display: "flex", justifyContent: "center", alignItems: "center", overflow: "hidden", marginBottom: "1rem" }}>
+                        {formData.firmaPaciente ? (
+                          <img src={formData.firmaPaciente} alt="Firma del Paciente" style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }} />
+                        ) : (
+                          <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>Sin firma registrada</span>
+                        )}
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                        <div>
+                          <label className="form-label" style={{ fontSize: "0.8rem" }}>Nombre</label>
+                          <input type="text" className="input" value={formData.nombrePacienteFirma || ""} disabled />
+                        </div>
+                        <div>
+                          <label className="form-label" style={{ fontSize: "0.8rem" }}>Fecha</label>
+                          <input type="text" className="input" value={formData.fechaFirmaPaciente || ""} disabled />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ border: "1px solid rgba(139, 92, 246, 0.15)", borderRadius: "12px", padding: "1.25rem", background: "var(--card-bg)" }}>
+                      <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)", marginBottom: "0.5rem", display: "block" }}>🩺 Firma del Profesional de la Salud</label>
+                      <div style={{ background: "#ffffff", border: "1px solid var(--border-light)", borderRadius: "8px", height: "160px", display: "flex", justifyContent: "center", alignItems: "center", overflow: "hidden", marginBottom: "1rem" }}>
+                        {formData.firmaProfesional ? (
+                          <img src={formData.firmaProfesional} alt="Firma del Profesional" style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }} />
+                        ) : (
+                          <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>Sin firma registrada</span>
+                        )}
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                        <div>
+                          <label className="form-label" style={{ fontSize: "0.8rem" }}>Nombre</label>
+                          <input type="text" className="input" value={formData.nombreProfesionalFirma || ""} disabled />
+                        </div>
+                        <div>
+                          <label className="form-label" style={{ fontSize: "0.8rem" }}>Fecha</label>
+                          <input type="text" className="input" value={formData.fechaFirmaProfesional || ""} disabled />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               </div>
             )}

@@ -42,6 +42,12 @@ const historialPacienteSchema = new mongoose.Schema({
     antecedentesNoPatologicos: { type: Object, default: {} },
     lesiones: { type: Object, default: {} },
     obser: { type: Object, default: {} },
+    firmaPaciente: { type: String, default: "" },
+    firmaProfesional: { type: String, default: "" },
+    nombrePacienteFirma: { type: String, default: "" },
+    nombreProfesionalFirma: { type: String, default: "" },
+    fechaFirmaPaciente: { type: String, default: "" },
+    fechaFirmaProfesional: { type: String, default: "" },
     soapFK: { type: mongoose.Schema.Types.ObjectId, ref: "Nota" },
 });
 

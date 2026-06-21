@@ -42,7 +42,6 @@ export default function Header({
           className="mobile-hamburger-btn"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Abrir menú"
-          style={{ display: 'flex' }}
         >
           <FiMenu size={20} />
         </button>

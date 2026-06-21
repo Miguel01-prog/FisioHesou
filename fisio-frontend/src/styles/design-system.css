@@ -1260,6 +1260,18 @@ hr {
   box-shadow: 0 6px 16px hsla(var(--accent-h), var(--accent-s), var(--accent-l), 0.25);
 }
 
+.patient-detail-action-btn.btn-danger-action {
+  background: var(--danger, #ef4444);
+  color: var(--text-inverse, #fff);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.patient-detail-action-btn.btn-danger-action:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.35);
+}
+
 /* ==========================================================================
    👤 MODERN PATIENT PROFILE & RESPONSIVE SOAP NOTES - DESIGN SYSTEM
    ========================================================================== */
@@ -1525,6 +1537,7 @@ hr {
 
 .tabs {
   display: flex;
+  flex-wrap: nowrap;
   background: var(--primary-light);
   border-radius: var(--radius-sm);
   padding: 0.35rem;
@@ -1533,13 +1546,25 @@ hr {
   width: fit-content;
   max-width: 100%;
   overflow-x: auto;
-  scrollbar-width: none; /* Hide scrollbar for standard browsers */
-  -ms-overflow-style: none; /* Hide scrollbar for IE/Edge */
+  scrollbar-width: thin;
+  -ms-overflow-style: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Hide scrollbar for Chrome/Safari/Webkit */
+/* Custom subtle scrollbar for tab container */
 .tabs::-webkit-scrollbar {
-  display: none;
+  height: 4px;
+}
+.tabs::-webkit-scrollbar-track {
+  background: transparent;
+}
+.tabs::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.25);
+  border-radius: 99px;
+}
+.tabs::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.45);
 }
 
 .tab {
@@ -1557,6 +1582,7 @@ hr {
   align-items: center;
   gap: 0.5rem;
   user-select: none;
+  flex-shrink: 0;
 }
 
 .tab:hover:not(.active) {
@@ -2091,8 +2117,10 @@ tr:hover .patient-list-avatar-circle {
   backdrop-filter: blur(10px) saturate(120%);
   -webkit-backdrop-filter: blur(10px) saturate(120%);
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* Align to start so taller content is scrollable from the top */
   justify-content: center;
+  overflow-y: auto; /* Enable scroll on the backdrop container */
+  padding: 2rem 0; /* Add safety margins for scrollable content */
   z-index: 9999; /* Highest priority to be on top of everything! */
   animation: fadeInModal 0.25s ease-out;
 }
@@ -2100,6 +2128,7 @@ tr:hover .patient-list-avatar-circle {
 .modal-content,
 .glass-modal {
   position: relative;
+  margin: auto; /* margin: auto maintains vertical centering while preventing top-overflow cutoff */
   background: var(--card-bg);
   backdrop-filter: blur(25px) saturate(140%);
   -webkit-backdrop-filter: blur(25px) saturate(140%);
@@ -2108,8 +2137,6 @@ tr:hover .patient-list-avatar-circle {
   padding: 2.25rem 2rem;
   width: 92%;
   max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
   box-shadow: var(--shadow-glass), 0 20px 40px rgba(0, 0, 0, 0.15);
   animation: scaleUpModal 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   color: var(--text-main);

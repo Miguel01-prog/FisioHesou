@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../api";
 import LoadingSpinner from "../layout/LoadingSpinner";
@@ -213,9 +214,9 @@ const ConstructorPlan = () => {
       </div>
 
       {/* Modal del Catálogo de Ejercicios */}
-      {mostrarModal && (
-        <div className="modal-backdrop">
-          <div className="modal-content" style={{ maxWidth: '600px', width: '90%', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      {mostrarModal && createPortal(
+        <div className="modal-backdrop" onClick={() => setMostrarModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px', width: '90%', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
               <h2 className="title_card" style={{ margin: 0 }}>Catálogo de Ejercicios</h2>
               <button className="close-btn" onClick={() => setMostrarModal(false)} style={{ position: 'relative', right: '0', top: '0', margin: '0' }}>✕</button>
@@ -248,7 +249,8 @@ const ConstructorPlan = () => {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

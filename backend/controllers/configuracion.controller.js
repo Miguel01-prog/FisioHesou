@@ -87,3 +87,18 @@ export const obtenerItemsPorClave = async (req, res) => {
     });
   }
 };
+
+// Eliminar un ítem de configuración
+export const eliminarItem = async (req, res) => {
+  try {
+    const { itemId } = req.params;
+    const itemEliminado = await confItemSchema.findByIdAndDelete(itemId);
+    if (!itemEliminado) {
+      return res.status(404).json({ ok: false, message: "Ítem no encontrado" });
+    }
+    res.json({ ok: true, message: "Ítem eliminado con éxito" });
+  } catch (error) {
+    console.error("Error al eliminar ítem:", error);
+    res.status(500).json({ ok: false, message: "Error al eliminar ítem" });
+  }
+};

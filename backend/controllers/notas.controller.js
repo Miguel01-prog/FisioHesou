@@ -1,10 +1,39 @@
 import Nota from "../models/notas.model.js";
+import Cita from "../models/cita.model.js";
 
 // Crear nota
 export const crearNota = async (req, res) => {
     try {
         const nuevaNota = new Nota(req.body);
         await nuevaNota.save();
+
+        // Automatización: Cambiar estado de la cita más cercana a "Asistió"
+        if (nuevaNota.identificadorPaciente) {
+            const ahora = new Date();
+            const citasProgramadas = await Cita.find({
+                identificadorPaciente: nuevaNota.identificadorPaciente,
+                estado: "Programado"
+            });
+
+            if (citasProgramadas.length > 0) {
+                // Encontrar la cita más cercana a "ahora"
+                let citaMasCercana = citasProgramadas[0];
+                let diferenciaMinima = Math.abs(ahora - new Date(citaMasCercana.fechaCita));
+
+                for (let i = 1; i < citasProgramadas.length; i++) {
+                    const diff = Math.abs(ahora - new Date(citasProgramadas[i].fechaCita));
+                    if (diff < diferenciaMinima) {
+                        diferenciaMinima = diff;
+                        citaMasCercana = citasProgramadas[i];
+                    }
+                }
+
+                // Actualizar estado de la cita más cercana a "Asistió"
+                citaMasCercana.estado = "Asistió";
+                await citaMasCercana.save();
+                console.log(`Cita automática: Se marcó la cita del ${citaMasCercana.fechaCitaStr} a las ${citaMasCercana.horaCita} como "Asistió".`);
+            }
+        }
 
         res.status(201).json({ message: "Nota creada correctamente", nota: nuevaNota });
     } catch (err) {
