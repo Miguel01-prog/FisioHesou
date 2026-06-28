@@ -30,17 +30,15 @@ const ListaPlanesPaciente = () => {
     <div className="auth-wrapper-content">
       <div className="cards-column">
         <div className="auth-card auth-card-detail">
-          
+
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                <button className="btn" onClick={() => navigate(`/fisioterapeuta/paciente/${id}`)} style={{ background: '#f8f9fa', border: '1px solid #ddd', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer' }}>
-                  <FaArrowLeft /> Volver
-                </button>
-                <h2 className="title_card" style={{ marginTop: "10px" }}>
-                  Historial de Planes de Tratamiento
-                </h2>
+
+              <h2 className="title_card" style={{ marginTop: "10px" }}>
+                Historial de Planes de Tratamiento
+              </h2>
             </div>
-            
+
             <button
               className="save-btn"
               style={{ backgroundColor: "#28a745", padding: "8px 20px" }}
@@ -54,7 +52,7 @@ const ListaPlanesPaciente = () => {
 
           {cargando ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
-              <LoadingSpinner size="large" color="#42133B"/>
+              <LoadingSpinner size="large" color="#42133B" />
             </div>
           ) : planes.length === 0 ? (
             <p>No hay planes de tratamiento registrados para este paciente.</p>

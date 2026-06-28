@@ -12,6 +12,7 @@ import { showConfirm, showSuccess, showError } from "../../utils/alerts.js";
 export default function ListaPacientes() {
   const [pacientes, setPacientes] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [cargandoFicha, setCargandoFicha] = useState(false);
   const [selectedPaciente, setSelectedPaciente] = useState(null);
   const [tieneHistorial, setTieneHistorial] = useState(null);
   const [showModalCita, setShowModalCita] = useState(false);
@@ -27,11 +28,14 @@ export default function ListaPacientes() {
   const cargarCitasPaciente = async (identificadorPaciente) => {
     if (!identificadorPaciente) return;
     try {
+      setCargandoFicha(true);
       const { data } = await api.get(`/citas/detalles-paciente/${identificadorPaciente}`);
       setCitasPaciente(data.historial || []);
     } catch (err) {
       console.error("Error al cargar citas de paciente:", err);
       setCitasPaciente([]);
+    } finally {
+      setCargandoFicha(false);
     }
   };
 
@@ -42,20 +46,31 @@ export default function ListaPacientes() {
       setCitasPaciente([]);
       return;
     }
-    const verificarHistorial = async () => {
+    const cargarDatosFicha = async () => {
       try {
-        const res = await api.get(`/historial-notas/paciente/${selectedPaciente.identificadorPaciente}`);
-        if (res.data.ok && res.data.historial) {
-          setTieneHistorial(true);
-        } else {
-          setTieneHistorial(false);
+        setCargandoFicha(true);
+        // 1. Verificar Historial Clínico
+        let tieneHist = false;
+        try {
+          const res = await api.get(`/historial-notas/paciente/${selectedPaciente.identificadorPaciente}`);
+          if (res.data.ok && res.data.historial) {
+            tieneHist = true;
+          }
+        } catch (error) {
+          // ignore or log
         }
-      } catch (error) {
-        setTieneHistorial(false);
+        setTieneHistorial(tieneHist);
+
+        // 2. Cargar Citas
+        const { data } = await api.get(`/citas/detalles-paciente/${selectedPaciente.identificadorPaciente}`);
+        setCitasPaciente(data.historial || []);
+      } catch (err) {
+        console.error("Error al cargar datos de la ficha:", err);
+      } finally {
+        setCargandoFicha(false);
       }
     };
-    verificarHistorial();
-    cargarCitasPaciente(selectedPaciente.identificadorPaciente);
+    cargarDatosFicha();
   }, [selectedPaciente]);
 
   useEffect(() => {
@@ -183,10 +198,9 @@ export default function ListaPacientes() {
                   navigate(`/${user?.role || 'fisioterapeuta'}/creacion-historial`);
                 }}
               >
-                <span>➕</span> Registrar Paciente (Nuevo Expediente)
+                <span>➕</span> Registrar Paciente
               </button>
             </div>
-            <span className="subtitle-card-badge">Clínica Hesou</span>
           </div>
           <hr />
 
@@ -232,9 +246,7 @@ export default function ListaPacientes() {
                                 <span className="patient-list-name">
                                   {capitalizeWords(p.nombres)} {capitalizeWords(p.apellidos)}
                                 </span>
-                                <span className="patient-list-id-badge">
-                                  ID: {p.identificadorPaciente}
-                                </span>
+
                               </div>
                             </div>
                           </td>
@@ -297,143 +309,111 @@ export default function ListaPacientes() {
         {selectedPaciente && (
           <div className="patient-detail-card-wrapper">
             <div className="auth-card" style={{ marginTop: 0 }}>
-              <h3 className="title_card" style={{ marginTop: 0, marginBottom: 0 }}>Detalles del Paciente</h3>
-              <hr />
+              {cargandoFicha ? (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '350px' }}>
+                  <LoadingSpinner size="large" />
+                </div>
+              ) : (
+                <>
+                  <div className="card-header-split" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <h3 className="title_card" style={{ marginTop: 0, marginBottom: 0 }}>Detalle del paciente</h3>
 
-              <div className="patient-detail-avatar-section">
-                <div className="patient-detail-avatar-container">
-                  <div className="patient-detail-avatar">
-                    {selectedPaciente.nombres ? selectedPaciente.nombres.substring(0, 1).toUpperCase() : 'P'}
                   </div>
-                  <span className="active-dot-badge"></span>
-                </div>
-                <div>
-                  <h4 className="patient-detail-name">
-                    {capitalizeWords(selectedPaciente.nombres)} {capitalizeWords(selectedPaciente.apellidos)}
-                  </h4>
-                  <span className="patient-detail-id">ID: {selectedPaciente.identificadorPaciente}</span>
-                </div>
-              </div>
+                  <hr />
 
-              <div className="patient-detail-info-grid">
-                <div className="patient-detail-info-item">
-                  <span className="patient-detail-info-label">Teléfono</span>
-                  <span className="patient-detail-info-value">{selectedPaciente.telefono || 'No registrado'}</span>
-                </div>
-                <div className="patient-detail-info-item">
-                  <span className="patient-detail-info-label">Edad</span>
-                  <span className="patient-detail-info-value">{selectedPaciente.edad || 'No especificada'} años</span>
-                </div>
-
-
-                {(() => {
-                  const activeCitas = citasPaciente.filter(c => c.estado !== "Cancelado");
-                  const sortedCitas = [...activeCitas].sort((a, b) => {
-                    const dateTimeA = new Date(`${a.fechaCitaStr}T${a.horaCita}`);
-                    const dateTimeB = new Date(`${b.fechaCitaStr}T${b.horaCita}`);
-                    return dateTimeA - dateTimeB;
-                  });
-
-                  const ahora = new Date();
-                  const pastCitas = sortedCitas.filter(c => new Date(`${c.fechaCitaStr}T${c.horaCita}`) < ahora);
-                  const futureCitas = sortedCitas.filter(c => new Date(`${c.fechaCitaStr}T${c.horaCita}`) >= ahora);
-
-                  const ultimaCita = pastCitas.length > 0 ? pastCitas[pastCitas.length - 1] : null;
-                  const siguienteCita = futureCitas.length > 0 ? futureCitas[0] : null;
-
-                  return (
-                    <>
-                      <div className="patient-detail-info-item" style={{ gridColumn: 'span 2' }}>
-                        <span className="patient-detail-info-label">Última cita</span>
-                        <span className="patient-detail-info-value">
-                          {ultimaCita ? (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                              {formatDateDDMMYYYY(ultimaCita.fechaCitaStr)} a las {ultimaCita.horaCita} hs
-                              <span style={{
-                                fontSize: '0.75rem',
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                background: ultimaCita.estado === "Asistió" ? "rgba(16, 185, 129, 0.15)" : ultimaCita.estado === "No asistió" ? "rgba(239, 68, 68, 0.15)" : "rgba(255, 255, 255, 0.08)",
-                                color: ultimaCita.estado === "Asistió" ? "#10b981" : ultimaCita.estado === "No asistió" ? "#ef4444" : "inherit",
-                                fontWeight: '500'
-                              }}>
-
-                              </span>
-                            </span>
-                          ) : 'Ninguna registrada'}
-                        </span>
+                  <div className="patient-detail-avatar-section">
+                    <div className="patient-detail-avatar-container">
+                      <div className="patient-detail-avatar">
+                        {selectedPaciente.nombres ? selectedPaciente.nombres.substring(0, 1).toUpperCase() : 'P'}
                       </div>
-                      <div className="patient-detail-info-item" style={{ gridColumn: 'span 2' }}>
-                        <span className="patient-detail-info-label">Próxima cita</span>
-                        <span className="patient-detail-info-value">
-                          {siguienteCita ? (
-                            <span style={{ color: '#10b981', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                              {formatDateDDMMYYYY(siguienteCita.fechaCitaStr)} a las {siguienteCita.horaCita} hs
-                              <span style={{
-                                fontSize: '0.75rem',
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                background: 'rgba(16, 185, 129, 0.15)',
-                                color: '#10b981',
-                                fontWeight: '500'
-                              }}>
-                                {siguienteCita.estado || "Programado"}
-                              </span>
+                      <span className="active-dot-badge"></span>
+                    </div>
+                    <div>
+                      <h4 className="patient-detail-name">
+                        {capitalizeWords(selectedPaciente.nombres)} {capitalizeWords(selectedPaciente.apellidos)}
+                      </h4>
+                    </div>
+                  </div>
+
+                  <div className="patient-detail-info-grid">
+                    <div className="patient-detail-info-item">
+                      <span className="patient-detail-info-label">Teléfono</span>
+                      <span className="patient-detail-info-value">{selectedPaciente.telefono || 'No registrado'}</span>
+                    </div>
+                    <div className="patient-detail-info-item">
+                      <span className="patient-detail-info-label">Edad</span>
+                      <span className="patient-detail-info-value">{selectedPaciente.edad || 'No especificada'} años</span>
+                    </div>
+
+
+                    {(() => {
+                      const activeCitas = citasPaciente.filter(c => c.estado !== "Cancelado");
+                      const sortedCitas = [...activeCitas].sort((a, b) => {
+                        const dateTimeA = new Date(`${a.fechaCitaStr}T${a.horaCita}`);
+                        const dateTimeB = new Date(`${b.fechaCitaStr}T${b.horaCita}`);
+                        return dateTimeA - dateTimeB;
+                      });
+
+                      const ahora = new Date();
+                      const pastCitas = sortedCitas.filter(c => new Date(`${c.fechaCitaStr}T${c.horaCita}`) < ahora);
+                      const futureCitas = sortedCitas.filter(c => new Date(`${c.fechaCitaStr}T${c.horaCita}`) >= ahora);
+
+                      const ultimaCita = pastCitas.length > 0 ? pastCitas[pastCitas.length - 1] : null;
+                      const siguienteCita = futureCitas.length > 0 ? futureCitas[0] : null;
+
+                      return (
+                        <>
+                          <div className="patient-detail-info-item" style={{ gridColumn: 'span 2' }}>
+                            <span className="patient-detail-info-label">Última cita</span>
+                            <span className="patient-detail-info-value">
+                              {ultimaCita ? (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                  {formatDateDDMMYYYY(ultimaCita.fechaCitaStr)} a las {ultimaCita.horaCita} hs
+                                  <span style={{
+                                    fontSize: '0.75rem',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    background: ultimaCita.estado === "Asistió" ? "rgba(16, 185, 129, 0.15)" : ultimaCita.estado === "No asistió" ? "rgba(239, 68, 68, 0.15)" : "rgba(255, 255, 255, 0.08)",
+                                    color: ultimaCita.estado === "Asistió" ? "#10b981" : ultimaCita.estado === "No asistió" ? "#ef4444" : "inherit",
+                                    fontWeight: '500'
+                                  }}>
+
+                                  </span>
+                                </span>
+                              ) : 'Ninguna registrada'}
                             </span>
-                          ) : (
-                            <span style={{ color: '#ef4444', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                              ⚠️ Sin cita próxima
+                          </div>
+                          <div className="patient-detail-info-item" style={{ gridColumn: 'span 2' }}>
+                            <span className="patient-detail-info-label">Próxima cita</span>
+                            <span className="patient-detail-info-value">
+                              {siguienteCita ? (
+                                <span style={{ color: '#10b981', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                  {formatDateDDMMYYYY(siguienteCita.fechaCitaStr)} a las {siguienteCita.horaCita} hs
+
+                                </span>
+                              ) : (
+                                <span style={{ color: '#ef4444', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                  ⚠️ Sin cita próxima
+                                </span>
+                              )}
                             </span>
-                          )}
-                        </span>
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
 
-              <div className="patient-detail-actions-wrapper">
-                <button
-                  className="patient-detail-action-btn btn-primary-action hover-grow"
-                  onClick={() => handleViewFicha(selectedPaciente)}
-                >
-                  <FaFolderOpen /> Ver Ficha y Notas SOAP
-                </button>
-
-                {tieneHistorial === false && (
-                  <button
-                    className="patient-detail-action-btn btn-secondary-action hover-grow"
-                    onClick={() => handleCreateHistorial(selectedPaciente)}
-                  >
-                    <FaNotesMedical /> Registrar Historial Clínico
-                  </button>
-                )}
-
-                <button
-                  className="patient-detail-action-btn btn-secondary-action hover-grow"
-                  onClick={() => setShowModalHistorial(true)}
-                  style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', border: '1px solid rgba(99, 102, 241, 0.2)' }}
-                >
-                  <FaCalendarAlt /> Ver Historial de Citas ({citasPaciente.length})
-                </button>
-
-                <button
-                  className="patient-detail-action-btn btn-accent-action hover-grow"
-                  onClick={() => {
-                    setCitaParaReagendar(null);
-                    setShowModalCita(true);
-                  }}
-                >
-                  <FaCalendarAlt /> Agendar Nueva Cita
-                </button>
-
-                {/*<button
-                  className="patient-detail-action-btn btn-danger-action hover-grow"
-                  onClick={() => handleEliminarPaciente(selectedPaciente.identificadorPaciente)}
-                >
-                  <FaTrashAlt /> Eliminar Paciente
-                </button>*/}
-              </div>
+                  <div className="patient-detail-actions-wrapper">
+                    <button
+                      className="patient-detail-action-btn btn-primary-action hover-grow"
+                      onClick={() => handleViewFicha(selectedPaciente)}
+                      style={{ margin: 0, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}
+                    >
+                      <FaFolderOpen /> Gestionar Paciente
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -451,7 +431,7 @@ export default function ListaPacientes() {
             telefono: selectedPaciente.telefono,
             edad: selectedPaciente.edad,
             email: selectedPaciente.email,
-            area: selectedPaciente.area
+            area: selectedPaciente.area || user?.role || 'fisioterapeuta'
           }}
           citaAReagendar={citaParaReagendar}
           onClose={() => {

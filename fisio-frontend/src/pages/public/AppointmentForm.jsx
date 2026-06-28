@@ -8,6 +8,7 @@ import api from "../../api.js";
 import { showSuccess, showError } from "../../utils/alerts.js";
 import { FaCalendarAlt } from "react-icons/fa";
 import { FiChevronLeft, FiClock, FiCheckCircle } from "react-icons/fi";
+import LoadingSpinner from "../../components/layout/LoadingSpinner.jsx";
 
 export default function AppointmentForm() {
   const [tipoConsulta, setTipoConsulta] = useState("");
@@ -20,6 +21,8 @@ export default function AppointmentForm() {
   const [availableHours, setAvailableHours] = useState([]);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showHours, setShowHours] = useState(false);
+  const [loadingBlocks, setLoadingBlocks] = useState(false);
+  const [savingCita, setSavingCita] = useState(false);
 
   const [formData, setFormData] = useState({
     nombres: "",
@@ -53,6 +56,7 @@ export default function AppointmentForm() {
     if (!tipoConsulta) return;
     const fetchBlockedDates = async () => {
       try {
+        setLoadingBlocks(true);
         const { data } = await api.get(`/horarios/${tipoConsulta}`);
         setBlockedDatesAdmin(data.blockedDatesAdmin || []);
         setBlockedHoursAdmin(data.blockedHoursAdmin || {});
@@ -60,6 +64,8 @@ export default function AppointmentForm() {
         setBlockedHoursCitas(data.blockedHoursCitas || {});
       } catch (err) {
         console.error("Error al obtener bloqueos:", err);
+      } finally {
+        setLoadingBlocks(false);
       }
     };
     fetchBlockedDates();
@@ -134,6 +140,7 @@ export default function AppointmentForm() {
       return showError("Campos vacíos", "Completa todos los campos obligatorios del formulario (incluyendo correo electrónico).");
 
     try {
+      setSavingCita(true);
       const { data } = await api.post("/citas", {
         nombres: formData.nombres,
         apellidoPaterno: formData.apellidoPaterno,
@@ -167,6 +174,8 @@ export default function AppointmentForm() {
     } catch (err) {
       console.error(err);
       showError("Error", "No se pudo guardar la cita. Intenta nuevamente.");
+    } finally {
+      setSavingCita(false);
     }
   };
 
@@ -328,9 +337,10 @@ export default function AppointmentForm() {
               type="button"
               className="btn btn-primary btn-size-lg w-100 hover-grow glow-pulse-purple" 
               onClick={handleSaveCita}
-              style={{ height: "50px", fontSize: "1.05rem" }}
+              style={{ height: "50px", fontSize: "1.05rem", display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              disabled={savingCita}
             >
-              Confirmar y Agendar Cita
+              {savingCita ? <LoadingSpinner size="small" color="#fff" /> : "Confirmar y Agendar Cita"}
             </button>
           )}
         </div>
@@ -349,58 +359,66 @@ export default function AppointmentForm() {
               Especialidad: <strong>{tipoConsulta}</strong>
             </p>
 
-            <Calendar
-              onClickDay={handleDateSelect}
-              tileDisabled={({ date }) => {
-                const iso = toLocalISODate(date);
-                const hoy = toLocalISODate(new Date());
-                return iso < hoy || isDayFullyBlocked(iso);
-              }}
-              tileClassName={({ date }) => {
-                const iso = toLocalISODate(date);
-                const hoy = toLocalISODate(new Date());
-                if (iso < hoy) return "past-day";
-
-                if (blockedDatesAdmin.includes(iso)) return "blocked-admin";
-                if (blockedDatesPaciente.includes(iso)) return "blocked-paciente";
-                return null;
-              }}
-            />
-
-            {showHours && selectedDate && (
-              <div style={{ marginTop: "20px", textAlign: "center" }}>
-                <h4 className="text-muted mb-3" style={{ fontSize: "0.9rem", fontWeight: "600" }}>
-                  Horarios para el {formatDateDDMMYYYY(selectedDate)}
-                </h4>
-                {availableHours.length > 0 ? (
-                  <div className="hours-grid-modern">
-                    {allHours.map((hour) => {
-                      const isBlockedAdmin = blockedHoursAdmin[selectedDate]?.includes(hour);
-                      const isBlockedPaciente = blockedHoursCitas[selectedDate]?.includes(hour);
-                      const isAvailable = availableHours.includes(hour);
-                      const isSelected = selectedHour === hour;
-
-                      return (
-                        <button
-                          key={hour}
-                          type="button"
-                          className={`hour-btn 
-                            ${isBlockedAdmin ? "blocked-admin-hour" : ""} 
-                            ${isBlockedPaciente ? "blocked-paciente-hour" : ""} 
-                            ${isAvailable ? "" : "disabled"}
-                            ${isSelected ? "selected-hour" : ""}`}
-                          disabled={!isAvailable}
-                          onClick={() => isAvailable && handleHourSelect(hour)}
-                        >
-                          {hour}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-muted mt-2" style={{ fontSize: "0.85rem" }}>No hay horarios disponibles en esta fecha.</p>
-                )}
+            {loadingBlocks ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem 0' }}>
+                <LoadingSpinner size="large" />
               </div>
+            ) : (
+              <>
+                <Calendar
+                  onClickDay={handleDateSelect}
+                  tileDisabled={({ date }) => {
+                    const iso = toLocalISODate(date);
+                    const hoy = toLocalISODate(new Date());
+                    return iso < hoy || isDayFullyBlocked(iso);
+                  }}
+                  tileClassName={({ date }) => {
+                    const iso = toLocalISODate(date);
+                    const hoy = toLocalISODate(new Date());
+                    if (iso < hoy) return "past-day";
+
+                    if (blockedDatesAdmin.includes(iso)) return "blocked-admin";
+                    if (blockedDatesPaciente.includes(iso)) return "blocked-paciente";
+                    return null;
+                  }}
+                />
+
+                {showHours && selectedDate && (
+                  <div style={{ marginTop: "20px", textAlign: "center" }}>
+                    <h4 className="text-muted mb-3" style={{ fontSize: "0.9rem", fontWeight: "600" }}>
+                      Horarios para el {formatDateDDMMYYYY(selectedDate)}
+                    </h4>
+                    {availableHours.length > 0 ? (
+                      <div className="hours-grid-modern">
+                        {allHours.map((hour) => {
+                          const isBlockedAdmin = blockedHoursAdmin[selectedDate]?.includes(hour);
+                          const isBlockedPaciente = blockedHoursCitas[selectedDate]?.includes(hour);
+                          const isAvailable = availableHours.includes(hour);
+                          const isSelected = selectedHour === hour;
+
+                          return (
+                            <button
+                              key={hour}
+                              type="button"
+                              className={`hour-btn 
+                                ${isBlockedAdmin ? "blocked-admin-hour" : ""} 
+                                ${isBlockedPaciente ? "blocked-paciente-hour" : ""} 
+                                ${isAvailable ? "" : "disabled"}
+                                ${isSelected ? "selected-hour" : ""}`}
+                              disabled={!isAvailable}
+                              onClick={() => isAvailable && handleHourSelect(hour)}
+                            >
+                              {hour}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-muted mt-2" style={{ fontSize: "0.85rem" }}>No hay horarios disponibles en esta fecha.</p>
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>,

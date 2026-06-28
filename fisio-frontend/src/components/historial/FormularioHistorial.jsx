@@ -37,7 +37,7 @@ const SignaturePad = ({ label, value, onChange, placeholderName, nameValue, onNa
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
-    
+
     let clientX, clientY;
     if (e.touches && e.touches.length > 0) {
       clientX = e.touches[0].clientX;
@@ -46,10 +46,10 @@ const SignaturePad = ({ label, value, onChange, placeholderName, nameValue, onNa
       clientX = e.clientX;
       clientY = e.clientY;
     }
-    
+
     const x = ((clientX - rect.left) / rect.width) * canvas.width;
     const y = ((clientY - rect.top) / rect.height) * canvas.height;
-    
+
     return { x, y };
   };
 
@@ -102,7 +102,7 @@ const SignaturePad = ({ label, value, onChange, placeholderName, nameValue, onNa
   return (
     <div className="signature-pad-container" style={{ border: "1px solid rgba(139, 92, 246, 0.15)", borderRadius: "12px", padding: "1.25rem", background: "var(--card-bg)", boxShadow: "var(--shadow-sm)" }}>
       <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)", marginBottom: "0.5rem", display: "block" }}>{label}</label>
-      
+
       <div className="canvas-wrapper" style={{ position: "relative", background: "#ffffff", border: "1px dashed rgba(139, 92, 246, 0.25)", borderRadius: "8px", overflow: "hidden", height: "160px", marginBottom: "1rem" }}>
         <canvas
           ref={canvasRef}
@@ -137,7 +137,7 @@ const SignaturePad = ({ label, value, onChange, placeholderName, nameValue, onNa
           Limpiar
         </button>
       </div>
-      
+
       <div className="signature-fields" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
         <div>
           <label className="form-label" style={{ fontSize: "0.8rem", marginBottom: "4px", fontWeight: "600" }}>Nombre firma</label>
@@ -640,11 +640,11 @@ const FormularioHistorial = () => {
       });
 
       showSuccess("¡Historial Guardado!", "El historial y la nota SOAP se han creado exitosamente.");
-      
+
       if (isNewPatient) {
         localStorage.removeItem("dataPaciente");
       }
-      
+
       navigate(`/${user?.role || 'fisioterapeuta'}/pacientes`);
     } catch (err) {
       console.error(err);
@@ -665,10 +665,9 @@ const FormularioHistorial = () => {
         <div className="auth-card auth-card-detail" style={{ marginTop: "1rem", padding: "2.5rem" }}>
           <div className="card-header-split" style={{ marginBottom: "1.5rem" }}>
             <h2 className="title_card" style={{ margin: 0 }}>Crear Historial Clínico</h2>
-            <span className="subtitle-card-badge">Expediente Digital</span>
           </div>
           <hr style={{ marginBottom: "1.5rem" }} />
-          
+
           <div className="tabs" style={{ marginBottom: "2rem" }}>
             <button type="button" className={`tab ${activeTab === "datosPersonales" ? "active" : ""}`} onClick={() => setActiveTab("datosPersonales")}>Resumen</button>
             <button type="button" className={`tab ${activeTab === "AnaAnte" ? "active" : ""}`} onClick={() => setActiveTab("AnaAnte")}>Anamnesis y Antecedentes</button>
@@ -687,54 +686,54 @@ const FormularioHistorial = () => {
                       <>
                         <div className="col" style={{ gridColumn: "span 2" }}>
                           <label className="form-label">Nombres *</label>
-                          <input 
-                            type="text" 
-                            className="input" 
-                            value={newPatientData.nombres} 
-                            onChange={(e) => setNewPatientData(prev => ({ ...prev, nombres: e.target.value }))} 
-                            required 
+                          <input
+                            type="text"
+                            className="input"
+                            value={newPatientData.nombres}
+                            onChange={(e) => setNewPatientData(prev => ({ ...prev, nombres: e.target.value }))}
+                            required
                             placeholder="Nombres"
                           />
                         </div>
                         <div className="col">
                           <label className="form-label">Apellido Paterno *</label>
-                          <input 
-                            type="text" 
-                            className="input" 
-                            value={newPatientData.apellidoPaterno} 
-                            onChange={(e) => setNewPatientData(prev => ({ ...prev, apellidoPaterno: e.target.value }))} 
-                            required 
+                          <input
+                            type="text"
+                            className="input"
+                            value={newPatientData.apellidoPaterno}
+                            onChange={(e) => setNewPatientData(prev => ({ ...prev, apellidoPaterno: e.target.value }))}
+                            required
                             placeholder="Apellido Paterno"
                           />
                         </div>
                         <div className="col">
                           <label className="form-label">Apellido Materno</label>
-                          <input 
-                            type="text" 
-                            className="input" 
-                            value={newPatientData.apellidoMaterno} 
-                            onChange={(e) => setNewPatientData(prev => ({ ...prev, apellidoMaterno: e.target.value }))} 
+                          <input
+                            type="text"
+                            className="input"
+                            value={newPatientData.apellidoMaterno}
+                            onChange={(e) => setNewPatientData(prev => ({ ...prev, apellidoMaterno: e.target.value }))}
                             placeholder="Apellido Materno"
                           />
                         </div>
                         <div className="col">
                           <label className="form-label">Edad *</label>
-                          <input 
-                            type="number" 
-                            className="input" 
-                            value={newPatientData.edad} 
-                            onChange={(e) => setNewPatientData(prev => ({ ...prev, edad: e.target.value }))} 
-                            required 
+                          <input
+                            type="number"
+                            className="input"
+                            value={newPatientData.edad}
+                            onChange={(e) => setNewPatientData(prev => ({ ...prev, edad: e.target.value }))}
+                            required
                             placeholder="Ej. 30"
                             min="1"
                           />
                         </div>
                         <div className="col">
                           <label className="form-label">Área / Especialidad *</label>
-                          <select 
-                            className="input" 
-                            value={newPatientData.area} 
-                            onChange={(e) => setNewPatientData(prev => ({ ...prev, area: e.target.value }))} 
+                          <select
+                            className="input"
+                            value={newPatientData.area}
+                            onChange={(e) => setNewPatientData(prev => ({ ...prev, area: e.target.value }))}
                             required
                           >
                             <option value="fisioterapeuta">Fisioterapia</option>
@@ -746,7 +745,7 @@ const FormularioHistorial = () => {
                       <>
                         <div className="col" style={{ gridColumn: "span 2" }}>
                           <label className="form-label">Nombre completo</label>
-                          <input type="text" className="input" value={`${paciente.nombres} ${paciente.apellidos}`} readOnly style={{ background: "rgba(226, 232, 240, 0.4)" }} />
+                          <input type="text" className="input" value={`${paciente.nombres || ""} ${paciente.apellidos || ""}`.replace(/\s+/g, ' ').trim()} readOnly style={{ background: "rgba(226, 232, 240, 0.4)" }} />
                         </div>
                         <div className="col">
                           <label className="form-label">Edad (Años)</label>
@@ -783,12 +782,12 @@ const FormularioHistorial = () => {
                     <div className="col">
                       <label className="form-label">Teléfono *</label>
                       {isNewPatient ? (
-                        <input 
-                          type="text" 
-                          className="input" 
-                          value={newPatientData.telefono} 
-                          onChange={(e) => setNewPatientData(prev => ({ ...prev, telefono: e.target.value }))} 
-                          required 
+                        <input
+                          type="text"
+                          className="input"
+                          value={newPatientData.telefono}
+                          onChange={(e) => setNewPatientData(prev => ({ ...prev, telefono: e.target.value }))}
+                          required
                           placeholder="Ej. 5512345678"
                         />
                       ) : (
@@ -815,7 +814,7 @@ const FormularioHistorial = () => {
             {activeTab === "consentimiento" && paciente && (
               <div className="tab-content">
                 <div className="clinical-form-section" style={{ background: "#ffffff", border: "1px solid var(--border-light)", boxShadow: "var(--shadow-md)", padding: "2.5rem", borderRadius: "16px", color: "#1e293b", fontFamily: "var(--font-family-display, inherit)", lineHeight: "1.6" }}>
-                  
+
                   <div style={{ textAlign: "center", marginBottom: "2.5rem", borderBottom: "2px double var(--primary-light)", paddingBottom: "1.5rem" }}>
                     <h2 style={{ textTransform: "uppercase", fontSize: "1.4rem", letterSpacing: "1px", fontWeight: "900", color: "var(--primary)", margin: "0 0 5px 0" }}>Consentimiento Informado</h2>
                     <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: "600" }}>SERVICIO DE FISIOTERAPIA - FISIOHESOU</span>

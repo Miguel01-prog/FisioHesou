@@ -40,11 +40,6 @@ export default function CrearNota() {
   };
 
   useEffect(() => {
-    // Si estamos en pantallas grandes, el acordeón de la última nota se abre por defecto
-    if (window.innerWidth >= 1200) {
-      setOpenUltimaNota(true);
-    }
-
     const init = async () => {
       const datos = JSON.parse(localStorage.getItem("dataPaciente"));
       if (!datos) return;
@@ -137,7 +132,7 @@ export default function CrearNota() {
       <div className="cards-column">
 
         {ultimaNota && (
-          <div className="auth-card auth-card-detail accordion mb-4">
+          <div className={`auth-card auth-card-detail accordion mb-4 ${!openUltimaNota ? "pulse-expand-hint" : ""}`}>
             <button
               type="button"
               className={`accordion-header ${openUltimaNota ? "open" : ""}`}
@@ -147,7 +142,7 @@ export default function CrearNota() {
                 Última Nota: {ultimaNota.idHistoricoFk || ultimaNota.idNota}
               </span>
               <span className="accordion-icon">
-                {openUltimaNota ? <IoCaretUp color="#808080ff" /> : <IoCaretDown color="#808080ff" />}
+                {openUltimaNota ? <IoCaretUp /> : <IoCaretDown />}
               </span>
             </button>
 

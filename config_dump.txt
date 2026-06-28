@@ -1,0 +1,10 @@
+=== CONFIGURACIONES DETECTADAS ===
+Clave: "AntMed", Descripcion: "Antecedentes médicos", ID: "693f718d58c9648c5acca23b"
+Clave: "AntFam", Descripcion: "Antecedentes familiares", ID: "693f717858c9648c5acca239"
+==================================
+
+ITEMS PARA Antecedentes médicos (AntMed):
+  - ID: "69640ac260e9f0942da57418", Valor: "PRUEBA DE ANTECEDETNE RANCHO"
+
+ITEMS PARA Antecedentes familiares (AntFam):
+  - ID: "6951c4ea5ee8b5da5eb7ec9f", Valor: "prueba antecednetes"

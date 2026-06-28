@@ -141,7 +141,14 @@ export const generaridHistoricoFk = async (req, res) => {
         });
 
         // Generar ID: iniciales + fecha + conteo + random
-        const iniciales = `${nombrePaciente[0]}${apellidoPaciente[0]}`.toUpperCase();
+        const parts = apellidoPaciente.trim().split(/\s+/).filter(Boolean);
+        let apellidoIniciales = "";
+        parts.forEach(part => {
+            if (part && part[0]) {
+                apellidoIniciales += part[0];
+            }
+        });
+        const iniciales = `${nombrePaciente[0]}${apellidoIniciales}`.toUpperCase();
         const idHistoricoFk = `${iniciales}-${mesAñoNota}-${cantidadNotas + 1}`;
 
         res.json({ idHistoricoFk, mesAñoNota });

@@ -4,6 +4,7 @@ import api from "../../api";
 import { IoIosAddCircle } from "react-icons/io";
 import { createPortal } from "react-dom";
 import { showSuccess, showError } from "../../utils/alerts";
+import LoadingSpinner from "./LoadingSpinner.jsx";
 
 const Antecedentes = () => {
   const [categorias, setCategorias] = useState([]);
@@ -11,6 +12,8 @@ const Antecedentes = () => {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [categoriaActual, setCategoriaActual] = useState(null);
   const [nuevoItem, setNuevoItem] = useState("");
+  const [cargandoCategorias, setCargandoCategorias] = useState(true);
+  const [cargandoItems, setCargandoItems] = useState(false);
 
   useEffect(() => {
     cargarCategorias();
@@ -18,10 +21,13 @@ const Antecedentes = () => {
 
   const cargarCategorias = async () => {
     try {
+      setCargandoCategorias(true);
       const res = await api.get("/configuracion/confGen");
       setCategorias(res.data?.configuraciones || []);
     } catch (err) {
       console.error(err);
+    } finally {
+      setCargandoCategorias(false);
     }
   };
 
@@ -30,6 +36,7 @@ const Antecedentes = () => {
     setNuevoItem("");
     setMostrarModal(true);
     setItems([]);
+    setCargandoItems(true);
 
     try {
       const res = await api.get(`/configuracion/item/${categoria.clave}`);
@@ -37,6 +44,8 @@ const Antecedentes = () => {
     } catch (err) {
       console.error(err);
       setItems([]);
+    } finally {
+      setCargandoItems(false);
     }
   };
 
@@ -91,39 +100,45 @@ const Antecedentes = () => {
           </div>
           <hr style={{ marginBottom: "1.5rem" }} />
 
-          <div className="table-responsive-container">
-            <table className="tabla-pacientes">
-              <thead>
-                <tr>
-                  <th style={{ width: "50%" }}>Descripción</th>
-                  <th style={{ textAlign: 'center', width: '50%' }}>Ver</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categorias.map((c) => (
-                  <tr key={c._id}>
-                    <td>
-                      <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>
-                        {c.descripcion}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'center' }}>
-                      <button
-                        type="button"
-                        className="patient-detail-action-btn btn-primary-action hover-grow"
-                        style={{ width: "auto", padding: "0.4rem 0.8rem", fontSize: "0.8rem", borderRadius: "6px", display: "inline-flex", alignItems: "center", gap: "0.3rem", margin: 0 }}
-                        onClick={() => abrirModal(c)}
-                        title={`Ver antecedentes de ${c.descripcion}`}
-                        aria-label={`Ver antecedentes de ${c.descripcion}`}
-                      >
-                        <FaEye />
-                      </button>
-                    </td>
+          {cargandoCategorias ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem 0' }}>
+              <LoadingSpinner size="large" />
+            </div>
+          ) : (
+            <div className="table-responsive-container">
+              <table className="tabla-pacientes">
+                <thead>
+                  <tr>
+                    <th style={{ width: "50%" }}>Descripción</th>
+                    <th style={{ textAlign: 'center', width: '50%' }}>Ver</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {categorias.map((c) => (
+                    <tr key={c._id}>
+                      <td>
+                        <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>
+                          {c.descripcion}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <button
+                          type="button"
+                          className="patient-detail-action-btn btn-primary-action hover-grow"
+                          style={{ width: "auto", padding: "0.4rem 0.8rem", fontSize: "0.8rem", borderRadius: "6px", display: "inline-flex", alignItems: "center", gap: "0.3rem", margin: 0 }}
+                          onClick={() => abrirModal(c)}
+                          title={`Ver antecedentes de ${c.descripcion}`}
+                          aria-label={`Ver antecedentes de ${c.descripcion}`}
+                        >
+                          <FaEye />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
       </div>
@@ -140,44 +155,52 @@ const Antecedentes = () => {
             <hr style={{ marginBottom: "1.5rem" }} />
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxHeight: '320px', overflowY: 'auto', paddingRight: '4px', marginBottom: "1.5rem" }}>
-              {items.length === 0 && (
-                <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '1.5rem 0', fontSize: '0.9rem' }}>
-                  No hay antecedentes registrados en esta categoría.
-                </p>
-              )}
-
-              {items.length > 0 && items.map((i) => (
-                <div key={i._id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <input
-                    className="input"
-                    value={i.valor}
-                    readOnly
-                    style={{ background: 'rgba(226, 232, 240, 0.4)', cursor: 'default', flex: 1 }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleEliminarItem(i._id)}
-                    style={{
-                      background: 'rgba(239, 68, 68, 0.1)',
-                      color: 'var(--danger, #ef4444)',
-                      border: 'none',
-                      borderRadius: '8px',
-                      width: '40px',
-                      height: '40px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      fontSize: '1rem',
-                      transition: 'all 0.2s',
-                      flexShrink: 0
-                    }}
-                    title="Eliminar antecedente"
-                  >
-                    <FaTrash />
-                  </button>
+              {cargandoItems ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem 0' }}>
+                  <LoadingSpinner size="medium" />
                 </div>
-              ))}
+              ) : (
+                <>
+                  {items.length === 0 && (
+                    <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '1.5rem 0', fontSize: '0.9rem' }}>
+                      No hay antecedentes registrados en esta categoría.
+                    </p>
+                  )}
+
+                  {items.length > 0 && items.map((i) => (
+                    <div key={i._id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <input
+                        className="input"
+                        value={i.valor}
+                        readOnly
+                        style={{ background: 'rgba(226, 232, 240, 0.4)', cursor: 'default', flex: 1 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleEliminarItem(i._id)}
+                        style={{
+                          background: 'rgba(239, 68, 68, 0.1)',
+                          color: 'var(--danger, #ef4444)',
+                          border: 'none',
+                          borderRadius: '8px',
+                          width: '40px',
+                          height: '40px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          fontSize: '1rem',
+                          transition: 'all 0.2s',
+                          flexShrink: 0
+                        }}
+                        title="Eliminar antecedente"
+                      >
+                        <FaTrash />
+                      </button>
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
 
             <hr style={{ marginBottom: "1.5rem" }} />

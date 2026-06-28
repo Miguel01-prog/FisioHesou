@@ -107,3 +107,18 @@ export const eliminarPaciente = async (req, res) => {
     res.status(500).json({ message: "Error al eliminar paciente", error: err.message });
   }
 };
+
+export const obtenerPacientePorId = async (req, res) => {
+  console.log("- Obteniendo paciente por ID:", req.params.id);
+  try {
+    const { id } = req.params;
+    const paciente = await Paciente.findOne({ identificadorPaciente: id });
+    if (!paciente) {
+      return res.status(404).json({ message: "Paciente no encontrado" });
+    }
+    res.json(paciente);
+  } catch (err) {
+    console.error("Error al obtener paciente por ID:", err);
+    res.status(500).json({ message: "Error al obtener paciente" });
+  }
+};

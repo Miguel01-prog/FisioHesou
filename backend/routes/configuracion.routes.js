@@ -1,6 +1,10 @@
 import express from "express";
 import { obtenerConfiguraciones, crearConfiguracion, crearItem, obtenerItemsPorClave, eliminarItem} from "../controllers/configuracion.controller.js";
+import { verifyToken } from "../libs/auth.middleware.js";
+
 const router = express.Router();
+
+router.use(verifyToken);
 
 router.get("/confGen", obtenerConfiguraciones);
 router.post("/", crearConfiguracion);

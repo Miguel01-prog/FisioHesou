@@ -3,8 +3,11 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { crearEjercicio, obtenerEjercicios, eliminarEjercicio } from "../controllers/ejercicio.controller.js";
+import { verifyToken } from "../libs/auth.middleware.js";
 
 const router = express.Router();
+
+router.use(verifyToken);
 
 // Configurar multer para guardar imágenes
 const storage = multer.diskStorage({

@@ -2,6 +2,7 @@ import express from "express";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import mongoSanitize from "express-mongo-sanitize";
 
 import authRoutes from "./routes/auth.routes.js";
 import citasRoutes from "./routes/citas.routes.js";
@@ -49,13 +50,18 @@ app.use(cors({
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      callback(null, true); // Fallback to trust in local dev
+      callback(new Error("No permitido por la política de CORS de la aplicación"));
     }
   },
   credentials: true
 }));
 
 app.use(express.json());
+app.use((req, res, next) => {
+  if (req.body) mongoSanitize.sanitize(req.body);
+  if (req.params) mongoSanitize.sanitize(req.params);
+  next();
+});
 app.use(cookieParser());
 
 // Servir archivos estáticos para las imágenes

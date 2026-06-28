@@ -153,11 +153,17 @@ const CalendarioBloqueo = ({ role }) => {
           </div>
           <hr style={{ marginBottom: "1.5rem" }} />
 
-          <Calendar
-            onClickDay={handleDayClick}
-            tileDisabled={tileDisabled}
-            tileClassName={tileClassName}
-          />
+          {loading && blockedDatesAdmin.length === 0 ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem 0' }}>
+              <LoadingSpinner size="large" />
+            </div>
+          ) : (
+            <Calendar
+              onClickDay={handleDayClick}
+              tileDisabled={tileDisabled}
+              tileClassName={tileClassName}
+            />
+          )}
           
           <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.85rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Sidebar from './Sidebar.jsx';
 import Header from './Header.jsx';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import './FisioLayout.css'; // Reuse the standard structural layout css
 
 /**
@@ -10,6 +10,8 @@ import './FisioLayout.css'; // Reuse the standard structural layout css
 export default function AdminLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <div className="layout-app-wrapper">
@@ -35,6 +37,16 @@ export default function AdminLayout() {
 
         {/* 🧱 Dynamic main content body */}
         <main className="layout-content-view">
+          {location.pathname !== '/admin' && location.pathname !== '/admin/' && (
+            <div className="layout-back-btn-container">
+              <button 
+                className="back-generic-btn"
+                onClick={() => navigate(-1)}
+              >
+                ⬅ Volver
+              </button>
+            </div>
+          )}
           <Outlet />
         </main>
       </div>

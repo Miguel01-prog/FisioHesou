@@ -3,9 +3,12 @@ import CardPaciente from "../pacientes/CardPaciente.jsx";
 import { useNavigate, useParams } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import api from "../../api.js";
-import { FaEye, FaFolderOpen, FaNotesMedical, FaPlus } from "react-icons/fa";
+import { FaEye, FaFolderOpen, FaNotesMedical, FaPlus, FaCalendarAlt } from "react-icons/fa";
 import LoadingSpinner from "../layout/LoadingSpinner.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
+import ModalAgendarCita from "../layout/ModalAgendarCita.jsx";
+import ModalHistorialCitas from "../layout/ModalHistorialCitas.jsx";
+import { showSuccess, showError } from "../../utils/alerts.js";
 
 export default function PacienteDetalle() {
   const { id } = useParams();
@@ -13,35 +16,46 @@ export default function PacienteDetalle() {
   const [historialClinico, setHistorialClinico] = useState(null);
   const [paciente, setPaciente] = useState(null);
   const [planes, setPlanes] = useState([]);
+  const [citas, setCitas] = useState([]);
+  const [showModalCita, setShowModalCita] = useState(false);
+  const [showModalHistorial, setShowModalHistorial] = useState(false);
+  const [citaParaReagendar, setCitaParaReagendar] = useState(null);
   const [cargando, setCargando] = useState(true);
   const { user } = useAuth();
   const navigate = useNavigate();
 
+
   const rolePath = user?.role || 'fisioterapeuta';
+
+  const cargarCitasPaciente = async () => {
+    try {
+      const resCitas = await api.get(`/citas/detalles-paciente/${id}`);
+      setCitas(resCitas.data.historial || []);
+    } catch (err) {
+      console.error("Error al recargar citas:", err);
+    }
+  };
 
   // 📌 Cargar historial y notas del paciente
   useEffect(() => {
     const fetchDatos = async () => {
       try {
         // Cargar detalles del paciente
-        const resCitas = await api.get(`/citas/detalles-paciente/${id}`);
-        if (resCitas.data.historial && resCitas.data.historial.length > 0) {
-          const p = resCitas.data.historial[0];
-          setPaciente({
-            identificadorPaciente: p.identificadorPaciente,
-            nombres: p.nombres,
-            apellidos: p.apellidos,
-            edad: p.edad,
-            telefono: p.telefono,
-            fechaRegistro: p.fechaCreado,
-          });
-        } else {
-          // Intentar desde localStorage si no tiene citas previas
+        try {
+          const resPac = await api.get(`/pacientes/${id}`);
+          setPaciente(resPac.data);
+          localStorage.setItem("dataPaciente", JSON.stringify(resPac.data));
+        } catch (err) {
+          console.error("Error al cargar paciente por ID, usando fallback:", err);
           const localData = JSON.parse(localStorage.getItem("dataPaciente"));
           if (localData && localData.identificadorPaciente === id) {
             setPaciente(localData);
           }
         }
+
+        // Cargar citas
+        const resCitas = await api.get(`/citas/detalles-paciente/${id}`);
+        setCitas(resCitas.data.historial || []);
 
         // Cargar Historial Clínico
         try {
@@ -96,54 +110,187 @@ export default function PacienteDetalle() {
             {paciente && <CardPaciente paciente={paciente} />}
 
             <div className="auth-card auth-card-detail" style={{ marginTop: 0 }}>
-              <div className="profile-actions-header">
-                <h3 className="profile-actions-title">
+              <div className="profile-actions-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                <h3 className="profile-actions-title" style={{ margin: 0 }}>
                   Historial Clínico del Paciente
                 </h3>
 
-                <div className="profile-actions-button-group">
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+
                   {historialClinico ? (
                     <>
+                      {/* 📅 Historial de Citas */}
                       <button
-                        className="save-btn"
-                        style={{ backgroundColor: "var(--primary)" }}
-                        onClick={() => navigate(`/${rolePath}/historial-detalle/${historialClinico._id}`)}
+                        title={`Ver Historial de Citas (${citas.length})`}
+                        onClick={() => setShowModalHistorial(true)}
+                        style={{
+                          background: 'rgba(99, 102, 241, 0.12)',
+                          color: 'var(--primary)',
+                          border: '1px solid rgba(99, 102, 241, 0.25)',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          fontSize: '0.8rem',
+                          fontWeight: '600',
+                          transition: 'all 0.2s',
+                          margin: 0
+                        }}
+                        className="hover-grow"
                       >
-                        <FaFolderOpen /> Ver Historial Completo
+                        <FaCalendarAlt size={11} /> Citas ({citas.length})
                       </button>
 
-                      {planes.length > 0 ? (
-                        <button
-                          className="save-btn"
-                          style={{ backgroundColor: "#17a2b8" }}
-                          onClick={() => navigate(`/${rolePath}/planes-paciente/${id}`)}
-                        >
-                          <FaNotesMedical /> Planes de Ejercicio ({planes.length})
-                        </button>
-                      ) : (
-                        <button
-                          className="save-btn"
-                          style={{ backgroundColor: "#17a2b8" }}
-                          onClick={() => navigate(`/${rolePath}/crear-plan/${id}`)}
-                        >
-                          <FaPlus /> Crear Plan de Ejercicio
-                        </button>
-                      )}
-                      
+                      {/* ➕ Agendar Cita */}
                       <button
-                        className="save-btn"
-                        onClick={() => navigate(`/${rolePath}/notas`)}
+                        title="Agendar Nueva Cita"
+                        onClick={() => {
+                          setCitaParaReagendar(null);
+                          setShowModalCita(true);
+                        }}
+                        style={{
+                          background: 'rgba(16, 185, 129, 0.12)',
+                          color: '#10b981',
+                          border: '1px solid rgba(16, 185, 129, 0.25)',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          fontSize: '0.8rem',
+                          fontWeight: '600',
+                          transition: 'all 0.2s',
+                          margin: 0
+                        }}
+                        className="hover-grow"
                       >
-                        <FaPlus /> Añadir Nota SOAP
+                        <span>➕</span> Agendar
+                      </button>
+
+                      {/* 📋 Ver Historial Completo */}
+                      <button
+                        title="Ver Historial Completo"
+                        onClick={() => navigate(`/${rolePath}/historial-detalle/${historialClinico._id}`)}
+                        style={{
+                          background: 'rgba(99, 102, 241, 0.12)',
+                          color: 'var(--primary)',
+                          border: '1px solid rgba(99, 102, 241, 0.25)',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          fontSize: '0.8rem',
+                          fontWeight: '600',
+                          transition: 'all 0.2s',
+                          margin: 0
+                        }}
+                        className="hover-grow"
+                      >
+                        <FaFolderOpen size={11} /> Historial
                       </button>
                     </>
                   ) : (
+                    /* 📋 Registrar Historial Clínico (Cuando no tiene) */
                     <button
-                      className="save-btn"
+                      title="Registrar Historial Médico"
                       onClick={() => navigate(`/${rolePath}/creacion-historial`)}
+                      style={{
+                        background: 'rgba(245, 158, 11, 0.12)',
+                        color: '#f59e0b',
+                        border: '1px solid rgba(245, 158, 11, 0.25)',
+                        padding: '6px 10px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                        fontSize: '0.8rem',
+                        fontWeight: '600',
+                        transition: 'all 0.2s',
+                        margin: 0
+                      }}
+                      className="hover-grow glow-pulse-orange"
                     >
-                      <FaPlus /> Registrar Historial Médico
+                      <FaNotesMedical size={11} /> Crear Historial
                     </button>
+                  )}
+
+                  {/* Planes de Ejercicio */}
+                  {historialClinico && (
+                    <>
+                      {planes.length > 0 ? (
+                        <button
+                          className="hover-grow"
+                          style={{
+                            background: 'rgba(23, 162, 184, 0.12)',
+                            color: '#17a2b8',
+                            border: '1px solid rgba(23, 162, 184, 0.25)',
+                            padding: '6px 10px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
+                            fontSize: '0.8rem',
+                            fontWeight: '600',
+                            transition: 'all 0.2s',
+                            margin: 0
+                          }}
+                          onClick={() => navigate(`/${rolePath}/planes-paciente/${id}`)}
+                        >
+                          <FaNotesMedical size={11} /> Planes ({planes.length})
+                        </button>
+                      ) : (
+                        <button
+                          className="hover-grow"
+                          style={{
+                            background: 'rgba(23, 162, 184, 0.12)',
+                            color: '#17a2b8',
+                            border: '1px solid rgba(23, 162, 184, 0.25)',
+                            padding: '6px 10px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
+                            fontSize: '0.8rem',
+                            fontWeight: '600',
+                            transition: 'all 0.2s',
+                            margin: 0
+                          }}
+                          onClick={() => navigate(`/${rolePath}/crear-plan/${id}`)}
+                        >
+                          <FaPlus size={10} /> Crear Plan
+                        </button>
+                      )}
+
+                      <button
+                        className="hover-grow"
+                        style={{
+                          background: 'rgba(99, 102, 241, 0.12)',
+                          color: 'var(--primary)',
+                          border: '1px solid rgba(99, 102, 241, 0.25)',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          fontSize: '0.8rem',
+                          fontWeight: '600',
+                          transition: 'all 0.2s',
+                          margin: 0
+                        }}
+                        onClick={() => navigate(`/${rolePath}/notas`)}
+                      >
+                        <FaPlus size={10} /> Nota SOAP
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -215,6 +362,52 @@ export default function PacienteDetalle() {
               )}
             </div>
 
+            {/* Booking Modal */}
+            {showModalCita && paciente && (
+              <ModalAgendarCita
+                paciente={{
+                  identificadorPaciente: paciente.identificadorPaciente,
+                  nombres: paciente.nombres,
+                  apellidoPaterno: paciente.apellidoPaterno || '',
+                  apellidoMaterno: paciente.apellidoMaterno || '',
+                  apellidos: paciente.apellidos,
+                  telefono: paciente.telefono,
+                  edad: paciente.edad,
+                  email: paciente.email || '',
+                  area: paciente.area || rolePath
+                }}
+                citaAReagendar={citaParaReagendar}
+                onClose={() => {
+                  setShowModalCita(false);
+                  setCitaParaReagendar(null);
+                  cargarCitasPaciente();
+                }}
+              />
+            )}
+
+            {/* History Modal */}
+            {showModalHistorial && paciente && (
+              <ModalHistorialCitas
+                paciente={paciente}
+                citas={citas}
+                onClose={() => setShowModalHistorial(false)}
+                onStatusChange={async (citaId, nuevoEstado) => {
+                  try {
+                    await api.put(`/citas/${citaId}/estado`, { estado: nuevoEstado });
+                    showSuccess("Estado actualizado", `La cita se marcó como: ${nuevoEstado}`);
+                    cargarCitasPaciente();
+                  } catch (err) {
+                    console.error("Error al actualizar estado:", err);
+                    showError("Error", "No se pudo actualizar el estado de la cita");
+                  }
+                }}
+                onReagendar={(cita) => {
+                  setShowModalHistorial(false);
+                  setCitaParaReagendar(cita);
+                  setShowModalCita(true);
+                }}
+              />
+            )}
           </>
         )}
 

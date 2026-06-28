@@ -3,25 +3,25 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import api from '../../api.js';
 import LoadingSpinner from '../../components/layout/LoadingSpinner.jsx';
-import { 
-  showSuccess, 
-  showError, 
-  showInfo, 
-  showConfirm 
+import {
+  showSuccess,
+  showError,
+  showInfo,
+  showConfirm
 } from '../../utils/alerts.js';
-import { 
-  FiUsers, 
-  FiCalendar, 
-  FiClock, 
-  FiActivity, 
-  FiArrowRight, 
-  FiPlus, 
-  FiTrash2, 
-  FiCheckCircle, 
-  FiInfo, 
-  FiAlertTriangle, 
-  FiAlertCircle, 
-  FiPlay 
+import {
+  FiUsers,
+  FiCalendar,
+  FiClock,
+  FiActivity,
+  FiArrowRight,
+  FiPlus,
+  FiTrash2,
+  FiCheckCircle,
+  FiInfo,
+  FiAlertTriangle,
+  FiAlertCircle,
+  FiPlay
 } from 'react-icons/fi';
 
 export default function DashboardFisio() {
@@ -55,14 +55,14 @@ export default function DashboardFisio() {
       // Fetch Pacientes list to get count
       const pacRes = await api.get('/pacientes');
       const pacientesData = pacRes.data || [];
-      
+
       // Fetch Citas list
       const citasRes = await api.get('/citas?area=fisioterapeuta');
       const citasData = citasRes.data || [];
-      
+
       const hoyStr = new Date().toISOString().split('T')[0];
       const todaySessions = citasData.filter(c => c.fechaCitaStr === hoyStr || c.fechaCita === hoyStr);
-      
+
       // Sort sessions by hour
       todaySessions.sort((a, b) => (a.horaCita > b.horaCita ? 1 : -1));
 
@@ -72,13 +72,13 @@ export default function DashboardFisio() {
         const painScores = [7, 4, 8, 2, 5, 6, 9];
         const painValue = painScores[index % painScores.length];
         const painLevel = painValue >= 7 ? 'high' : painValue >= 4 ? 'medium' : 'low';
-        
+
         // Mock status
         const statuses = ['En Espera', 'En Progreso', 'Programado', 'Completado'];
         let status = 'Programado';
         if (index === 0) status = 'En Espera';
         else if (index === 1) status = 'En Progreso';
-        
+
         const patientDetails = pacientesData.find(p => p.identificadorPaciente === c.identificadorPaciente);
         const rawPatientData = patientDetails || {
           identificadorPaciente: c.identificadorPaciente || '1',
@@ -110,7 +110,7 @@ export default function DashboardFisio() {
           { id: 3, name: 'Fernanda Lira', treatment: 'Electroestimulación - Hombro congelado', hour: '12:00 PM', pain: '8/10', painLevel: 'high', status: 'Programado', identificadorPaciente: '3', rawPatientData: { identificadorPaciente: '3', nombres: 'Fernanda', apellidos: 'Lira', edad: 35, telefono: '5559876543' } },
           { id: 4, name: 'Daniela Montes', treatment: 'Punción seca - Contractura gemelo derecho', hour: '02:00 PM', pain: '2/10', painLevel: 'low', status: 'Programado', identificadorPaciente: '4', rawPatientData: { identificadorPaciente: '4', nombres: 'Daniela', apellidos: 'Montes', edad: 31, telefono: '5553456789' } }
         ]);
-        
+
         setStats({
           pacientesTotales: pacientesData.length || 8,
           citasTotales: citasData.length || 14,
@@ -161,11 +161,11 @@ export default function DashboardFisio() {
       '¿Cancelar Cita?',
       `Esta acción removerá la cita de ${name} para hoy.`
     );
-    
+
     if (isConfirm) {
       setPatients(prev => prev.filter(p => p.id !== id));
       showError('Cita Cancelada', `Se canceló la cita de ${name}.`);
-      
+
       const isMock = typeof id === 'number' || (typeof id === 'string' && id.length < 20);
       if (!isMock) {
         try {
@@ -200,12 +200,12 @@ export default function DashboardFisio() {
   const renderRow = (patient) => {
     const painBadgeClass = `pain-badge pain-${patient.painLevel}`;
     const statusBadgeClass = `status-badge status-${patient.status.replace(/\s+/g, '-').toLowerCase()}`;
-    
+
     return (
       <tr key={patient.id} className="desktop-table-row">
         <td>
-          <div 
-            className="table-patient-identity" 
+          <div
+            className="table-patient-identity"
             style={{ cursor: "pointer" }}
             onClick={() => handleAction(patient, `/fisioterapeuta/paciente/${patient.identificadorPaciente}`)}
           >
@@ -226,7 +226,7 @@ export default function DashboardFisio() {
         <td><span className={statusBadgeClass}>{patient.status}</span></td>
         <td>
           <div className="table-row-actions">
-            <button 
+            <button
               className="btn btn-secondary"
               style={{ width: 'auto', height: '32px', fontSize: '0.8rem', padding: '0 10px', display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(139, 92, 246, 0.1)', color: 'var(--accent)', border: '1px solid rgba(139, 92, 246, 0.1)' }}
               onClick={() => handleAction(patient, `/fisioterapeuta/paciente/${patient.identificadorPaciente}`)}
@@ -234,7 +234,7 @@ export default function DashboardFisio() {
             >
               <FiInfo /> Ficha
             </button>
-            <button 
+            <button
               className="btn btn-primary"
               style={{ width: 'auto', height: '32px', fontSize: '0.8rem', padding: '0 10px', display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', border: '1px solid rgba(16, 185, 129, 0.1)' }}
               onClick={() => handleAction(patient, `/fisioterapeuta/notas`)}
@@ -243,7 +243,7 @@ export default function DashboardFisio() {
               <FiPlus /> Nota
             </button>
             {patient.status !== 'Completado' && (
-              <button 
+              <button
                 className="btn btn-primary"
                 style={{ width: 'auto', height: '32px', fontSize: '0.8rem', padding: '0 10px', display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', border: '1px solid rgba(99, 102, 241, 0.1)' }}
                 onClick={() => completeSession(patient.id, patient.name)}
@@ -252,8 +252,8 @@ export default function DashboardFisio() {
                 <FiCheckCircle /> Completar
               </button>
             )}
-            <button 
-              className="table-action-delete-btn" 
+            <button
+              className="table-action-delete-btn"
               onClick={() => deletePatient(patient.id, patient.name)}
               title="Cancelar cita"
               aria-label={`Cancelar cita de ${patient.name}`}
@@ -270,11 +270,11 @@ export default function DashboardFisio() {
   const renderCard = (patient) => {
     const painBadgeClass = `pain-badge pain-${patient.painLevel}`;
     const statusBadgeClass = `status-badge status-${patient.status.replace(/\s+/g, '-').toLowerCase()}`;
-    
+
     return (
       <div key={patient.id} className="mobile-row-card glass-card">
         <div className="mobile-card-header">
-          <div 
+          <div
             className="table-patient-identity"
             style={{ cursor: "pointer" }}
             onClick={() => handleAction(patient, `/fisioterapeuta/paciente/${patient.identificadorPaciente}`)}
@@ -305,14 +305,14 @@ export default function DashboardFisio() {
         </div>
 
         <div className="mobile-card-footer" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-          <button 
+          <button
             className="btn btn-primary"
             style={{ height: '36px', fontSize: '0.825rem', gap: '0.25rem', width: '100%', justifyContent: 'center' }}
             onClick={() => handleAction(patient, `/fisioterapeuta/paciente/${patient.identificadorPaciente}`)}
           >
             <FiInfo /> Ficha Clínica
           </button>
-          <button 
+          <button
             className="btn btn-secondary"
             style={{ height: '36px', fontSize: '0.825rem', color: 'var(--success)', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.1)', width: '100%', justifyContent: 'center' }}
             onClick={() => handleAction(patient, `/fisioterapeuta/notas`)}
@@ -320,7 +320,7 @@ export default function DashboardFisio() {
             <FiPlus /> Nueva Nota
           </button>
           {patient.status !== 'Completado' && (
-            <button 
+            <button
               className="btn btn-primary"
               style={{ gridColumn: 'span 2', height: '36px', fontSize: '0.825rem', gap: '0.25rem', width: '100%', justifyContent: 'center' }}
               onClick={() => completeSession(patient.id, patient.name)}
@@ -328,7 +328,7 @@ export default function DashboardFisio() {
               <FiCheckCircle /> Completar Sesión
             </button>
           )}
-          <button 
+          <button
             className="btn btn-secondary"
             style={{ gridColumn: 'span 2', height: '36px', fontSize: '0.825rem', color: 'var(--danger)', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)', width: '100%', justifyContent: 'center' }}
             onClick={() => deletePatient(patient.id, patient.name)}
@@ -349,7 +349,7 @@ export default function DashboardFisio() {
           <p>Bienvenido al panel clínico. Administra las citas terapéuticas de hoy y evalúa los niveles de dolor de los pacientes de forma responsiva.</p>
         </div>
         <div className="welcome-banner-actions">
-          <button 
+          <button
             className="btn btn-glass btn-size-md hover-grow"
             onClick={() => navigate('/fisioterapeuta/agenda')}
           >
@@ -366,7 +366,7 @@ export default function DashboardFisio() {
         <>
           {/* 📊 1. Metric Stats Cards Grid */}
           <div className="dashboard-grid">
-            
+
             {/* Card 1: Patients Today */}
             <div className="auth-card dashboard-metric-card hover-grow">
               <div className="dashboard-metric-icon" style={{ background: 'rgba(16, 185, 129, 0.08)', color: 'var(--success)' }}>
@@ -427,7 +427,7 @@ export default function DashboardFisio() {
 
           {/* 🧱 2. Dual Column Layout (Table & Showcase Sandbox) */}
           <div className="main-dashboard-content">
-            
+
             {/* Left Column: Scheduled Patients Table (Transforms on iPad!) */}
             <div className="auth-card table-wrapper-column">
               <div className="glass-card-header">
@@ -439,7 +439,7 @@ export default function DashboardFisio() {
 
               {patients.length > 0 ? (
                 <div className="responsive-table-container">
-                  
+
                   {/* Desktop HTML Table (>= 1025px) */}
                   <table className="desktop-table">
                     <thead>
@@ -483,29 +483,29 @@ export default function DashboardFisio() {
                 <h3 className="catalog-subtitle">Notificaciones Clínicas</h3>
                 <p className="catalog-desc">Dispara alertas con animaciones fluidas utilizando el motor de diseño unificado:</p>
                 <div className="catalog-btn-grid vertical-buttons">
-                  <button 
-                    className="btn btn-primary w-100" 
+                  <button
+                    className="btn btn-primary w-100"
                     style={{ justifyContent: 'center', height: '36px', fontSize: '0.85rem' }}
                     onClick={() => showSuccess('Sesión Agendada', 'La ficha de fisioterapia ha sido guardada en la base de datos.')}
                   >
                     Lanzar Éxito
                   </button>
-                  <button 
-                    className="btn btn-secondary w-100" 
+                  <button
+                    className="btn btn-secondary w-100"
                     style={{ justifyContent: 'center', height: '36px', fontSize: '0.85rem', color: 'var(--primary)', background: 'var(--primary-light)', border: '1px solid var(--border-light)' }}
                     onClick={() => showInfo('Ficha Actualizada', 'Los datos antropométricos del paciente se guardaron.')}
                   >
                     Lanzar Información
                   </button>
-                  <button 
-                    className="btn w-100" 
+                  <button
+                    className="btn w-100"
                     style={{ justifyContent: 'center', height: '36px', fontSize: '0.85rem', color: 'var(--warning)', background: 'var(--warning-bg)', border: '1px solid rgba(245, 158, 11, 0.2)' }}
                     onClick={() => showInfo('Evaluación Pendiente', 'Falta registrar el rango de movimiento articular.')}
                   >
                     Lanzar Advertencia
                   </button>
-                  <button 
-                    className="btn w-100" 
+                  <button
+                    className="btn w-100"
                     style={{ justifyContent: 'center', height: '36px', fontSize: '0.85rem', color: 'var(--danger)', background: 'var(--danger-bg)', border: '1px solid rgba(239, 68, 68, 0.2)' }}
                     onClick={() => showError('Cita Cancelada', 'El paciente canceló su sesión por dolor agudo.')}
                   >
