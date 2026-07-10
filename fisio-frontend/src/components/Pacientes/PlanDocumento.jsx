@@ -76,16 +76,16 @@ const PlanDocumento = () => {
 
   return (
     <div className="auth-wrapper-content" style={{ padding: '40px 20px 120px 20px', flexDirection: 'column', alignItems: 'center' }}>
-      
+
       {/* BARRA FLOTANTE DE ACCIONES (NO SE IMPRIME) */}
-      <div 
+      <div
         className="no-print"
-        style={{ 
+        style={{
           position: 'fixed',
           bottom: '40px',
           left: '50%',
           transform: 'translateX(-50%)',
-          display: 'flex', 
+          display: 'flex',
           alignItems: 'center',
           gap: '15px',
           padding: '15px 25px',
@@ -97,23 +97,23 @@ const PlanDocumento = () => {
           zIndex: 1000
         }}
       >
-        <button 
-          onClick={handleShareWhatsApp} 
-          style={{ 
+        <button
+          onClick={handleShareWhatsApp}
+          style={{
             border: 'none',
-            padding: '12px 20px', 
-            borderRadius: '30px', 
+            padding: '12px 20px',
+            borderRadius: '30px',
             cursor: 'pointer',
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px', 
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
             backgroundColor: '#25D366',
             color: 'white',
             fontWeight: '600',
             fontSize: '14px',
             boxShadow: '0 4px 10px rgba(37, 211, 102, 0.3)',
             transition: 'all 0.2s ease'
-          }} 
+          }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
           title="Compartir por WhatsApp"
@@ -121,24 +121,24 @@ const PlanDocumento = () => {
           <FaWhatsapp size={20} />
           <span>WhatsApp</span>
         </button>
-        
-        <button 
-          onClick={handleShareEmail} 
-          style={{ 
+
+        <button
+          onClick={handleShareEmail}
+          style={{
             border: 'none',
-            padding: '12px 20px', 
-            borderRadius: '30px', 
+            padding: '12px 20px',
+            borderRadius: '30px',
             cursor: 'pointer',
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px', 
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
             backgroundColor: '#EA4335',
             color: 'white',
             fontWeight: '600',
             fontSize: '14px',
             boxShadow: '0 4px 10px rgba(234, 67, 53, 0.3)',
             transition: 'all 0.2s ease'
-          }} 
+          }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
           title="Compartir por Correo"
@@ -146,18 +146,18 @@ const PlanDocumento = () => {
           <FaEnvelope size={20} />
           <span>Correo</span>
         </button>
-        
+
         <div style={{ width: '1px', height: '30px', background: '#ddd', margin: '0 5px' }}></div>
 
-        <button 
-          onClick={handlePrint} 
-          style={{ 
+        <button
+          onClick={handlePrint}
+          style={{
             border: 'none',
-            padding: '12px 24px', 
-            borderRadius: '30px', 
+            padding: '12px 24px',
+            borderRadius: '30px',
             cursor: 'pointer',
-            display: 'flex', 
-            alignItems: 'center', 
+            display: 'flex',
+            alignItems: 'center',
             gap: '10px',
             backgroundColor: '#42133B',
             color: 'white',
@@ -169,43 +169,10 @@ const PlanDocumento = () => {
           onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
         >
-          <FaPrint size={18} /> 
+          <FaPrint size={18} />
           <span>Imprimir / PDF</span>
         </button>
       </div>
-
-      {/* BOTÓN VOLVER */}
-      <div className="no-print" style={{ width: '100%', maxWidth: '800px', margin: '0 auto 20px auto', display: 'flex' }}>
-        <button 
-          onClick={() => navigate(-1)} 
-          style={{ 
-            background: 'white', 
-            border: 'none', 
-            padding: '10px 20px', 
-            borderRadius: '8px', 
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            color: '#42133B',
-            fontWeight: '600',
-            fontSize: '14px',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.05)';
-          }}
-        >
-          <FaArrowLeft /> Volver al Historial
-        </button>
-      </div>
-
       {/* DOCUMENTO A IMPRIMIR */}
       <div
         ref={componentRef}

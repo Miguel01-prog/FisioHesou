@@ -50,3 +50,94 @@
     overflow: visible !important;
   }
 }
+
+/* Generic Back Button Layout container */
+.layout-back-btn-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 1.5rem 2rem 0 2rem;
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* Premium styling for generic back button */
+.back-generic-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--primary);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  outline: none;
+  text-decoration: none;
+}
+
+.back-generic-btn:hover {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.3);
+  transform: translateX(-4px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+}
+
+.back-generic-btn:active {
+  transform: translateX(-4px) scale(0.97);
+}
+
+@media (max-width: 768px) {
+  .layout-back-btn-container {
+    padding: 1rem 1.5rem 0 1.5rem;
+  }
+}
+
+/* ==========================================================================
+   ✨ Collapsible Accordion Hint Animations (Pulsing Glow & Arrow Bounce)
+   ========================================================================== */
+.pulse-expand-hint {
+  animation: pulseHint 2.5s infinite ease-in-out;
+  border: 1px solid rgba(99, 102, 241, 0.2) !important;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+}
+
+.pulse-expand-hint .accordion-icon {
+  animation: arrowBounceHint 2s infinite ease-in-out, iconColorHint 2.5s infinite ease-in-out;
+  color: #808080;
+}
+
+@keyframes pulseHint {
+  0%, 100% {
+    border-color: rgba(99, 102, 241, 0.2) !important;
+    background-color: var(--card-bg);
+    box-shadow: 0 4px 20px -2px rgba(99, 102, 241, 0.08), 0 0 0 0px rgba(99, 102, 241, 0.1);
+  }
+  50% {
+    border-color: rgba(99, 102, 241, 0.6) !important;
+    background-color: rgba(99, 102, 241, 0.02);
+    box-shadow: 0 4px 20px -2px rgba(99, 102, 241, 0.12), 0 0 0 4px rgba(99, 102, 241, 0.08);
+  }
+}
+
+@keyframes iconColorHint {
+  0%, 100% {
+    color: #808080;
+  }
+  50% {
+    color: var(--primary);
+  }
+}
+
+@keyframes arrowBounceHint {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(3px);
+  }
+}
+

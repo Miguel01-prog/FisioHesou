@@ -46,6 +46,11 @@
   transform: scale(1.05);
 }
 
+.back-generic-btn:hover {
+  background-color: rgba(99, 102, 241, 0.16) !important;
+  transform: scale(1.03);
+}
+
 .header-breadcrumbs {
   display: flex;
   align-items: center;

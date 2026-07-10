@@ -1,16 +1,207 @@
 import { IoIosAddCircle } from "react-icons/io";
 import { IoCaretDown } from "react-icons/io5";
 import { IoCaretUp } from "react-icons/io5";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { TiDelete } from "react-icons/ti";
 import InformacionClinica from "../layout/InformacionClinica";
 import api from "../../api";
-import { showError } from "../../utils/alerts";
+import { showError, showSuccess } from "../../utils/alerts";
+import { useAuth } from "../../context/AuthContext";
 import LoadingSpinner from "../layout/LoadingSpinner";
+import { useNavigate } from "react-router-dom";
+
+const SignaturePad = ({ label, value, onChange, placeholderName, nameValue, onNameChange, dateValue, onDateChange }) => {
+  const canvasRef = useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.strokeStyle = "#1e1b4b"; // Indigo stroke
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    if (value) {
+      const img = new Image();
+      img.onload = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+      };
+      img.src = value;
+    }
+  }, [value]);
+
+  const getCoordinates = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+
+    let clientX, clientY;
+    if (e.touches && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+
+    const x = ((clientX - rect.left) / rect.width) * canvas.width;
+    const y = ((clientY - rect.top) / rect.height) * canvas.height;
+
+    return { x, y };
+  };
+
+  const startDrawing = (e) => {
+    if (e.type === "touchstart") {
+      // Prevent scrolling on iOS when signing
+      e.preventDefault();
+    }
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const { x, y } = getCoordinates(e);
+    const ctx = canvas.getContext("2d");
+
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    setIsDrawing(true);
+  };
+
+  const draw = (e) => {
+    if (!isDrawing) return;
+    if (e.type === "touchmove") {
+      e.preventDefault();
+    }
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const { x, y } = getCoordinates(e);
+    const ctx = canvas.getContext("2d");
+
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+
+  const stopDrawing = () => {
+    if (!isDrawing) return;
+    setIsDrawing(false);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dataUrl = canvas.toDataURL("image/png");
+    onChange(dataUrl);
+  };
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    onChange("");
+  };
+
+  return (
+    <div className="signature-pad-container" style={{ border: "1px solid rgba(139, 92, 246, 0.15)", borderRadius: "12px", padding: "1.25rem", background: "var(--card-bg)", boxShadow: "var(--shadow-sm)" }}>
+      <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)", marginBottom: "0.5rem", display: "block" }}>{label}</label>
+
+      <div className="canvas-wrapper" style={{ position: "relative", background: "#ffffff", border: "1px dashed rgba(139, 92, 246, 0.25)", borderRadius: "8px", overflow: "hidden", height: "160px", marginBottom: "1rem" }}>
+        <canvas
+          ref={canvasRef}
+          width={400}
+          height={160}
+          style={{ width: "100%", height: "100%", cursor: "crosshair", touchAction: "none" }}
+          onMouseDown={startDrawing}
+          onMouseMove={draw}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={stopDrawing}
+        />
+        <button
+          type="button"
+          onClick={clearCanvas}
+          style={{
+            position: "absolute",
+            bottom: "10px",
+            right: "10px",
+            background: "rgba(239, 68, 68, 0.1)",
+            color: "var(--danger)",
+            border: "none",
+            borderRadius: "6px",
+            padding: "4px 10px",
+            fontSize: "0.75rem",
+            fontWeight: "700",
+            cursor: "pointer"
+          }}
+        >
+          Limpiar
+        </button>
+      </div>
+
+      <div className="signature-fields" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+        <div>
+          <label className="form-label" style={{ fontSize: "0.8rem", marginBottom: "4px", fontWeight: "600" }}>Nombre firma</label>
+          <input
+            type="text"
+            className="input"
+            style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
+            placeholder={placeholderName}
+            value={nameValue}
+            onChange={(e) => onNameChange(e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="form-label" style={{ fontSize: "0.8rem", marginBottom: "4px", fontWeight: "600" }}>Fecha firma</label>
+          <input
+            type="date"
+            className="input"
+            style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
+            value={dateValue}
+            onChange={(e) => onDateChange(e.target.value)}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const FormularioHistorial = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [paciente, setPaciente] = useState(null);
+  const [isNewPatient, setIsNewPatient] = useState(false);
+  const [newPatientData, setNewPatientData] = useState({
+    nombres: "",
+    apellidoPaterno: "",
+    apellidoMaterno: "",
+    edad: "",
+    telefono: "",
+    email: "",
+    area: "fisioterapeuta"
+  });
+
   const [activeTab, setActiveTab] = useState("datosPersonales");
+
+  // Actualizar el área por defecto basada en el rol del terapeuta
+  useEffect(() => {
+    if (user?.role) {
+      setNewPatientData(prev => ({
+        ...prev,
+        area: user.role === "nutriologa" ? "nutriologa" : "fisioterapeuta"
+      }));
+    }
+  }, [user]);
+
+  // Sincronizar el nombre del paciente para la firma
+  useEffect(() => {
+    if (isNewPatient) {
+      const nombreCompleto = `${newPatientData.nombres} ${newPatientData.apellidoPaterno} ${newPatientData.apellidoMaterno}`.trim();
+      setFormData(prev => ({
+        ...prev,
+        nombrePacienteFirma: nombreCompleto
+      }));
+    }
+  }, [newPatientData.nombres, newPatientData.apellidoPaterno, newPatientData.apellidoMaterno, isNewPatient]);
   const [nuevoID, setNuevoID] = useState("");
   const [mesAñoNota, setMesAñoNota] = useState("");
   const [itemsAntFam, setItemsAntFam] = useState([]);
@@ -96,7 +287,20 @@ const FormularioHistorial = () => {
     indicacionesMedicas: "",
     dolorPalpacion: "",
     espasmoPalpacion: "",
+    firmaPaciente: "",
+    firmaProfesional: "",
+    nombrePacienteFirma: "",
+    nombreProfesionalFirma: user?.name || "",
+    fechaFirmaPaciente: new Date().toISOString().split('T')[0],
+    fechaFirmaProfesional: new Date().toISOString().split('T')[0],
   });
+
+  const updateSignature = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState("");
@@ -131,35 +335,9 @@ const FormularioHistorial = () => {
       console.warn("Error leyendo dataPaciente:", e);
     }
 
-    if (!datosPaciente) {
-      console.warn("dataPaciente es null — se detiene useEffect");
-      return;
-    }
-
     const fecha = new Date();
     const mesAño = `${fecha.getMonth() + 1}-${fecha.getFullYear()}`;
     setMesAñoNota(mesAño);
-
-    setPaciente({
-      nombres: datosPaciente.nombres,
-      apellidos: datosPaciente.apellidos,
-      edad: datosPaciente.edad,
-      telefono: datosPaciente.telefono,
-      fechaRegistro: datosPaciente.fechaCitaStr,
-      identificadorPaciente: datosPaciente.identificadorPaciente,
-    });
-
-
-
-    const cargarID = async () => {
-      const idGenerado = await generarIdNotaFront(datosPaciente, mesAño);
-      setNuevoID(idGenerado);
-      setFormData(prev => ({
-        ...prev,
-        idHistoricoFk: idGenerado,
-        mesAñoNota: mesAño,
-      }));
-    };
 
     const cargarAntecedentesFamiliares = async () => {
       try {
@@ -179,10 +357,51 @@ const FormularioHistorial = () => {
       }
     };
 
-    cargarID();
     cargarAntecedentesFamiliares();
     cargarAntecedentesMedicos();
-  }, []);
+
+    if (!datosPaciente) {
+      console.warn("dataPaciente es null — se activará el modo de creación manual");
+      setIsNewPatient(true);
+      setPaciente({
+        nombres: "",
+        apellidos: "",
+        edad: "",
+        telefono: "",
+        identificadorPaciente: "NUEVO",
+      });
+      setFormData(prev => ({
+        ...prev,
+        mesAñoNota: mesAño,
+        nombreProfesionalFirma: user?.name || "",
+      }));
+      return;
+    }
+
+    setIsNewPatient(false);
+    setPaciente({
+      nombres: datosPaciente.nombres,
+      apellidos: datosPaciente.apellidos,
+      edad: datosPaciente.edad,
+      telefono: datosPaciente.telefono,
+      fechaRegistro: datosPaciente.fechaCitaStr,
+      identificadorPaciente: datosPaciente.identificadorPaciente,
+    });
+
+    const cargarID = async () => {
+      const idGenerado = await generarIdNotaFront(datosPaciente, mesAño);
+      setNuevoID(idGenerado);
+      setFormData(prev => ({
+        ...prev,
+        idHistoricoFk: idGenerado,
+        mesAñoNota: mesAño,
+        nombrePacienteFirma: `${datosPaciente.nombres} ${datosPaciente.apellidos}`,
+        nombreProfesionalFirma: user?.name || "",
+      }));
+    };
+
+    cargarID();
+  }, [user]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -297,15 +516,61 @@ const FormularioHistorial = () => {
     };
 
     try {
-      if (!paciente) {
+      let pacienteObj = paciente;
+      let finalPacienteId = paciente?.identificadorPaciente;
+      let finalIdHistoricoFk = formData.idHistoricoFk;
+
+      if (isNewPatient) {
+        if (!newPatientData.nombres.trim() || !newPatientData.apellidoPaterno.trim() || !newPatientData.edad || !newPatientData.telefono.trim()) {
+          showError("Datos del Paciente Incompletos", "Por favor, complete los campos obligatorios del paciente (Nombres, Apellido Paterno, Edad, Teléfono) en la pestaña Resumen.");
+          setLoading(false);
+          return;
+        }
+
+        try {
+          const resPaciente = await api.post("/pacientes", {
+            nombres: newPatientData.nombres,
+            apellidoPaterno: newPatientData.apellidoPaterno,
+            apellidoMaterno: newPatientData.apellidoMaterno,
+            edad: parseInt(newPatientData.edad),
+            telefono: newPatientData.telefono,
+            email: formData.correoElectronico || newPatientData.email,
+            area: newPatientData.area
+          });
+          pacienteObj = resPaciente.data.paciente;
+          finalPacienteId = pacienteObj.identificadorPaciente;
+        } catch (err) {
+          console.error("Error al registrar paciente:", err);
+          const errMsg = err.response?.data?.message || "No se pudo registrar al paciente antes de guardar el historial.";
+          showError("Error al registrar paciente", errMsg);
+          setLoading(false);
+          return;
+        }
+
+        // Generar ID de nota
+        const idGenerado = await generarIdNotaFront(pacienteObj, mesAñoNota);
+        if (!idGenerado) {
+          setLoading(false);
+          return;
+        }
+        finalIdHistoricoFk = idGenerado;
+      }
+
+      if (!finalPacienteId) {
         showError("Error", "No hay datos del paciente");
         setLoading(false);
         return;
       }
 
+      if (!formData.firmaPaciente || !formData.firmaProfesional) {
+        showError("Firmas requeridas", "Por favor, complete las firmas del paciente y del profesional en la pestaña de Consentimiento Informado antes de guardar.");
+        setLoading(false);
+        return;
+      }
+
       const historialData = {
-        identificadorPaciente: paciente.identificadorPaciente,
-        idHistorial: formData.idHistoricoFk,
+        identificadorPaciente: finalPacienteId,
+        idHistorial: finalIdHistoricoFk,
         antecedentesFamiliares: formData.antecedentesFamiliares,
         antecedentesMedicos: formData.antecedentesMedicos,
         antecedentesQuirurgicos: formData.antecedentesQuirurgicos,
@@ -344,13 +609,19 @@ const FormularioHistorial = () => {
         espasmoPalpacion: formData.espasmoPalpacion,
         antecedentesNoPatologicos: antecedentesNoPatologicos,
         lesiones: lesiones,
-        obser: obser
+        obser: obser,
+        firmaPaciente: formData.firmaPaciente || "",
+        firmaProfesional: formData.firmaProfesional || "",
+        nombrePacienteFirma: formData.nombrePacienteFirma || "",
+        nombreProfesionalFirma: formData.nombreProfesionalFirma || "",
+        fechaFirmaPaciente: formData.fechaFirmaPaciente || "",
+        fechaFirmaProfesional: formData.fechaFirmaProfesional || "",
       };
 
       const notaData = {
-        identificadorPaciente: paciente.identificadorPaciente,
+        identificadorPaciente: finalPacienteId,
         idHistorialFk: "",
-        idHistoricoFk: formData.idHistoricoFk,
+        idHistoricoFk: finalIdHistoricoFk,
         mesAñoNota: formData.mesAñoNota,
         contenidoNota: formData.contenidoNota,
         S: formData.S,
@@ -369,6 +640,12 @@ const FormularioHistorial = () => {
       });
 
       showSuccess("¡Historial Guardado!", "El historial y la nota SOAP se han creado exitosamente.");
+
+      if (isNewPatient) {
+        localStorage.removeItem("dataPaciente");
+      }
+
+      navigate(`/${user?.role || 'fisioterapeuta'}/pacientes`);
     } catch (err) {
       console.error(err);
       const errorMessage = err.response?.data?.error || err.response?.data?.message || "No se pudo guardar el historial. Revisa los datos.";
@@ -383,20 +660,20 @@ const FormularioHistorial = () => {
   return (
     <div className="auth-wrapper-content fade-in-up">
       <div className="cards-column" style={{ width: "100%", maxWidth: "1000px", margin: "0 auto" }}>
-        {paciente && <InformacionClinica paciente={paciente} />}
+        {paciente && !isNewPatient && <InformacionClinica paciente={paciente} />}
 
         <div className="auth-card auth-card-detail" style={{ marginTop: "1rem", padding: "2.5rem" }}>
           <div className="card-header-split" style={{ marginBottom: "1.5rem" }}>
             <h2 className="title_card" style={{ margin: 0 }}>Crear Historial Clínico</h2>
-            <span className="subtitle-card-badge">Expediente Digital</span>
           </div>
           <hr style={{ marginBottom: "1.5rem" }} />
-          
+
           <div className="tabs" style={{ marginBottom: "2rem" }}>
-            <button type="button" className={`tab ${activeTab === "datosPersonales" ? "active" : ""}`} onClick={() => setActiveTab("datosPersonales")}>Datos Personales</button>
+            <button type="button" className={`tab ${activeTab === "datosPersonales" ? "active" : ""}`} onClick={() => setActiveTab("datosPersonales")}>Resumen</button>
             <button type="button" className={`tab ${activeTab === "AnaAnte" ? "active" : ""}`} onClick={() => setActiveTab("AnaAnte")}>Anamnesis y Antecedentes</button>
             <button type="button" className={`tab ${activeTab === "evaluacion" ? "active" : ""}`} onClick={() => setActiveTab("evaluacion")}>Evaluación Física</button>
             <button type="button" className={`tab ${activeTab === "soap" ? "active" : ""}`} onClick={() => setActiveTab("soap")}>Notas SOAP</button>
+            <button type="button" className={`tab ${activeTab === "consentimiento" ? "active" : ""}`} onClick={() => setActiveTab("consentimiento")}>Consentimiento Informado</button>
           </div>
 
           <form className="form" onSubmit={handleSubmit}>
@@ -405,10 +682,77 @@ const FormularioHistorial = () => {
                 <div className="clinical-form-section">
                   <h3 className="clinical-section-title">👤 Información Básica</h3>
                   <div className="clinical-grid-3">
-                    <div className="col" style={{ gridColumn: "span 2" }}>
-                      <label className="form-label">Nombre completo</label>
-                      <input type="text" className="input" value={`${paciente.nombres} ${paciente.apellidos}`} readOnly style={{ background: "rgba(226, 232, 240, 0.4)" }} />
-                    </div>
+                    {isNewPatient ? (
+                      <>
+                        <div className="col" style={{ gridColumn: "span 2" }}>
+                          <label className="form-label">Nombres *</label>
+                          <input
+                            type="text"
+                            className="input"
+                            value={newPatientData.nombres}
+                            onChange={(e) => setNewPatientData(prev => ({ ...prev, nombres: e.target.value }))}
+                            required
+                            placeholder="Nombres"
+                          />
+                        </div>
+                        <div className="col">
+                          <label className="form-label">Apellido Paterno *</label>
+                          <input
+                            type="text"
+                            className="input"
+                            value={newPatientData.apellidoPaterno}
+                            onChange={(e) => setNewPatientData(prev => ({ ...prev, apellidoPaterno: e.target.value }))}
+                            required
+                            placeholder="Apellido Paterno"
+                          />
+                        </div>
+                        <div className="col">
+                          <label className="form-label">Apellido Materno</label>
+                          <input
+                            type="text"
+                            className="input"
+                            value={newPatientData.apellidoMaterno}
+                            onChange={(e) => setNewPatientData(prev => ({ ...prev, apellidoMaterno: e.target.value }))}
+                            placeholder="Apellido Materno"
+                          />
+                        </div>
+                        <div className="col">
+                          <label className="form-label">Edad *</label>
+                          <input
+                            type="number"
+                            className="input"
+                            value={newPatientData.edad}
+                            onChange={(e) => setNewPatientData(prev => ({ ...prev, edad: e.target.value }))}
+                            required
+                            placeholder="Ej. 30"
+                            min="1"
+                          />
+                        </div>
+                        <div className="col">
+                          <label className="form-label">Área / Especialidad *</label>
+                          <select
+                            className="input"
+                            value={newPatientData.area}
+                            onChange={(e) => setNewPatientData(prev => ({ ...prev, area: e.target.value }))}
+                            required
+                          >
+                            <option value="fisioterapeuta">Fisioterapia</option>
+                            <option value="nutriologa">Nutriología</option>
+                          </select>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="col" style={{ gridColumn: "span 2" }}>
+                          <label className="form-label">Nombre completo</label>
+                          <input type="text" className="input" value={`${paciente.nombres || ""} ${paciente.apellidos || ""}`.replace(/\s+/g, ' ').trim()} readOnly style={{ background: "rgba(226, 232, 240, 0.4)" }} />
+                        </div>
+                        <div className="col">
+                          <label className="form-label">Edad (Años)</label>
+                          <input type="text" className="input" value={paciente.edad} readOnly style={{ background: "rgba(226, 232, 240, 0.4)" }} />
+                        </div>
+                      </>
+                    )}
                     <div className="col">
                       <label className="form-label">Fecha de nacimiento *</label>
                       <input type="date" name="fechaNacimiento" className="input" value={formData.fechaNacimiento} onChange={handleInputChange} required />
@@ -420,10 +764,6 @@ const FormularioHistorial = () => {
                         <option value="Hombre">Hombre</option>
                         <option value="Mujer">Mujer</option>
                       </select>
-                    </div>
-                    <div className="col">
-                      <label className="form-label">Edad (Años)</label>
-                      <input type="text" className="input" value={paciente.edad} readOnly style={{ background: "rgba(226, 232, 240, 0.4)" }} />
                     </div>
                   </div>
                 </div>
@@ -440,8 +780,19 @@ const FormularioHistorial = () => {
                       <input type="number" name="peso" className="input" step="0.01" min="0" value={formData.peso} onChange={handleInputChange} placeholder="Ej. 70" />
                     </div>
                     <div className="col">
-                      <label className="form-label">Teléfono</label>
-                      <input type="text" className="input" value={paciente.telefono} readOnly style={{ background: "rgba(226, 232, 240, 0.4)" }} />
+                      <label className="form-label">Teléfono *</label>
+                      {isNewPatient ? (
+                        <input
+                          type="text"
+                          className="input"
+                          value={newPatientData.telefono}
+                          onChange={(e) => setNewPatientData(prev => ({ ...prev, telefono: e.target.value }))}
+                          required
+                          placeholder="Ej. 5512345678"
+                        />
+                      ) : (
+                        <input type="text" className="input" value={paciente.telefono} readOnly style={{ background: "rgba(226, 232, 240, 0.4)" }} />
+                      )}
                     </div>
                     <div className="col" style={{ gridColumn: "span 2" }}>
                       <label className="form-label">Dirección particular</label>
@@ -456,6 +807,111 @@ const FormularioHistorial = () => {
                       <input type="email" name="correoElectronico" className="input" value={formData.correoElectronico} onChange={handleInputChange} placeholder="Ej. correo@paciente.com" />
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "consentimiento" && paciente && (
+              <div className="tab-content">
+                <div className="clinical-form-section" style={{ background: "#ffffff", border: "1px solid var(--border-light)", boxShadow: "var(--shadow-md)", padding: "2.5rem", borderRadius: "16px", color: "#1e293b", fontFamily: "var(--font-family-display, inherit)", lineHeight: "1.6" }}>
+
+                  <div style={{ textAlign: "center", marginBottom: "2.5rem", borderBottom: "2px double var(--primary-light)", paddingBottom: "1.5rem" }}>
+                    <h2 style={{ textTransform: "uppercase", fontSize: "1.4rem", letterSpacing: "1px", fontWeight: "900", color: "var(--primary)", margin: "0 0 5px 0" }}>Consentimiento Informado</h2>
+                    <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: "600" }}>SERVICIO DE FISIOTERAPIA - FISIOHESOU</span>
+                  </div>
+
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <h4 style={{ fontWeight: "800", color: "var(--primary)", borderBottom: "1px solid var(--border-light)", paddingBottom: "4px", marginBottom: "8px", fontSize: "1rem" }}>1. Información General</h4>
+                    <p style={{ margin: 0, fontSize: "0.95rem", textAlign: "justify" }}>
+                      Yo, <input type="text" value={formData.nombrePacienteFirma} onChange={(e) => updateSignature("nombrePacienteFirma", e.target.value)} style={{ border: "none", borderBottom: "1px solid #1e293b", padding: "0 5px", fontWeight: "700", color: "var(--primary)", width: "320px", background: "transparent" }} placeholder="Nombre del paciente" /> declaro que he sido debidamente informado/a sobre la naturaleza del tratamiento que recibiré en este consultorio, incluyendo los beneficios, riesgos y alternativas disponibles.
+                    </p>
+                  </div>
+
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <h4 style={{ fontWeight: "800", color: "var(--primary)", borderBottom: "1px solid var(--border-light)", paddingBottom: "4px", marginBottom: "8px", fontSize: "1rem" }}>2. Detalles del Tratamiento</h4>
+                    <p style={{ margin: "0 0 6px 0", fontSize: "0.95rem" }}>
+                      <strong>Tipo de tratamiento:</strong> Fisioterapia
+                    </p>
+                    <p style={{ margin: "0 0 10px 0", fontSize: "0.95rem" }}>
+                      <strong>Profesional a cargo:</strong> <input type="text" value={formData.nombreProfesionalFirma} onChange={(e) => updateSignature("nombreProfesionalFirma", e.target.value)} style={{ border: "none", borderBottom: "1px solid #1e293b", padding: "0 5px", fontWeight: "700", color: "var(--primary)", width: "320px", background: "transparent" }} placeholder="Nombre del profesional" />
+                    </p>
+                    <p style={{ margin: "0 0 4px 0", fontSize: "0.95rem", fontWeight: "700" }}>
+                      Descripción del procedimiento o intervención:
+                    </p>
+                    <p style={{ margin: 0, fontSize: "0.92rem", color: "#475569", background: "rgba(99, 102, 241, 0.03)", padding: "10px 15px", borderRadius: "8px", borderLeft: "3px solid var(--primary)", textAlign: "justify" }}>
+                      Aplicación de técnicas manuales, ejercicios terapéuticos, electroterapia, termoterapia, aplicación de Kinesiotape, ultrasonido.
+                    </p>
+                  </div>
+
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <h4 style={{ fontWeight: "800", color: "var(--primary)", borderBottom: "1px solid var(--border-light)", paddingBottom: "4px", marginBottom: "8px", fontSize: "1rem" }}>3. Riesgos Potenciales</h4>
+                    <p style={{ margin: 0, fontSize: "0.95rem", textAlign: "justify" }}>
+                      Se me ha informado que, aunque el tratamiento está diseñado para mejorar mi condición, pueden existir riesgos o efectos secundarios, como:
+                      <span style={{ display: "block", fontStyle: "italic", color: "#64748b", marginTop: "4px" }}>Molestias temporales, irritación en la piel, fatiga muscular, entre otros.</span>
+                    </p>
+                  </div>
+
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <h4 style={{ fontWeight: "800", color: "var(--primary)", borderBottom: "1px solid var(--border-light)", paddingBottom: "4px", marginBottom: "8px", fontSize: "1rem" }}>4. Derechos del Paciente</h4>
+                    <p style={{ margin: "0 0 6px 0", fontSize: "0.95rem" }}>Declaro que:</p>
+                    <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "0.92rem", color: "#334155" }}>
+                      <li>Tengo derecho a realizar preguntas y recibir explicaciones claras sobre mi tratamiento.</li>
+                      <li>Tengo derecho a detener el tratamiento en cualquier momento, informando al profesional a cargo.</li>
+                      <li>Mis datos personales serán tratados de manera confidencial, conforme a la Ley General de Protección de Datos Personales.</li>
+                    </ul>
+                  </div>
+
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <h4 style={{ fontWeight: "800", color: "var(--primary)", borderBottom: "1px solid var(--border-light)", paddingBottom: "4px", marginBottom: "8px", fontSize: "1rem" }}>5. Consentimiento para el Tratamiento</h4>
+                    <p style={{ margin: "0 0 6px 0", fontSize: "0.95rem" }}>Con pleno entendimiento de la información proporcionada:</p>
+                    <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "0.92rem", color: "#334155" }}>
+                      <li>Autorizo al profesional a realizar el tratamiento descrito y utilizar las técnicas y procedimientos necesarios.</li>
+                      <li>Declaro que la información que he proporcionado sobre mi historia clínica es veraz y completa.</li>
+                      <li>Acepto seguir las recomendaciones y pautas indicadas durante y después del tratamiento.</li>
+                    </ul>
+                  </div>
+
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <h4 style={{ fontWeight: "800", color: "var(--primary)", borderBottom: "1px solid var(--border-light)", paddingBottom: "4px", marginBottom: "8px", fontSize: "1rem" }}>6. Consentimiento para Uso de Información</h4>
+                    <p style={{ margin: 0, fontSize: "0.95rem", textAlign: "justify" }}>
+                      Autorizo el uso de mi información de forma anónima para fines educativos, estadísticos o de mejora de servicios.
+                    </p>
+                  </div>
+
+                  <div style={{ marginBottom: "2.5rem" }}>
+                    <h4 style={{ fontWeight: "800", color: "var(--primary)", borderBottom: "1px solid var(--border-light)", paddingBottom: "4px", marginBottom: "8px", fontSize: "1rem" }}>7. Declaración del Paciente</h4>
+                    <p style={{ margin: "0 0 6px 0", fontSize: "0.95rem" }}>Declaro que:</p>
+                    <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "0.92rem", color: "#334155" }}>
+                      <li>He leído y comprendido el presente documento.</li>
+                      <li>Todas mis preguntas han sido respondidas satisfactoriamente.</li>
+                      <li>Firmo este documento de manera libre y consciente.</li>
+                    </ul>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem", borderTop: "1px dashed var(--border-light)", paddingTop: "2rem" }}>
+                    <SignaturePad
+                      label="✍️ Firma del Paciente"
+                      value={formData.firmaPaciente}
+                      onChange={(val) => updateSignature("firmaPaciente", val)}
+                      placeholderName="Nombre del Paciente"
+                      nameValue={formData.nombrePacienteFirma}
+                      onNameChange={(val) => updateSignature("nombrePacienteFirma", val)}
+                      dateValue={formData.fechaFirmaPaciente}
+                      onDateChange={(val) => updateSignature("fechaFirmaPaciente", val)}
+                    />
+
+                    <SignaturePad
+                      label="🩺 Firma del Profesional de la Salud"
+                      value={formData.firmaProfesional}
+                      onChange={(val) => updateSignature("firmaProfesional", val)}
+                      placeholderName="Nombre del Fisioterapeuta"
+                      nameValue={formData.nombreProfesionalFirma}
+                      onNameChange={(val) => updateSignature("nombreProfesionalFirma", val)}
+                      dateValue={formData.fechaFirmaProfesional}
+                      onDateChange={(val) => updateSignature("fechaFirmaProfesional", val)}
+                    />
+                  </div>
+
                 </div>
               </div>
             )}
@@ -779,6 +1235,8 @@ const FormularioHistorial = () => {
                 </div>
               </div>
             )}
+
+
 
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "2rem" }}>
               <button type="submit" className="btn btn-primary btn-size-lg hover-grow glow-pulse-purple" disabled={loading} style={{ height: "50px", minWidth: "220px", fontSize: "1.05rem" }}>

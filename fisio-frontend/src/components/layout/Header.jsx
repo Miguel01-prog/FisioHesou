@@ -21,36 +21,144 @@ export default function Header({
     navigate('/login');
   };
 
-  const getBreadcrumbs = () => {
+  const getBreadcrumbsList = () => {
     const pathParts = location.pathname.split('/').filter(Boolean);
+    const list = [];
+
     if (pathParts.length === 0) {
-      return { parent: 'Clínica', current: 'Dashboard' };
+      return [{ label: 'Clínica' }, { label: 'Dashboard' }];
     }
-    
-    const parent = pathParts[0] ? pathParts[0].charAt(0).toUpperCase() + pathParts[0].slice(1) : 'Personal';
-    const current = pathParts[1] ? pathParts[1].charAt(0).toUpperCase() + pathParts[1].slice(1) : 'Resumen';
-    return { parent, current };
+
+    // Role
+    const role = pathParts[0] ? pathParts[0].charAt(0).toUpperCase() + pathParts[0].slice(1) : 'Personal';
+    list.push({ label: role, path: `/${pathParts[0]}` });
+
+    const page = pathParts[1];
+
+    const getPatientName = () => {
+      try {
+        const local = localStorage.getItem("dataPaciente");
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (parsed && (parsed.nombres || parsed.apellidos)) {
+            return `${parsed.nombres} ${parsed.apellidos}`;
+          }
+        }
+      } catch (e) {}
+      return "Paciente";
+    };
+
+    if (page === 'pacientes') {
+      list.push({ label: 'Pacientes', path: `/${pathParts[0]}/pacientes` });
+    } else if (page === 'paciente') {
+      list.push({ label: 'Pacientes', path: `/${pathParts[0]}/pacientes` });
+      list.push({ label: getPatientName(), path: location.pathname });
+    } else if (page === 'planes-paciente') {
+      const id = pathParts[2];
+      list.push({ label: 'Pacientes', path: `/${pathParts[0]}/pacientes` });
+      list.push({ label: getPatientName(), path: `/${pathParts[0]}/paciente/${id}` });
+      list.push({ label: 'Planes', path: location.pathname });
+    } else if (page === 'crear-plan') {
+      const id = pathParts[2];
+      list.push({ label: 'Pacientes', path: `/${pathParts[0]}/pacientes` });
+      list.push({ label: getPatientName(), path: `/${pathParts[0]}/paciente/${id}` });
+      list.push({ label: 'Crear Plan', path: location.pathname });
+    } else if (page === 'editar-plan') {
+      list.push({ label: 'Pacientes', path: `/${pathParts[0]}/pacientes` });
+      list.push({ label: getPatientName(), path: null });
+      list.push({ label: 'Editar Plan', path: location.pathname });
+    } else if (page === 'plan-documento') {
+      list.push({ label: 'Pacientes', path: `/${pathParts[0]}/pacientes` });
+      list.push({ label: getPatientName(), path: null });
+      list.push({ label: 'Plan PDF', path: location.pathname });
+    } else if (page === 'creacion-historial') {
+      list.push({ label: 'Pacientes', path: `/${pathParts[0]}/pacientes` });
+      list.push({ label: getPatientName(), path: null });
+      list.push({ label: 'Crear Historial', path: location.pathname });
+    } else if (page === 'historial-detalle') {
+      const local = localStorage.getItem("dataPaciente");
+      let patientId = '';
+      if (local) {
+        try {
+          const parsed = JSON.parse(local);
+          patientId = parsed.identificadorPaciente || parsed._id || '';
+        } catch (e) {}
+      }
+      list.push({ label: 'Pacientes', path: `/${pathParts[0]}/pacientes` });
+      if (patientId) {
+        list.push({ label: getPatientName(), path: `/${pathParts[0]}/paciente/${patientId}` });
+      } else {
+        list.push({ label: getPatientName(), path: null });
+      }
+      list.push({ label: 'Historial', path: location.pathname });
+    } else if (page === 'notas') {
+      const local = localStorage.getItem("dataPaciente");
+      let patientId = '';
+      if (local) {
+        try {
+          const parsed = JSON.parse(local);
+          patientId = parsed.identificadorPaciente || parsed._id || '';
+        } catch (e) {}
+      }
+      list.push({ label: 'Pacientes', path: `/${pathParts[0]}/pacientes` });
+      if (patientId) {
+        list.push({ label: getPatientName(), path: `/${pathParts[0]}/paciente/${patientId}` });
+      }
+      list.push({ label: 'Nueva Nota SOAP', path: location.pathname });
+    } else if (page === 'nota-detail' || page === 'nota-detalle') {
+      const local = localStorage.getItem("dataPaciente");
+      let patientId = '';
+      if (local) {
+        try {
+          const parsed = JSON.parse(local);
+          patientId = parsed.identificadorPaciente || parsed._id || '';
+        } catch (e) {}
+      }
+      list.push({ label: 'Pacientes', path: `/${pathParts[0]}/pacientes` });
+      if (patientId) {
+        list.push({ label: getPatientName(), path: `/${pathParts[0]}/paciente/${patientId}` });
+      }
+      list.push({ label: 'Detalle de Nota SOAP', path: location.pathname });
+    } else {
+      list.push({ label: page ? page.charAt(0).toUpperCase() + page.slice(1) : 'Resumen' });
+    }
+
+    return list;
   };
 
-  const { parent, current } = getBreadcrumbs();
+  const breadcrumbs = getBreadcrumbsList();
 
   return (
     <header className="header-container">
-      {/* 1. Left Block: Mobile hamburger & breadcrumbs */}
+      {/* 1. Left Block: Mobile hamburger, back button & breadcrumbs */}
       <div className="header-left-block">
         <button 
           className="mobile-hamburger-btn"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Abrir menú"
-          style={{ display: 'flex' }}
         >
           <FiMenu size={20} />
         </button>
 
         <div className="header-breadcrumbs">
-          <span className="breadcrumb-parent">{parent}</span>
-          <span className="breadcrumb-divider">/</span>
-          <span className="breadcrumb-current">{current}</span>
+          {breadcrumbs.map((crumb, idx) => (
+            <React.Fragment key={idx}>
+              {idx > 0 && <span className="breadcrumb-divider">/</span>}
+              {crumb.path && idx < breadcrumbs.length - 1 ? (
+                <span 
+                  className="breadcrumb-parent" 
+                  style={{ cursor: 'pointer', textDecoration: 'none' }}
+                  onClick={() => navigate(crumb.path)}
+                >
+                  {crumb.label}
+                </span>
+              ) : (
+                <span className={idx === breadcrumbs.length - 1 ? "breadcrumb-current" : "breadcrumb-parent"}>
+                  {crumb.label}
+                </span>
+              )}
+            </React.Fragment>
+          ))}
         </div>
       </div>
 

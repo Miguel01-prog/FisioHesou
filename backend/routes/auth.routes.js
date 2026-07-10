@@ -16,7 +16,7 @@ router.get('/test', (req, res) => {
 });
 
 
-router.post('/register', async (req, res) => {
+router.post('/register', verifyToken, checkRole('superadmin'), async (req, res) => {
   console.log(' POST /api/register recibido', req.body);  // <--- agrega esto para depurar
 
   try {
