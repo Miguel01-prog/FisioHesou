@@ -1171,6 +1171,12 @@ hr {
     transition: transform var(--transition-fast);
     text-align: left;
   }
+
+  .patient-detail-card-wrapper {
+    position: relative !important;
+    top: 0 !important;
+    margin-top: 1.5rem;
+  }
 }
 
 @media (max-width: 640px) {
@@ -2624,4 +2630,23 @@ tr:hover .patient-list-avatar-circle {
   cursor: default !important;
   font-weight: 500;
   box-shadow: none !important;
+}
+
+/* Responsive Grid Spans for Clinical Form Grid */
+.col-span-2 {
+  grid-column: span 2;
+}
+.col-span-3 {
+  grid-column: span 3;
+}
+@media (max-width: 900px) {
+  .col-span-3 {
+    grid-column: span 2;
+  }
+}
+@media (max-width: 600px) {
+  .col-span-2,
+  .col-span-3 {
+    grid-column: span 1 !important;
+  }
 }

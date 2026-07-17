@@ -342,11 +342,11 @@ export default function DashboardFisio() {
 
   return (
     <div className="dashboard-main-view auth-wrapper-content fade-in-up">
-      {/* 🚀 Clinical Welcome Banner */}
+      {/* 🚀 Clinical Welcome Banner 
       <div className="dashboard-welcome-banner">
         <div className="welcome-banner-info">
           <h1>Hesou Fisioterapia</h1>
-          <p>Bienvenido al panel clínico. Administra las citas terapéuticas de hoy y evalúa los niveles de dolor de los pacientes de forma responsiva.</p>
+          <p>Bienvenido al panel clínico. Administra .</p>
         </div>
         <div className="welcome-banner-actions">
           <button
@@ -356,7 +356,7 @@ export default function DashboardFisio() {
             <FiPlus /> Nueva Consulta
           </button>
         </div>
-      </div>
+      </div>*/}
 
       {loading ? (
         <div className="spinner-overlay" style={{ position: 'relative', minHeight: '200px', background: 'transparent' }}>

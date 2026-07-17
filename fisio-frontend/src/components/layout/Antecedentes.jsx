@@ -23,11 +23,38 @@ const Antecedentes = () => {
     try {
       setCargandoCategorias(true);
       const res = await api.get("/configuracion/confGen");
-      setCategorias(res.data?.configuraciones || []);
+      let list = res.data?.configuraciones || [];
+      
+      if (list.length === 0) {
+        try {
+          await api.post("/configuracion", { clave: "AntMed", descripcion: "Antecedentes Médicos" });
+          await api.post("/configuracion", { clave: "AntFam", descripcion: "Antecedentes Familiares" });
+          const resRetry = await api.get("/configuracion/confGen");
+          list = resRetry.data?.configuraciones || [];
+        } catch (err) {
+          console.error("Error al auto-crear categorías:", err);
+        }
+      }
+      
+      setCategorias(list);
     } catch (err) {
       console.error(err);
     } finally {
       setCargandoCategorias(false);
+    }
+  };
+
+  const inicializarCategorias = async () => {
+    try {
+      setCargandoCategorias(true);
+      await api.post("/configuracion", { clave: "AntMed", descripcion: "Antecedentes Médicos" });
+      await api.post("/configuracion", { clave: "AntFam", descripcion: "Antecedentes Familiares" });
+      showSuccess("Categorías Inicializadas", "Se crearon los Antecedentes Médicos y Familiares correctamente.");
+      cargarCategorias();
+    } catch (err) {
+      console.error(err);
+      showError("Error", "No se pudieron inicializar las categorías.");
+      cargarCategorias();
     }
   };
 
@@ -103,6 +130,18 @@ const Antecedentes = () => {
           {cargandoCategorias ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem 0' }}>
               <LoadingSpinner size="large" />
+            </div>
+          ) : categorias.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "2rem" }}>
+              <p className="text-muted mb-3" style={{ fontSize: "0.9rem" }}>No hay categorías de antecedentes configuradas en la base de datos.</p>
+              <button 
+                type="button" 
+                className="save-btn" 
+                onClick={inicializarCategorias}
+                style={{ width: "auto", margin: "0 auto", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
+              >
+                ➕ Inicializar Categorías (Médicos y Familiares)
+              </button>
             </div>
           ) : (
             <div className="table-responsive-container">

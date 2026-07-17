@@ -88,9 +88,14 @@ router.post('/logout', (req, res) => {
 });
 
 // Obtener datos del usuario actual
-router.get('/me', verifyToken, (req, res) => {
-  // req.user viene del token decodificado por el middleware verifyToken
-  res.json({ role: req.user.role, name: req.user.name, id: req.user.id });
+router.get('/me', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+    res.json({ role: user.role, name: user.name, email: user.email, id: user._id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Reset Password Simple (por ID) - Protegido solo para superadmin
@@ -150,6 +155,47 @@ router.put('/change-password', verifyToken, async (req, res) => {
     res.json({ message: 'Contraseña actualizada correctamente' });
   } catch (error) {
     console.error('Error al cambiar contraseña:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Actualizar perfil (nombre, email, y/o nueva contraseña)
+router.put('/profile', verifyToken, async (req, res) => {
+  try {
+    const { name, email, newPassword } = req.body;
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    if (name) user.name = name;
+    
+    if (email && email.toLowerCase() !== user.email.toLowerCase()) {
+      const existingUser = await User.findOne({ email: email.toLowerCase() });
+      if (existingUser) {
+        return res.status(409).json({ message: 'El correo electrónico ya está en uso por otro usuario' });
+      }
+      user.email = email.toLowerCase();
+    }
+
+    if (newPassword) {
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: 'La nueva contraseña debe tener al menos 6 caracteres' });
+      }
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      user.password = hashedPassword;
+    }
+
+    await user.save();
+
+    res.json({ 
+      message: 'Perfil actualizado correctamente', 
+      user: { name: user.name, email: user.email, role: user.role } 
+    });
+  } catch (error) {
+    console.error('Error al actualizar perfil:', error);
     res.status(500).json({ error: error.message });
   }
 });

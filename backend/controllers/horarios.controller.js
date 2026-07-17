@@ -7,7 +7,7 @@ const toDate = (fechaStr) => new Date(fechaStr + "T00:00:00.000Z");
 // ---- Crear o actualizar bloqueos manuales (días y horas) ----
 export const crearOBloquear = async (req, res) => {
   const { area } = req.params;
-  const { blockedDates = [], blockedHours = {} } = req.body;
+  const { blockedDates = [], blockedHours = {}, blockedNotes = {} } = req.body;
 
   if (!Array.isArray(blockedDates)) {
     return res.status(400).json({ error: "blockedDates debe ser un arreglo" });
@@ -21,10 +21,11 @@ export const crearOBloquear = async (req, res) => {
       const fecha = toDate(fechaStr);
 
       const horas = Array.isArray(blockedHours[fechaStr]) ? blockedHours[fechaStr] : [];
+      const note = typeof blockedNotes[fechaStr] === "string" ? blockedNotes[fechaStr] : "";
 
       const bloqueo = await Horarios.findOneAndUpdate(
         { area, fechaStr },
-        { area, fecha, fechaStr, blockedHours: horas },
+        { area, fecha, fechaStr, blockedHours: horas, note },
         { new: true, upsert: true, setDefaultsOnInsert: true }
       );
 
@@ -44,23 +45,35 @@ export const crearOBloquear = async (req, res) => {
   }
 };
 
-// ---- Obtener bloqueos diferenciados (admin + citas) ----
 export const obtenerBloqueos = async (req, res) => {
   const { area } = req.params;
 
+  // Unificar las variaciones de nombre de área
+  const areasABuscar = [area];
+  if (area === "fisioterapia" || area === "fisioterapeuta") {
+    areasABuscar.push("fisioterapia", "fisioterapeuta");
+  } else if (area === "nutriologa" || area === "nutricion" || area === "nutriología") {
+    areasABuscar.push("nutriologa", "nutricion", "nutriología");
+  }
+
   try {
     // 1️⃣ Bloqueos manuales (admin)
-    const bloqueos = await Horarios.find({ area });
+    const bloqueos = await Horarios.find({ area: { $in: areasABuscar } });
     const blockedHoursAdmin = {};
+    const blockedNotesAdmin = {};
     const blockedDatesAdmin = [];
 
     bloqueos.forEach((b) => {
       blockedHoursAdmin[b.fechaStr] = b.blockedHours || [];
+      blockedNotesAdmin[b.fechaStr] = b.note || "";
       blockedDatesAdmin.push(b.fechaStr);
     });
 
-    // 2️⃣ Bloqueos por citas de pacientes
-    const citas = await Cita.find({ area });
+    // 2️⃣ Bloqueos por citas de pacientes (excluyendo canceladas)
+    const citas = await Cita.find({ 
+      area: { $in: areasABuscar },
+      estado: { $ne: "Cancelado" }
+    });
     const blockedHoursCitas = {};
     const blockedDatesPaciente = [];
 
@@ -79,6 +92,7 @@ export const obtenerBloqueos = async (req, res) => {
     res.status(200).json({
       blockedDatesAdmin,
       blockedHoursAdmin,
+      blockedNotesAdmin,
       blockedDatesPaciente: blockedDatesPacienteUnique,
       blockedHoursCitas,
     });
