@@ -16,10 +16,12 @@ const WORK_HOURS = [
 const CalendarioBloqueo = ({ role }) => {
   const [blockedDatesAdmin, setBlockedDatesAdmin] = useState([]);
   const [blockedHoursAdmin, setBlockedHoursAdmin] = useState({});
+  const [blockedNotesAdmin, setBlockedNotesAdmin] = useState({});
   const [blockedDatesPaciente, setBlockedDatesPaciente] = useState([]);
   const [blockedHoursCitas, setBlockedHoursCitas] = useState({});
   const [selectedDay, setSelectedDay] = useState(null);
   const [selectedHours, setSelectedHours] = useState([]);
+  const [noteText, setNoteText] = useState("");
   const [loading, setLoading] = useState(false);
 
   // Obtener bloqueos
@@ -30,6 +32,7 @@ const CalendarioBloqueo = ({ role }) => {
         const { data } = await api.get(`/horarios/${role}`);
         setBlockedDatesAdmin(data.blockedDatesAdmin || []);
         setBlockedHoursAdmin(data.blockedHoursAdmin || {});
+        setBlockedNotesAdmin(data.blockedNotesAdmin || {});
         setBlockedDatesPaciente(data.blockedDatesPaciente || []);
         setBlockedHoursCitas(data.blockedHoursCitas || {});
       } catch (err) {
@@ -58,6 +61,7 @@ const CalendarioBloqueo = ({ role }) => {
 
     setSelectedDay(fechaStr);
     setSelectedHours(blockedHoursAdmin[fechaStr] || []);
+    setNoteText(blockedNotesAdmin[fechaStr] || "");
   };
 
   // Alternar hora
@@ -76,6 +80,7 @@ const CalendarioBloqueo = ({ role }) => {
     if (!selectedDay) return;
 
     const newBlockedHours = { ...blockedHoursAdmin, [selectedDay]: selectedHours };
+    const newBlockedNotes = { ...blockedNotesAdmin, [selectedDay]: noteText };
     const newBlockedDates = Object.entries(newBlockedHours)
       .filter(([_, hours]) => hours.length > 0)
       .map(([day]) => day);
@@ -84,12 +89,15 @@ const CalendarioBloqueo = ({ role }) => {
       await api.post(`/horarios/${role}`, {
         blockedDates: newBlockedDates,
         blockedHours: newBlockedHours,
+        blockedNotes: newBlockedNotes,
       });
 
       setBlockedDatesAdmin(newBlockedDates);
       setBlockedHoursAdmin(newBlockedHours);
+      setBlockedNotesAdmin(newBlockedNotes);
       setSelectedDay(null);
       setSelectedHours([]);
+      setNoteText("");
       showSuccess("Horario guardado", "Los bloqueos de horario se guardaron correctamente en la base de datos.");
     } catch (err) {
       console.error("Error al guardar bloqueos:", err);
@@ -101,6 +109,8 @@ const CalendarioBloqueo = ({ role }) => {
   const deleteDayBlocks = async (fechaStr) => {
     const newBlockedHours = { ...blockedHoursAdmin };
     delete newBlockedHours[fechaStr];
+    const newBlockedNotes = { ...blockedNotesAdmin };
+    delete newBlockedNotes[fechaStr];
     const newBlockedDates = blockedDatesAdmin.filter((day) => day !== fechaStr);
 
     try {
@@ -108,10 +118,12 @@ const CalendarioBloqueo = ({ role }) => {
       await api.post(`/horarios/${role}`, {
         blockedDates: newBlockedDates,
         blockedHours: newBlockedHours,
+        blockedNotes: newBlockedNotes,
       });
 
       setBlockedDatesAdmin(newBlockedDates);
       setBlockedHoursAdmin(newBlockedHours);
+      setBlockedNotesAdmin(newBlockedNotes);
       showSuccess("Bloqueos eliminados", "Se eliminaron los bloqueos para este día en la base de datos.");
     } catch (err) {
       console.error("Error al eliminar bloqueos del día:", err);
@@ -251,6 +263,19 @@ const CalendarioBloqueo = ({ role }) => {
                 })}
               </div>
 
+              <div style={{ marginBottom: "1.2rem", textAlign: "left" }}>
+                <label className="form-label" style={{ fontSize: "0.8rem", marginBottom: "0.3rem", display: "block", color: "var(--text-muted)" }}>
+                  Nota del bloqueo (Se mostrará en el calendario público):
+                </label>
+                <textarea
+                  className="textarea"
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  placeholder="Ej. Fuera por capacitación / Vacaciones"
+                  style={{ minHeight: "55px", fontSize: "0.85rem", padding: "0.4rem 0.6rem" }}
+                />
+              </div>
+
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <button 
                   type="button" 
@@ -315,11 +340,16 @@ const CalendarioBloqueo = ({ role }) => {
                         border: '1px solid var(--border-light, #e2e8f0)' 
                       }}
                     >
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', flex: 1, minWidth: 0 }}>
                         <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{formatDateDDMMYYYY(dateStr)}</span>
                         <span style={{ fontSize: '0.8rem', color: isFull ? 'var(--danger, #ef4444)' : 'var(--text-muted)' }}>
                           {isFull ? "🔒 Día Completo Bloqueado" : `⏰ Horas: ${hours.join(", ")}`}
                         </span>
+                        {blockedNotesAdmin[dateStr] && (
+                          <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontStyle: 'italic', wordBreak: 'break-word' }}>
+                            📝 Nota: {blockedNotesAdmin[dateStr]}
+                          </span>
+                        )}
                       </div>
                       <button
                         type="button"

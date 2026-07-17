@@ -687,7 +687,7 @@ const FormularioHistorial = () => {
                   <div className="clinical-grid-3">
                     {isNewPatient ? (
                       <>
-                        <div className="col" style={{ gridColumn: "span 2" }}>
+                        <div className="col col-span-2">
                           <label className="form-label">Nombres *</label>
                           <input
                             type="text"
@@ -746,7 +746,7 @@ const FormularioHistorial = () => {
                       </>
                     ) : (
                       <>
-                        <div className="col" style={{ gridColumn: "span 2" }}>
+                        <div className="col col-span-2">
                           <label className="form-label">Nombre completo</label>
                           <input type="text" className="input" value={`${paciente.nombres || ""} ${paciente.apellidos || ""}`.replace(/\s+/g, ' ').trim()} readOnly style={{ background: "rgba(226, 232, 240, 0.4)" }} />
                         </div>
@@ -808,7 +808,7 @@ const FormularioHistorial = () => {
                         <input type="text" className="input" value={paciente.telefono} readOnly style={{ background: "rgba(226, 232, 240, 0.4)" }} />
                       )}
                     </div>
-                    <div className="col" style={{ gridColumn: "span 2" }}>
+                    <div className="col col-span-2">
                       <label className="form-label">Dirección particular</label>
                       <input type="text" name="direccion" className="input" value={formData.direccion} onChange={handleInputChange} placeholder="Ej. Av. Universidad 120" />
                     </div>
@@ -816,7 +816,7 @@ const FormularioHistorial = () => {
                       <label className="form-label">Ocupación</label>
                       <input type="text" name="ocupacion" className="input" value={formData.ocupacion} onChange={handleInputChange} placeholder="Ej. Ingeniero" />
                     </div>
-                    <div className="col" style={{ gridColumn: "span 3" }}>
+                    <div className="col col-span-3">
                       <label className="form-label">Correo electrónico</label>
                       <input type="email" name="correoElectronico" className="input" value={formData.correoElectronico} onChange={handleInputChange} placeholder="Ej. correo@paciente.com" />
                     </div>

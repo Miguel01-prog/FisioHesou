@@ -13,6 +13,7 @@ import historialNotasRoutes from "./routes/historial-notas.route.js";
 import configuracionRoutes from "./routes/configuracion.routes.js";
 import ejerciciosRoutes from "./routes/ejercicios.routes.js";
 import planesRoutes from "./routes/planes.routes.js";
+import notificationRoutes from "./routes/notification.routes.js";
 import path from "path";
 
 const app = express();
@@ -93,6 +94,7 @@ app.use("/api/historial-notas", historialNotasRoutes);
 app.use("/api/configuracion", configuracionRoutes);
 app.use("/api/ejercicios", ejerciciosRoutes);
 app.use("/api/planes", planesRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 
 export default app;

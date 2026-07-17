@@ -377,8 +377,22 @@ export default function ListaPacientes() {
                                     color: ultimaCita.estado === "Asistió" ? "#10b981" : ultimaCita.estado === "No asistió" ? "#ef4444" : "inherit",
                                     fontWeight: '500'
                                   }}>
-
+                                    {ultimaCita.estado}
                                   </span>
+                                </span>
+                              ) : selectedPaciente.esNuevo ? (
+                                <span style={{
+                                  fontSize: '0.8rem',
+                                  padding: '3px 8px',
+                                  borderRadius: '6px',
+                                  background: 'rgba(94, 80, 161, 0.12)',
+                                  color: 'var(--primary, #5e50a1)',
+                                  fontWeight: 'bold',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem'
+                                }}>
+                                  🆕 Nuevo Paciente
                                 </span>
                               ) : 'Ninguna registrada'}
                             </span>

@@ -249,36 +249,30 @@ export default function ModalAgendarManual({ selectedDateInitial, onClose, onSav
             </div>
           )}
 
-          {/* Horas disponibles del día - Hacer botones de hora más pequeños */}
+          {/* Horas del día */}
           <div className="form-row" style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
             <label className="form-label" style={{ display: "flex", alignItems: "center", gap: "0.3rem", fontSize: "0.75rem" }}>
               <FiClock size={12} /> Seleccionar Hora
             </label>
-            {availableHours.length > 0 ? (
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(55px, 1fr))",
-                gap: "0.25rem",
-                marginTop: "0.15rem"
-              }}>
-                {availableHours.map((hour) => {
+            {availableHours.length > 0 || allHours.length > 0 ? (
+              <div className="hours-grid-modern">
+                {allHours.map((hour) => {
+                  const isBlockedAdmin = blockedHoursAdmin[selectedDateInitial]?.includes(hour);
+                  const isBlockedPaciente = blockedHoursCitas[selectedDateInitial]?.includes(hour);
+                  const isAvailable = availableHours.includes(hour);
                   const isSelected = selectedHour === hour;
+
                   return (
                     <button
                       key={hour}
                       type="button"
-                      style={{
-                        padding: "0.15rem 0.1rem",
-                        fontSize: "0.68rem",
-                        borderRadius: "4px",
-                        border: "1px solid var(--border-light, rgba(99, 102, 241, 0.09))",
-                        background: isSelected ? "var(--primary)" : "var(--card-bg, #ffffff)",
-                        color: isSelected ? "#ffffff" : "var(--text-main)",
-                        cursor: "pointer",
-                        fontWeight: isSelected ? "600" : "500",
-                        transition: "all 0.15s ease-in-out"
-                      }}
-                      onClick={() => setSelectedHour(hour)}
+                      className={`hour-btn 
+                        ${isBlockedAdmin ? "blocked-admin-hour" : ""} 
+                        ${isBlockedPaciente ? "blocked-paciente-hour" : ""} 
+                        ${isAvailable ? "" : "disabled"}
+                        ${isSelected ? "selected-hour" : ""}`}
+                      disabled={!isAvailable}
+                      onClick={() => isAvailable && setSelectedHour(hour)}
                     >
                       {hour}
                     </button>

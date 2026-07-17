@@ -14,6 +14,7 @@ export default function AppointmentForm() {
   const [tipoConsulta, setTipoConsulta] = useState("");
   const [blockedDatesAdmin, setBlockedDatesAdmin] = useState([]);
   const [blockedHoursAdmin, setBlockedHoursAdmin] = useState({});
+  const [blockedNotesAdmin, setBlockedNotesAdmin] = useState({});
   const [blockedDatesPaciente, setBlockedDatesPaciente] = useState([]);
   const [blockedHoursCitas, setBlockedHoursCitas] = useState({});
   const [selectedDate, setSelectedDate] = useState(null);
@@ -60,6 +61,7 @@ export default function AppointmentForm() {
         const { data } = await api.get(`/horarios/${tipoConsulta}`);
         setBlockedDatesAdmin(data.blockedDatesAdmin || []);
         setBlockedHoursAdmin(data.blockedHoursAdmin || {});
+        setBlockedNotesAdmin(data.blockedNotesAdmin || {});
         setBlockedDatesPaciente(data.blockedDatesPaciente || []);
         setBlockedHoursCitas(data.blockedHoursCitas || {});
       } catch (err) {
@@ -191,7 +193,7 @@ export default function AppointmentForm() {
     <>
       <div className="auth-wrapper-public fade-in-up">
         <div className="auth-card card" style={{ maxWidth: "620px", width: "90%", padding: "2.5rem" }}>
-          
+
           <div className="text-center mb-4">
             <div className="brand-logo-sphere" style={{ margin: "0 auto 1rem auto", width: "50px", height: "50px", fontSize: "1.4rem" }}>
               <span>H</span>
@@ -235,7 +237,7 @@ export default function AppointmentForm() {
                   type="text"
                   name="apellidoMaterno"
                   className="input"
-                  placeholder="Ej. Ruiz (Opcional)"
+                  placeholder="Ej. Ruiz"
                   value={formData.apellidoMaterno}
                   onChange={handleInputChange}
                 />
@@ -271,7 +273,7 @@ export default function AppointmentForm() {
 
             <div className="form-row mb-4">
               <div className="col">
-                <label className="form-label">Correo electrónico (Amarre de expediente único)</label>
+                <label className="form-label">Correo electrónico</label>
                 <input
                   type="email"
                   name="email"
@@ -286,10 +288,10 @@ export default function AppointmentForm() {
           </form>
 
           <h3 className="form-label mb-2" style={{ fontSize: "1rem", fontWeight: "600" }}>Área de consulta</h3>
-          
+
           {/* Modern Interactive Specialty Option Cards */}
           <div className="specialty-selector-grid mb-4">
-            <div 
+            <div
               className={`specialty-card-glass ${tipoConsulta === "fisioterapia" ? "active" : ""}`}
               onClick={() => handleTipoChange("fisioterapia")}
             >
@@ -301,7 +303,7 @@ export default function AppointmentForm() {
               {tipoConsulta === "fisioterapia" && <FiCheckCircle className="check-icon-active" />}
             </div>
 
-            <div 
+            <div
               className={`specialty-card-glass ${tipoConsulta === "nutriologa" ? "active" : ""}`}
               onClick={() => handleTipoChange("nutriologa")}
             >
@@ -333,9 +335,9 @@ export default function AppointmentForm() {
           )}
 
           {formData.nombres && formData.apellidoPaterno && formData.edad && formData.telefono && formData.email && selectedDate && selectedHour && (
-            <button 
+            <button
               type="button"
-              className="btn btn-primary btn-size-lg w-100 hover-grow glow-pulse-purple" 
+              className="btn btn-primary btn-size-lg w-100 hover-grow glow-pulse-purple"
               onClick={handleSaveCita}
               style={{ height: "50px", fontSize: "1.05rem", display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               disabled={savingCita}
@@ -351,7 +353,7 @@ export default function AppointmentForm() {
         <div className="modal-backdrop" onClick={() => setShowCalendar(false)}>
           <div className="modal-content glass-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "480px" }}>
             <button className="close-btn" onClick={() => setShowCalendar(false)}>✕</button>
-            
+
             <h4 className="logo-agendar mb-3">
               Seleccionar Fecha y Hora
             </h4>
@@ -382,12 +384,35 @@ export default function AppointmentForm() {
                     return null;
                   }}
                 />
-
+ 
                 {showHours && selectedDate && (
                   <div style={{ marginTop: "20px", textAlign: "center" }}>
                     <h4 className="text-muted mb-3" style={{ fontSize: "0.9rem", fontWeight: "600" }}>
                       Horarios para el {formatDateDDMMYYYY(selectedDate)}
                     </h4>
+
+                    {blockedNotesAdmin[selectedDate] && (
+                      <div 
+                        className="blocked-note-alert" 
+                        style={{
+                          background: 'rgba(239, 68, 68, 0.08)',
+                          border: '1px solid rgba(239, 68, 68, 0.2)',
+                          borderRadius: '8px',
+                          padding: '0.75rem',
+                          marginBottom: '1rem',
+                          color: 'var(--danger, #ef4444)',
+                          fontSize: '0.85rem',
+                          fontWeight: '500',
+                          textAlign: 'left',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem'
+                        }}
+                      >
+                        <span>📝</span>
+                        <span><strong>Nota:</strong> {blockedNotesAdmin[selectedDate]}</span>
+                      </div>
+                    )}
                     {availableHours.length > 0 ? (
                       <div className="hours-grid-modern">
                         {allHours.map((hour) => {

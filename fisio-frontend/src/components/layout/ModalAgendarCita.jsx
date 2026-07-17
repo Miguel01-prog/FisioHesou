@@ -8,6 +8,7 @@ import { showSuccess, showError } from "../../utils/alerts.js";
 export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = null }) {
   const [blockedDatesAdmin, setBlockedDatesAdmin] = useState([]);
   const [blockedHoursAdmin, setBlockedHoursAdmin] = useState({});
+  const [blockedNotesAdmin, setBlockedNotesAdmin] = useState({});
   const [blockedDatesPaciente, setBlockedDatesPaciente] = useState([]);
   const [blockedHoursCitas, setBlockedHoursCitas] = useState({});
   
@@ -68,6 +69,7 @@ export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = n
         const { data } = await api.get(`/horarios/${paciente.area}`);
         setBlockedDatesAdmin(data.blockedDatesAdmin || []);
         setBlockedHoursAdmin(data.blockedHoursAdmin || {});
+        setBlockedNotesAdmin(data.blockedNotesAdmin || {});
         setBlockedDatesPaciente(data.blockedDatesPaciente || []);
         setBlockedHoursCitas(data.blockedHoursCitas || {});
       } catch (err) {
@@ -207,8 +209,30 @@ export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = n
               Horas disponibles para el {formatDateDDMMYYYY(selectedDate)}
             </h4>
             <hr style={{ marginBottom: "1rem" }} />
+
+            {blockedNotesAdmin[selectedDate] && (
+              <div 
+                style={{
+                  background: 'rgba(239, 68, 68, 0.06)',
+                  border: '1px solid rgba(239, 68, 68, 0.15)',
+                  borderRadius: '6px',
+                  padding: '0.6rem 0.75rem',
+                  marginBottom: '1rem',
+                  color: 'var(--danger, #ef4444)',
+                  fontSize: '0.85rem',
+                  fontWeight: '500',
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem'
+                }}
+              >
+                <span>📝</span>
+                <span><strong>Nota:</strong> {blockedNotesAdmin[selectedDate]}</span>
+              </div>
+            )}
             {availableHours.length > 0 ? (
-              <div className="hours-grid-modern" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '1.5rem' }}>
+              <div className="hours-grid-modern">
                 {allHours.map((hour) => {
                   const isBlockedAdmin = blockedHoursAdmin[selectedDate]?.includes(hour);
                   const isBlockedPaciente = blockedHoursCitas[selectedDate]?.includes(hour);
@@ -225,25 +249,6 @@ export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = n
                         ${isAvailable ? "" : "disabled"}
                         ${isSelected ? "selected-hour" : ""}`}
                       disabled={!isAvailable}
-                      style={{
-                        padding: '0.6rem 0.5rem',
-                        fontSize: '0.85rem',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border-light, #e2e8f0)',
-                        background: isSelected 
-                          ? 'var(--primary, #5e50a1)' 
-                          : !isAvailable 
-                            ? 'rgba(226, 232, 240, 0.4)' 
-                            : 'transparent',
-                        color: isSelected 
-                          ? '#ffffff' 
-                          : !isAvailable 
-                            ? 'var(--text-muted, #94a3b8)' 
-                            : 'var(--text-main)',
-                        cursor: !isAvailable ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s',
-                        fontWeight: isSelected ? '600' : 'normal',
-                      }}
                       onClick={() => isAvailable && setSelectedHour(hour)}
                     >
                       {hour}

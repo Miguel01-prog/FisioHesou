@@ -305,3 +305,76 @@
     font-size: 0.85rem !important;
   }
 }
+
+/* ==========================================================================
+   🕒 HOURS SELECTOR GRID & BUTTONS
+   ========================================================================== */
+.hours-grid-modern {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)) !important;
+  gap: 0.5rem !important;
+  margin: 1.25rem 0 !important;
+  width: 100% !important;
+}
+
+.hour-btn {
+  font-family: var(--font-family-sans) !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  color: var(--text-main) !important;
+  background: var(--card-bg, rgba(255, 255, 255, 0.6)) !important;
+  border: 1px solid var(--border-light, #e2e8f0) !important;
+  border-radius: 8px !important;
+  padding: 0.5rem 0.25rem !important;
+  cursor: pointer !important;
+  transition: all var(--transition-fast) cubic-bezier(0.4, 0, 0.2, 1) !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  user-select: none !important;
+  min-height: 38px !important;
+  outline: none !important;
+}
+
+.hour-btn:hover:not(:disabled) {
+  border-color: var(--primary) !important;
+  background: var(--primary-light) !important;
+  color: var(--primary) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.hour-btn.selected-hour {
+  background: var(--primary) !important;
+  color: var(--text-inverse, #ffffff) !important;
+  border-color: var(--primary) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 10px var(--primary-glow) !important;
+  transform: scale(1.03) !important;
+}
+
+/* Unavailable hours styles */
+.hour-btn.disabled,
+.hour-btn:disabled {
+  background: rgba(226, 232, 240, 0.45) !important;
+  color: var(--text-muted, #94a3b8) !important;
+  border: 1px dashed var(--border-light, #cbd5e1) !important;
+  cursor: not-allowed !important;
+  opacity: 0.4 !important;
+  transform: none !important;
+  box-shadow: none !important;
+  position: relative !important;
+}
+
+/* Specific styling for why an hour is blocked (visual feedback) */
+.hour-btn.blocked-admin-hour {
+  background: rgba(239, 68, 68, 0.08) !important;
+  color: var(--danger, #ef4444) !important;
+  border: 1px solid rgba(239, 68, 68, 0.25) !important;
+}
+
+.hour-btn.blocked-paciente-hour {
+  background: rgba(13, 148, 136, 0.08) !important;
+  color: var(--accent, #0d9488) !important;
+  border: 1px solid rgba(13, 148, 136, 0.2) !important;
+}

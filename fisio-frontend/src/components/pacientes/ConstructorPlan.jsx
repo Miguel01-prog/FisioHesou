@@ -134,15 +134,15 @@ const ConstructorPlan = () => {
       
       <div className="cards-column">
         <div className="auth-card auth-card-detail">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 className="title_card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            <h2 className="title_card" style={{ margin: 0 }}>
               {idPlan ? "Editar Plan de Tratamiento" : "Nuevo Plan de Tratamiento"}
             </h2>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button className="save-btn" onClick={() => setMostrarModal(true)} style={{ width: 'auto', backgroundColor: '#17a2b8' }}>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <button className="save-btn" onClick={() => setMostrarModal(true)} style={{ width: 'auto', backgroundColor: '#17a2b8', margin: 0 }}>
                 + Añadir Ejercicio
               </button>
-              <button className="save-btn" onClick={guardarPlan} disabled={guardando} style={{ width: '150px' }}>
+              <button className="save-btn" onClick={guardarPlan} disabled={guardando} style={{ width: '150px', margin: 0 }}>
                 {guardando ? <LoadingSpinner size="small" color="#fff" /> : "Guardar y Ver"}
               </button>
             </div>
@@ -178,32 +178,32 @@ const ConstructorPlan = () => {
                     <FaTrash />
                   </button>
                   
-                  <div style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}>
+                  <div style={{ display: 'flex', gap: '15px', marginBottom: '15px', flexWrap: 'wrap' }}>
                     {item.ejercicio.imagenUrl && (
                         <img src={`http://localhost:5000${item.ejercicio.imagenUrl}`} alt={item.ejercicio.nombre} style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '4px' }} />
                     )}
-                    <div>
+                    <div style={{ flex: '1 1 200px' }}>
                         <h4 style={{ margin: '0 0 5px 0', color: '#42133B' }}>{item.ejercicio.nombre}</h4>
                         <p style={{ margin: 0, fontSize: '12px', color: '#555' }}>{item.ejercicio.descripcion}</p>
                     </div>
                   </div>
-
-                  <div className="form-row" style={{ gap: '10px' }}>
-                    <div className="form-col">
+                  
+                  <div className="form-row" style={{ gap: '10px', flexWrap: 'wrap' }}>
+                    <div className="form-col" style={{ flex: '1 1 80px' }}>
                       <label className="form-label" style={{fontSize: '12px'}}>Series:</label>
                       <input type="text" className="input" placeholder="Ej. 3" value={item.series} onChange={(e) => handleChangeIndicaciones(idx, "series", e.target.value)} />
                     </div>
-                    <div className="form-col">
+                    <div className="form-col" style={{ flex: '1 1 80px' }}>
                       <label className="form-label" style={{fontSize: '12px'}}>Reps:</label>
                       <input type="text" className="input" placeholder="Ej. 10" value={item.repeticiones} onChange={(e) => handleChangeIndicaciones(idx, "repeticiones", e.target.value)} />
                     </div>
-                    <div className="form-col">
+                    <div className="form-col" style={{ flex: '1 1 120px' }}>
                       <label className="form-label" style={{fontSize: '12px'}}>Frecuencia:</label>
                       <input type="text" className="input" placeholder="Ej. 2 veces al día" value={item.frecuencia} onChange={(e) => handleChangeIndicaciones(idx, "frecuencia", e.target.value)} />
                     </div>
-                    <div className="form-col" style={{ flex: '2' }}>
+                    <div className="form-col" style={{ flex: '2 1 200px' }}>
                       <label className="form-label" style={{fontSize: '12px'}}>Notas específicas:</label>
-                      <input type="text" className="input" placeholder="Ej. Mantener 5 segundos..." value={item.notas} onChange={(e) => handleChangeIndicaciones(idx, "notas", e.target.value)} />
+                      <input type="text" className="input" placeholder="Ej. Mantener 5 segundos..." value={item.notes || item.notas} onChange={(e) => handleChangeIndicaciones(idx, "notas", e.target.value)} />
                     </div>
                   </div>
                 </div>

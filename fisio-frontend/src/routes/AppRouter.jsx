@@ -39,6 +39,7 @@ import InformacionClinica from '../components/layout/InformacionClinica.jsx';
 //configuraciones 
 import Antecedentes from '../components/layout/Antecedentes.jsx';
 import ConfiguracionEjercicios from '../components/layout/ConfiguracionEjercicios.jsx';
+import ProfilePage from '../components/layout/ProfilePage.jsx';
 
 
 export default function AppRouter() {
@@ -60,6 +61,7 @@ export default function AppRouter() {
       >
         <Route index element={<Dashboard />} />
         <Route path="users" element={<UsersPage />} />
+        <Route path="perfil" element={<ProfilePage />} />
       </Route>
 
       {/* Fisioterapeuta */}
@@ -87,6 +89,7 @@ export default function AppRouter() {
         <Route path="informacion-clinica" element={<InformacionClinica/>}/>
         <Route path="antecedentes" element={<Antecedentes/>}/>
         <Route path="ejercicios" element={<ConfiguracionEjercicios/>}/>
+        <Route path="perfil" element={<ProfilePage />} />
       </Route>
 
       {/* Nutrióloga */}
@@ -102,6 +105,7 @@ export default function AppRouter() {
         <Route path="bloquear" element={<BloquearHorarioNutri />} />
         <Route path="paciente/:id" element={<PacienteDetalle />} />
         <Route path="pacientes" element={<ListaPacientes/>} />
+        <Route path="perfil" element={<ProfilePage />} />
       </Route>
 
       {/* Ruta no encontrada */}

@@ -1,6 +1,7 @@
 import Cita from "../models/cita.model.js";
 import Paciente from "../models/pacientes.model.js";
 import crypto from "crypto";
+import Notification from "../models/notification.model.js";
 
 
 function generarIdentificadorPaciente(nombres, apellidos, telefono) {
@@ -95,6 +96,20 @@ export const crearCita = async (req, res) => {
 
     await nuevaCita.save();
 
+    // Crear notificación para el especialista
+    try {
+      await Notification.create({
+        title: "Nueva Cita Agendada (Pública)",
+        description: `El paciente ${nombres} ${apellidoPaterno} agendó una cita de ${area} para el ${fechaCitaStr} a las ${horaCita}.`,
+        area: area === "fisioterapia" || area === "fisioterapeuta" ? "fisioterapeuta" : "nutriologa",
+        type: "new_appointment",
+        citaId: nuevaCita._id,
+        identificadorPaciente: nuevaCita.identificadorPaciente
+      });
+    } catch (e) {
+      console.error("Error al crear notificación de cita pública:", e);
+    }
+
     res.status(201).json({ 
       message: esNuevoPaciente ? "Cita y expediente creados correctamente" : "Cita creada correctamente", 
       cita: nuevaCita,
@@ -145,6 +160,20 @@ export const crearCitaManual = async (req, res) => {
 
     await nuevaCita.save();
 
+    // Crear notificación para el especialista
+    try {
+      await Notification.create({
+        title: "Nueva Cita Registrada (Manual)",
+        description: `Cita manual para ${paciente.nombres} ${paternal} agendada para el ${fechaCitaStr} a las ${horaCita}.`,
+        area: area === "fisioterapia" || area === "fisioterapeuta" ? "fisioterapeuta" : "nutriologa",
+        type: "new_appointment",
+        citaId: nuevaCita._id,
+        identificadorPaciente: nuevaCita.identificadorPaciente
+      });
+    } catch (e) {
+      console.error("Error al crear notificación de cita manual:", e);
+    }
+
     res.status(201).json({ 
       message: "Cita creada correctamente para el paciente existente", 
       cita: nuevaCita
@@ -161,7 +190,16 @@ export const obtenerCitas = async (req, res) => {
   console.log("- Obtener Citas: Obteniendo todas las citas por area...");
   try {
     const { area } = req.query;
-    const filtro = area ? { area } : {};
+    let filtro = {};
+    if (area) {
+      const areasABuscar = [area];
+      if (area === "fisioterapia" || area === "fisioterapeuta") {
+        areasABuscar.push("fisioterapia", "fisioterapeuta");
+      } else if (area === "nutriologa" || area === "nutricion" || area === "nutriología") {
+        areasABuscar.push("nutriologa", "nutricion", "nutriología");
+      }
+      filtro = { area: { $in: areasABuscar } };
+    }
     const citas = await Cita.find(filtro).sort({ fechaCita: 1 });
     res.json(citas);
   } catch (err) {
@@ -207,12 +245,14 @@ export const obtenerCitasPorRol = async (req, res) => {
       return res.status(400).json({ message: "Debe especificar un rol o área" });
     }
 
-    const citas = await Cita.find({ area: rol }).sort({ fechaCita: 1 });
-
-    if (!citas.length) {
-      return res.status(404).json({ message: "No hay citas para este rol" });
+    const areasABuscar = [rol];
+    if (rol === "fisioterapia" || rol === "fisioterapeuta") {
+      areasABuscar.push("fisioterapia", "fisioterapeuta");
+    } else if (rol === "nutriologa" || rol === "nutricion" || rol === "nutriología") {
+      areasABuscar.push("nutriologa", "nutricion", "nutriología");
     }
 
+    const citas = await Cita.find({ area: { $in: areasABuscar } }).sort({ fechaCita: 1 });
     res.json(citas);
   } catch (err) {
     console.error(" Error al obtener citas por rol:", err);
