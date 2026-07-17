@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './Header.css';
-import { FiMenu, FiBell, FiChevronDown, FiActivity, FiUser } from 'react-icons/fi';
+import { FiMenu, FiBell, FiChevronDown, FiActivity, FiUser, FiKey } from 'react-icons/fi';
 import { RxExit } from "react-icons/rx";
+import ModalCambiarContrasena from './ModalCambiarContrasena.jsx';
 
 export default function Header({
   isCollapsed,
@@ -15,6 +16,7 @@ export default function Header({
   const navigate = useNavigate();
   const location = useLocation();
   const [bellOpen, setBellOpen] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -209,6 +211,17 @@ export default function Header({
           </div>
         </div>
 
+        {/* Change Password Button */}
+        <button 
+          className="header-action-icon-btn" 
+          onClick={() => setShowChangePasswordModal(true)}
+          title="Cambiar Contraseña"
+          aria-label="Cambiar contraseña"
+          style={{ marginRight: '8px', borderColor: 'rgba(94, 80, 161, 0.15)', color: 'var(--primary)' }}
+        >
+          <FiKey size={18} />
+        </button>
+
         {/* Exit Button */}
         <button 
           className="header-action-icon-btn" 
@@ -221,6 +234,10 @@ export default function Header({
         </button>
 
       </div>
+
+      {showChangePasswordModal && (
+        <ModalCambiarContrasena onClose={() => setShowChangePasswordModal(false)} />
+      )}
     </header>
   );
 }

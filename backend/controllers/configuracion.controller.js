@@ -19,6 +19,20 @@ export const crearConfiguracion = async (req, res) => {
 export const obtenerConfiguraciones = async (req, res) => {
     console.log("obtenerConfiguraciones: Obteniendo configuraciones");
     try {
+        // Asegurar que existan los antecedentes médicos iniciales
+        const medExists = await configuracion.findOne({ clave: "AntMed" });
+        if (!medExists) {
+            await configuracion.create({ clave: "AntMed", descripcion: "Antecedentes Médicos" });
+            console.log("obtenerConfiguraciones: Creada configuración inicial AntMed");
+        }
+
+        // Asegurar que existan los antecedentes familiares iniciales
+        const famExists = await configuracion.findOne({ clave: "AntFam" });
+        if (!famExists) {
+            await configuracion.create({ clave: "AntFam", descripcion: "Antecedentes Familiares" });
+            console.log("obtenerConfiguraciones: Creada configuración inicial AntFam");
+        }
+
         const configuraciones = await configuracion.find();
         res.json({ ok: true, configuraciones });
         console.log("obtenerConfiguraciones: Configuraciones obtenidas con éxito");
@@ -68,10 +82,18 @@ export const obtenerItemsPorClave = async (req, res) => {
     const { clave } = req.params;
     console.log("Clave recibida:", clave);
 
-    const config = await configuracion.findOne({ clave });
+    let config = await configuracion.findOne({ clave });
 
     if (!config) {
-      return res.json({ ok: true, items: [] });
+      if (clave === "AntMed") {
+        config = await configuracion.create({ clave: "AntMed", descripcion: "Antecedentes Médicos" });
+        console.log("obtenerItemsPorClave: Auto-creada configuración inicial AntMed");
+      } else if (clave === "AntFam") {
+        config = await configuracion.create({ clave: "AntFam", descripcion: "Antecedentes Familiares" });
+        console.log("obtenerItemsPorClave: Auto-creada configuración inicial AntFam");
+      } else {
+        return res.json({ ok: true, items: [] });
+      }
     }
 
     const items = await confItemSchema.find({

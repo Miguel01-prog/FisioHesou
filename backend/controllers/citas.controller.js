@@ -365,3 +365,138 @@ export const actualizarCita = async (req, res) => {
     res.status(500).json({ message: "Error al actualizar la cita", error: err.message });
   }
 };
+
+export const crearCitaManualCompleta = async (req, res) => {
+  console.log("- Crear cita manual completa...");
+  try {
+    let { identificadorPaciente, nombres, apellidoPaterno, apellidoMaterno, edad, telefono, email, fechaCitaStr, horaCita, area } = req.body;
+
+    if (!fechaCitaStr || !horaCita || !area) {
+      return res.status(400).json({ message: "La fecha, hora y área de la cita son obligatorios" });
+    }
+
+    let esNuevoPaciente = true;
+    let pacienteExiste = null;
+
+    // Si se pasa un ID directo, buscar primero por ID
+    if (identificadorPaciente) {
+      pacienteExiste = await Paciente.findOne({ identificadorPaciente });
+      if (pacienteExiste) {
+        esNuevoPaciente = false;
+        console.log(`Paciente existente encontrado por ID: ${identificadorPaciente}`);
+      }
+    }
+
+    // Si no se encontró por ID, pero tenemos datos relevantes, buscar por nombres/teléfono
+    const tieneNombres = nombres && nombres.trim() !== "";
+    const tieneApellido = apellidoPaterno && apellidoPaterno.trim() !== "";
+    const tieneTelefono = telefono && telefono.trim() !== "";
+    const tieneDatosRelevantes = tieneNombres && tieneApellido && tieneTelefono;
+
+    if (esNuevoPaciente && tieneDatosRelevantes) {
+      // 1. Verificar si el paciente ya existe en la base de datos
+      const cleanEmail = email ? email.trim().toLowerCase() : "";
+      if (cleanEmail !== "") {
+        pacienteExiste = await Paciente.findOne({
+          $or: [
+            {
+              nombres: { $regex: new RegExp(`^${nombres.trim()}$`, "i") },
+              apellidoPaterno: { $regex: new RegExp(`^${apellidoPaterno.trim()}$`, "i") },
+              apellidoMaterno: { $regex: new RegExp(`^${(apellidoMaterno || "").trim()}$`, "i") },
+              telefono: telefono.trim()
+            },
+            {
+              email: cleanEmail
+            }
+          ]
+        });
+      } else {
+        pacienteExiste = await Paciente.findOne({
+          nombres: { $regex: new RegExp(`^${nombres.trim()}$`, "i") },
+          apellidoPaterno: { $regex: new RegExp(`^${apellidoPaterno.trim()}$`, "i") },
+          apellidoMaterno: { $regex: new RegExp(`^${(apellidoMaterno || "").trim()}$`, "i") },
+          telefono: telefono.trim()
+        });
+      }
+
+      if (pacienteExiste) {
+        identificadorPaciente = pacienteExiste.identificadorPaciente;
+        esNuevoPaciente = false;
+        console.log(`Paciente existente encontrado por coincidencia de datos: ID ${identificadorPaciente}`);
+      } else {
+        // Generar identificador normal (12-char hex)
+        identificadorPaciente = crypto.randomBytes(6).toString("hex");
+        console.log(`Paciente nuevo con datos completos. ID: ${identificadorPaciente}`);
+      }
+    } else if (esNuevoPaciente) {
+      // Si faltan datos relevantes y no existe por ID:
+      // Asignar placeholders para cumplir las validaciones del esquema
+      nombres = nombres && nombres.trim() !== "" ? nombres.trim() : "Paciente Manual Incompleto";
+      apellidoPaterno = apellidoPaterno && apellidoPaterno.trim() !== "" ? apellidoPaterno.trim() : "Sin Apellido";
+      apellidoMaterno = apellidoMaterno || "";
+      edad = edad ? Number(edad) : 0;
+      
+      // Asignar un número de teléfono diferente para distinguir que faltan datos
+      telefono = telefono && telefono.trim() !== "" ? telefono.trim() : `000-${Math.floor(100000 + Math.random() * 900000)}`;
+      email = email ? email.trim().toLowerCase() : "";
+
+      // Asignar un identificador de paciente diferente (prefijo INC-)
+      identificadorPaciente = `INC-${Math.floor(100000 + Math.random() * 900000)}`;
+      console.log(`Paciente incompleto. Generando ID de control: ${identificadorPaciente} y Teléfono: ${telefono}`);
+    }
+
+    // 2. Si es un nuevo expediente (ya sea completo o incompleto), crearlo
+    if (esNuevoPaciente) {
+      pacienteExiste = await Paciente.create({
+        nombres,
+        apellidoPaterno,
+        apellidoMaterno: apellidoMaterno || "",
+        edad: edad || 0,
+        telefono,
+        email: email || "",
+        identificadorPaciente,
+        area,
+        esNuevo: true,
+        fechaRegistro: new Date(),
+      });
+      console.log("Paciente creado automáticamente desde cita manual.");
+    } else {
+      // Si el paciente ya existe, nos aseguramos de usar sus datos guardados para la cita
+      nombres = pacienteExiste.nombres;
+      apellidoPaterno = pacienteExiste.apellidoPaterno;
+      apellidoMaterno = pacienteExiste.apellidoMaterno;
+      edad = pacienteExiste.edad;
+      telefono = pacienteExiste.telefono;
+      email = pacienteExiste.email;
+    }
+
+    // 3. Crear la cita
+    const fechaCita = new Date(fechaCitaStr);
+    const nuevaCita = new Cita({
+      nombres,
+      apellidoPaterno,
+      apellidoMaterno: apellidoMaterno || "",
+      edad: edad || 0,
+      telefono,
+      email: email || "",
+      fechaCita,
+      fechaCitaStr,
+      horaCita,
+      area,
+      identificadorPaciente,
+      esNuevoPaciente
+    });
+
+    await nuevaCita.save();
+
+    res.status(201).json({
+      message: esNuevoPaciente ? "Cita y expediente creados correctamente" : "Cita creada para paciente existente",
+      cita: nuevaCita,
+      pacienteNuevo: esNuevoPaciente,
+      datosIncompletos: !tieneDatosRelevantes
+    });
+  } catch (error) {
+    console.error("Error al crear cita manual completa:", error);
+    res.status(500).json({ message: "Error al crear la cita manual", error: error.message });
+  }
+};

@@ -121,4 +121,37 @@ router.put('/reset-password/:id', verifyToken, checkRole('superadmin'), async (r
   }
 });
 
+// Cambiar contraseña (el propio usuario logueado)
+router.put('/change-password', verifyToken, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'La contraseña actual y la nueva son obligatorias' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Verificar la contraseña actual
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'La contraseña actual es incorrecta' });
+    }
+
+    // Hashear y guardar la nueva contraseña
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({ message: 'Contraseña actualizada correctamente' });
+  } catch (error) {
+    console.error('Error al cambiar contraseña:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

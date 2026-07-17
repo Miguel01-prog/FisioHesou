@@ -208,6 +208,7 @@ const FormularioHistorial = () => {
   const [antecedenteSeleccionado, setAntecedenteSeleccionado] = useState("");
   const [itemsAntMed, setItemsAntMed] = useState([]);
   const [antecedenteMedico, setAntecedenteMedico] = useState("");
+  const [edadEditable, setEdadEditable] = useState("");
 
   const getValorAntFam = (id) => {
     const found = itemsAntFam.find(item => item._id === id);
@@ -387,6 +388,7 @@ const FormularioHistorial = () => {
       fechaRegistro: datosPaciente.fechaCitaStr,
       identificadorPaciente: datosPaciente.identificadorPaciente,
     });
+    setEdadEditable(datosPaciente.edad || "");
 
     const cargarID = async () => {
       const idGenerado = await generarIdNotaFront(datosPaciente, mesAño);
@@ -571,6 +573,7 @@ const FormularioHistorial = () => {
       const historialData = {
         identificadorPaciente: finalPacienteId,
         idHistorial: finalIdHistoricoFk,
+        edad: edadEditable ? Number(edadEditable) : undefined,
         antecedentesFamiliares: formData.antecedentesFamiliares,
         antecedentesMedicos: formData.antecedentesMedicos,
         antecedentesQuirurgicos: formData.antecedentesQuirurgicos,
@@ -749,7 +752,18 @@ const FormularioHistorial = () => {
                         </div>
                         <div className="col">
                           <label className="form-label">Edad (Años)</label>
-                          <input type="text" className="input" value={paciente.edad} readOnly style={{ background: "rgba(226, 232, 240, 0.4)" }} />
+                          {!paciente.edad || paciente.edad === 0 || paciente.edad === "0" || paciente.edad === "No especificada" ? (
+                            <input
+                              type="number"
+                              className="input"
+                              value={edadEditable}
+                              onChange={(e) => setEdadEditable(e.target.value)}
+                              placeholder="Ej. 30"
+                              min="1"
+                            />
+                          ) : (
+                            <input type="text" className="input" value={paciente.edad} readOnly style={{ background: "rgba(226, 232, 240, 0.4)" }} />
+                          )}
                         </div>
                       </>
                     )}

@@ -1,5 +1,5 @@
 import express from "express";
-import { crearCita, crearCitaManual, obtenerCitas, obtenerCitaPorId, eliminarCita, obtenerCitasPorRol,
+import { crearCita, crearCitaManual, crearCitaManualCompleta, obtenerCitas, obtenerCitaPorId, eliminarCita, obtenerCitasPorRol,
          validarPacientesNoRegistrados, ObtenerDetallesPaciente, actualizarEstadoCita, actualizarCita} from "../controllers/citas.controller.js";
 import { verifyToken } from "../libs/auth.middleware.js";
 
@@ -11,6 +11,7 @@ router.post("/", crearCita);
 // Protected clinic management routes
 router.get("/validar-pacientes", verifyToken, validarPacientesNoRegistrados);
 router.post("/manual", verifyToken, crearCitaManual);
+router.post("/manual-completa", verifyToken, crearCitaManualCompleta);
 router.get("/", verifyToken, obtenerCitas);
 router.get("/rol/:rol", verifyToken, obtenerCitasPorRol);
 router.get("/detalles-paciente/:id", verifyToken, ObtenerDetallesPaciente);
