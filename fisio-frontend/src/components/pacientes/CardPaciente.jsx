@@ -32,13 +32,8 @@ const CardPaciente = ({ paciente }) => {
 
         <div className="profile-detail-item">
           <span className="profile-detail-label">Edad</span>
-          <span className="profile-detail-value">{paciente.edad || "No especificada"} años</span>
-        </div>
-
-        <div className="profile-detail-item">
-          <span className="profile-detail-label">ID Paciente</span>
-          <span className="profile-detail-value" style={{ fontFamily: "monospace", fontSize: "0.9rem" }}>
-            {paciente.identificadorPaciente}
+          <span className="profile-detail-value">
+            {paciente.edad ? `${paciente.edad} años` : "No especificada"}
           </span>
         </div>
 

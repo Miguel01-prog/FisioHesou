@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Historial from "../models/historial-pacientes.model.js";
 import Nota from "../models/notas.model.js";
+import Paciente from "../models/pacientes.model.js";
 
 // Crear historial + nota SOAP y enlazarlos
 export const crearHistorialConNotaSOAP = async (req, res) => {
@@ -11,6 +12,17 @@ export const crearHistorialConNotaSOAP = async (req, res) => {
       const { historialData, notaData } = req.body;
       const nuevoHistorial = new Historial(historialData);
       const historialGuardado = await nuevoHistorial.save({ session });
+
+      // Si se proporciona la edad en historialData, actualizar el Paciente
+      if (historialData.identificadorPaciente && (historialData.edad || req.body.edad)) {
+        const edadActualizada = Number(historialData.edad || req.body.edad);
+        await Paciente.updateOne(
+          { identificadorPaciente: historialData.identificadorPaciente },
+          { $set: { edad: edadActualizada } },
+          { session }
+        );
+        console.log(`crearHistorialConNotaSOAP: Edad del paciente ${historialData.identificadorPaciente} actualizada a ${edadActualizada}`);
+      }
 
       // Crear nota SOAP y asociarla al historial
       const nuevaNota = new Nota({

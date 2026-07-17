@@ -6,12 +6,15 @@ import Calendar from "react-calendar";
 import "../../styles/calendary.css";
 import api from "../../api";
 
+import ModalAgendarManual from "./ModalAgendarManual.jsx";
+
 export default function AgendaCitas() {
   const [citas, setCitas] = useState([]);
   const [selectedDay, setSelectedDay] = useState(null);
   const [citasDelDia, setCitasDelDia] = useState([]);
   const [blockedDatesAdmin, setBlockedDatesAdmin] = useState([]);
   const [blockedDatesPaciente, setBlockedDatesPaciente] = useState([]);
+  const [showAgendarManualModal, setShowAgendarManualModal] = useState(false);
   const user = JSON.parse(localStorage.getItem("user"));
   const rolUsuario = getUsuarioRol(user);
   const hoyStr = toLocalISODate(new Date());
@@ -20,33 +23,38 @@ export default function AgendaCitas() {
   const normalizar = (str) =>
     (str || "").trim().toLowerCase().replace(/\s+/g, " ");
 
-  // Cargar citas por rol
-  useEffect(() => {
-    const fetchCitas = async () => {
-      try {
-        const endpoint = rolUsuario ? `/citas?area=${rolUsuario}` : "/citas";
-        const { data } = await api.get(endpoint);
-        setCitas(data || []);
+  const fetchCitas = async () => {
+    try {
+      const endpoint = rolUsuario ? `/citas?area=${rolUsuario}` : "/citas";
+      const { data } = await api.get(endpoint);
+      setCitas(data || []);
 
-        const adminDays = [
-          ...new Set(data.filter(c => c.area === "administrador").map(c => c.fechaCitaStr))
-        ];
-        const pacienteDays = [
-          ...new Set(data.filter(c => c.area !== "administrador").map(c => c.fechaCitaStr))
-        ];
-        setBlockedDatesAdmin(adminDays);
-        setBlockedDatesPaciente(pacienteDays);
+      const adminDays = [
+        ...new Set(data.filter(c => c.area === "administrador").map(c => c.fechaCitaStr))
+      ];
+      const pacienteDays = [
+        ...new Set(data.filter(c => c.area !== "administrador").map(c => c.fechaCitaStr))
+      ];
+      setBlockedDatesAdmin(adminDays);
+      setBlockedDatesPaciente(pacienteDays);
 
-        const citasHoy = data.filter(c => c.fechaCitaStr === hoyStr);
-        citasHoy.sort((a, b) => (a.horaCita > b.horaCita ? 1 : -1));
+      const targetDay = selectedDay || hoyStr;
+      const citasDia = data.filter(c => c.fechaCitaStr === targetDay);
+      citasDia.sort((a, b) => (a.horaCita > b.horaCita ? 1 : -1));
+      
+      if (!selectedDay) {
         setSelectedDay(hoyStr);
-        setCitasDelDia(citasHoy);
-      } catch (err) {
-        console.error("Error al cargar citas:", err);
       }
-    };
+      setCitasDelDia(citasDia);
+    } catch (err) {
+      console.error("Error al cargar citas:", err);
+    }
+  };
+
+  // Cargar citas por rol o cambio de día
+  useEffect(() => {
     fetchCitas();
-  }, [rolUsuario]);
+  }, [rolUsuario, selectedDay]);
 
 
   const handleDayClick = (date) => {
@@ -55,9 +63,6 @@ export default function AgendaCitas() {
     if (iso < hoy) return;
 
     setSelectedDay(iso);
-    const citasDia = citas.filter(c => c.fechaCitaStr === iso);
-    citasDia.sort((a, b) => (a.horaCita > b.horaCita ? 1 : -1));
-    setCitasDelDia(citasDia);
   };
 
   return (
@@ -90,7 +95,7 @@ export default function AgendaCitas() {
 
           {/* Citas del día */}
           <div className="agenda-right-citas" style={{ marginTop: "20px" }}>
-            <div className="text-muted text-center">
+            <div className="text-muted text-center" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
               <h4>
                 {selectedDay
                   ? selectedDay === hoyStr
@@ -98,6 +103,26 @@ export default function AgendaCitas() {
                     : `Citas para ${formatDateDDMMYYYY(selectedDay)}`
                   : "Selecciona un día"}
               </h4>
+              {selectedDay && (
+                <button
+                  type="button"
+                  className="btn-primary-action hover-grow"
+                  onClick={() => setShowAgendarManualModal(true)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    fontSize: '0.9rem',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: 'var(--primary, #5e50a1)',
+                    color: '#ffffff',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    width: 'auto'
+                  }}
+                >
+                  ➕ Agendar Cita Manual
+                </button>
+              )}
             </div>
 
             <div className="right-body">
@@ -138,6 +163,15 @@ export default function AgendaCitas() {
           </div>
         </div>
       </div>
+      {showAgendarManualModal && (
+        <ModalAgendarManual
+          selectedDateInitial={selectedDay}
+          onClose={() => setShowAgendarManualModal(false)}
+          onSaveSuccess={() => {
+            fetchCitas();
+          }}
+        />
+      )}
     </div>
   );
 }
