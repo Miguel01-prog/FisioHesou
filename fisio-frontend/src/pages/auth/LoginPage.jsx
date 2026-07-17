@@ -79,11 +79,11 @@ export default function LoginPage() {
           </div>
         </form>
 
-        <div className="text-center mt-3" style={{ marginTop: '1.5rem' }}>
+        {/*<div className="text-center mt-3" style={{ marginTop: '1.5rem' }}>
           <p className="text-muted" style={{ fontSize: '0.9rem' }}>
             ¿No tienes cuenta? <Link to="/register" style={{ color: 'var(--primary)', fontWeight: '600' }}>Regístrate aquí</Link>
           </p>
-        </div>
+        </div>*/}
       </div>
     </div>
   );
