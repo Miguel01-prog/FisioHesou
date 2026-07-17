@@ -45,13 +45,30 @@ const allowedOrigins = [
   "http://127.0.0.1:3000"
 ];
 
+if (process.env.FRONTEND_URL) {
+  const envOrigins = process.env.FRONTEND_URL.split(",").map(o => o.trim());
+  allowedOrigins.push(...envOrigins);
+}
+
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error("No permitido por la política de CORS de la aplicación"));
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
     }
+    
+    // Automatically allow Vercel domains
+    try {
+      const hostname = new URL(origin).hostname;
+      if (hostname.endsWith(".vercel.app")) {
+        return callback(null, true);
+      }
+    } catch (e) {
+      // Invalid URL format
+    }
+    
+    callback(new Error("No permitido por la política de CORS de la aplicación"));
   },
   credentials: true
 }));
