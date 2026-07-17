@@ -12,12 +12,16 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
+        const storedToken = localStorage.getItem('token');
+        if (storedToken) setToken(storedToken);
         const res = await api.get('/auth/me');
         setUser({ name: res.data.name, role: res.data.role });
         localStorage.setItem('user', JSON.stringify({ role: res.data.role, nombre: res.data.name }));
       } catch (err) {
         setUser(null);
+        setToken(null);
         localStorage.removeItem('user');
+        localStorage.removeItem('token');
       } finally {
         setLoading(false);
       }
@@ -27,10 +31,13 @@ export const AuthProvider = ({ children }) => {
 
 
   // 🔐 Iniciar sesión
-  const login = (userData) => {
-    // The backend already set the token in HttpOnly cookie
+  const login = (userData, userToken = null) => {
     setUser(userData);
     localStorage.setItem('user', JSON.stringify({ rol: userData.role, nombre: userData.name })); 
+    if (userToken) {
+      setToken(userToken);
+      localStorage.setItem('token', userToken);
+    }
   };
 
   // 🚪 Cerrar sesión
@@ -43,6 +50,7 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setUser(null);
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
   };
 
   const value = { user, token, login, logout, loading };
