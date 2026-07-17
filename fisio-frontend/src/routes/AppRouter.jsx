@@ -18,8 +18,8 @@ import BloquearHorarioFisio from '../pages/fisioterapeuta/BloquearHorario.jsx';
 import BloquearHorarioNutri from '../pages/nutriologa/BloquearHorario.jsx';
 import AgendaCitas from '../components/layout/AgendarCitas.jsx';
 // Componentes Pacientes
-import PacienteDetalle from '../components/Pacientes/PacienteDetalle.jsx';
-import ListaPacientes from '../components/Pacientes/Pacientes.jsx';
+import PacienteDetalle from '../components/pacientes/PacienteDetalle.jsx';
+import ListaPacientes from '../components/pacientes/Pacientes.jsx';
 import ConstructorPlan from '../components/pacientes/ConstructorPlan.jsx';
 import PlanDocumento from '../components/pacientes/PlanDocumento.jsx';
 import ListaPlanesPaciente from '../components/pacientes/ListaPlanesPaciente.jsx';
