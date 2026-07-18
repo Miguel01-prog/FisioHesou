@@ -76,7 +76,7 @@ router.post('/login', async (req, res) => {
       maxAge: 12 * 60 * 60 * 1000 // 12 hours
     });
 
-    res.json({ role: user.role, name: user.name });
+    res.json({ role: user.role, name: user.name, token });
     console.log("Usuario logueado exitosamente:", user.email);
   } catch (err) {
     res.status(500).json({ error: err.message });
