@@ -49,6 +49,7 @@ const historialPacienteSchema = new mongoose.Schema({
     fechaFirmaPaciente: { type: String, default: "" },
     fechaFirmaProfesional: { type: String, default: "" },
     soapFK: { type: mongoose.Schema.Types.ObjectId, ref: "Nota" },
+    clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', required: true }
 });
 
 export default mongoose.model("HistorialPacientes", historialPacienteSchema);

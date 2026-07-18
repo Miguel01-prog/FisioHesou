@@ -10,14 +10,17 @@ export const crearHistorialConNotaSOAP = async (req, res) => {
 
     try {
       const { historialData, notaData } = req.body;
-      const nuevoHistorial = new Historial(historialData);
+      const nuevoHistorial = new Historial({
+        ...historialData,
+        clientId: req.user.clientId
+      });
       const historialGuardado = await nuevoHistorial.save({ session });
 
       // Si se proporciona la edad en historialData, actualizar el Paciente
       if (historialData.identificadorPaciente && (historialData.edad || req.body.edad)) {
         const edadActualizada = Number(historialData.edad || req.body.edad);
         await Paciente.updateOne(
-          { identificadorPaciente: historialData.identificadorPaciente },
+          { identificadorPaciente: historialData.identificadorPaciente, clientId: req.user.clientId },
           { $set: { edad: edadActualizada } },
           { session }
         );
@@ -28,6 +31,7 @@ export const crearHistorialConNotaSOAP = async (req, res) => {
       const nuevaNota = new Nota({
         ...notaData,
         identificadorPaciente: historialData.identificadorPaciente,
+        clientId: req.user.clientId
       });
       const notaGuardada = await nuevaNota.save({ session });
 
@@ -58,15 +62,12 @@ export const crearHistorialConNotaSOAP = async (req, res) => {
 // Obtener historial con nota SOAP
 export const obtenerHistorialConNotaSOAP = async (req, res) => {
   try {
-  const historial = await Historial.findById(req.params.id).populate("soapFK");
-  if (!historial) return res.status(404).json({ ok: false, msg: "Historial no encontrado" });
+    const historial = await Historial.findOne({ _id: req.params.id, clientId: req.user.clientId }).populate("soapFK");
+    if (!historial) return res.status(404).json({ ok: false, msg: "Historial no encontrado" });
 
-
-  res.json({ ok: true, historial });
-
-
+    res.json({ ok: true, historial });
   } catch (error) {
-  res.status(500).json({ ok: false, error: error.message });
+    res.status(500).json({ ok: false, error: error.message });
   }
 };
 
@@ -74,7 +75,7 @@ export const obtenerHistorialConNotaSOAP = async (req, res) => {
 export const obtenerHistorialPorPaciente = async (req, res) => {
   try {
     const { pacienteId } = req.params;
-    const historial = await Historial.findOne({ identificadorPaciente: pacienteId }).populate("soapFK");
+    const historial = await Historial.findOne({ identificadorPaciente: pacienteId, clientId: req.user.clientId }).populate("soapFK");
     if (!historial) {
       return res.status(404).json({ ok: false, msg: "No se encontró historial para este paciente" });
     }

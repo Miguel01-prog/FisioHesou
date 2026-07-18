@@ -14,7 +14,8 @@ export const crearEjercicio = async (req, res) => {
         const nuevoEjercicio = new Ejercicio({
             nombre,
             descripcion,
-            imagenUrl
+            imagenUrl,
+            clientId: req.user.clientId
         });
 
         const ejercicioGuardado = await nuevoEjercicio.save();
@@ -27,7 +28,13 @@ export const crearEjercicio = async (req, res) => {
 
 export const obtenerEjercicios = async (req, res) => {
     try {
-        const ejercicios = await Ejercicio.find({ activo: true }).sort({ fechaCreacion: -1 });
+        const ejercicios = await Ejercicio.find({
+            activo: true,
+            $or: [
+                { clientId: req.user.clientId },
+                { clientId: null }
+            ]
+        }).sort({ fechaCreacion: -1 });
         res.json({ ok: true, ejercicios });
     } catch (error) {
         console.error("Error al obtener ejercicios:", error);
@@ -38,10 +45,14 @@ export const obtenerEjercicios = async (req, res) => {
 export const eliminarEjercicio = async (req, res) => {
     try {
         const { id } = req.params;
-        const ejercicio = await Ejercicio.findByIdAndUpdate(id, { activo: false }, { new: true });
+        const ejercicio = await Ejercicio.findOneAndUpdate(
+            { _id: id, clientId: req.user.clientId },
+            { activo: false },
+            { new: true }
+        );
         
         if (!ejercicio) {
-            return res.status(404).json({ ok: false, msg: "Ejercicio no encontrado" });
+            return res.status(404).json({ ok: false, msg: "Ejercicio no encontrado o sin permisos" });
         }
         
         res.json({ ok: true, msg: "Ejercicio eliminado correctamente" });

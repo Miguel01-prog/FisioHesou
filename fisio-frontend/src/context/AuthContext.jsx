@@ -15,8 +15,8 @@ export const AuthProvider = ({ children }) => {
         const storedToken = localStorage.getItem('token');
         if (storedToken) setToken(storedToken);
         const res = await api.get('/auth/me');
-        setUser({ name: res.data.name, role: res.data.role });
-        localStorage.setItem('user', JSON.stringify({ role: res.data.role, nombre: res.data.name }));
+        setUser({ name: res.data.name, role: res.data.role, client: res.data.client });
+        localStorage.setItem('user', JSON.stringify({ role: res.data.role, nombre: res.data.name, client: res.data.client }));
       } catch (err) {
         setUser(null);
         setToken(null);
@@ -31,12 +31,23 @@ export const AuthProvider = ({ children }) => {
 
 
   // 🔐 Iniciar sesión
-  const login = (userData, userToken = null) => {
+  const login = async (userData, userToken = null) => {
+    // 1. Establecer el usuario de forma síncrona para pasar las guardas de ruta de inmediato
     setUser(userData);
     localStorage.setItem('user', JSON.stringify({ rol: userData.role, nombre: userData.name })); 
+
     if (userToken) {
       setToken(userToken);
       localStorage.setItem('token', userToken);
+    }
+
+    // 2. Cargar los detalles del cliente en segundo plano sin bloquear la redirección
+    try {
+      const res = await api.get('/auth/me');
+      setUser({ name: res.data.name, role: res.data.role, client: res.data.client });
+      localStorage.setItem('user', JSON.stringify({ role: res.data.role, nombre: res.data.name, client: res.data.client }));
+    } catch (err) {
+      console.error("Error al cargar perfil de clínica en segundo plano:", err);
     }
   };
 

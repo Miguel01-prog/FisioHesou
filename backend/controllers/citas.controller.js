@@ -13,9 +13,9 @@ function generarIdentificadorPaciente(nombres, apellidos, telefono) {
 export const crearCita = async (req, res) => {
   console.log("- Crear cita: Creando una nueva cita...");
   try {
-    const { nombres, apellidoPaterno, apellidoMaterno, edad, telefono, email, fechaCitaStr, horaCita, area } = req.body;
+    const { nombres, apellidoPaterno, apellidoMaterno, edad, telefono, email, fechaCitaStr, horaCita, area, clientId } = req.body;
 
-    if (!nombres || !apellidoPaterno || !edad || !telefono || !fechaCitaStr || !horaCita || !area) {
+    if (!nombres || !apellidoPaterno || !edad || !telefono || !fechaCitaStr || !horaCita || !area || !clientId) {
       return res.status(400).json({ message: "Todos los campos obligatorios deben ser completados" });
     }
 
@@ -25,6 +25,7 @@ export const crearCita = async (req, res) => {
 
     if (cleanEmail !== "") {
       pacienteExiste = await Paciente.findOne({
+        clientId,
         $or: [
           {
             nombres: { $regex: new RegExp(`^${nombres.trim()}$`, "i") },
@@ -39,6 +40,7 @@ export const crearCita = async (req, res) => {
       });
     } else {
       pacienteExiste = await Paciente.findOne({
+        clientId,
         nombres: { $regex: new RegExp(`^${nombres.trim()}$`, "i") },
         apellidoPaterno: { $regex: new RegExp(`^${apellidoPaterno.trim()}$`, "i") },
         apellidoMaterno: { $regex: new RegExp(`^${(apellidoMaterno || "").trim()}$`, "i") },
@@ -72,6 +74,7 @@ export const crearCita = async (req, res) => {
         area,
         esNuevo: true,
         fechaRegistro: new Date(),
+        clientId
       });
       console.log("Paciente nuevo creado automáticamente con apellidos separados y email único.");
     }
@@ -91,7 +94,8 @@ export const crearCita = async (req, res) => {
       horaCita,
       area,
       identificadorPaciente,
-      esNuevoPaciente
+      esNuevoPaciente,
+      clientId
     });
 
     await nuevaCita.save();
@@ -104,7 +108,8 @@ export const crearCita = async (req, res) => {
         area: area === "fisioterapia" || area === "fisioterapeuta" ? "fisioterapeuta" : "nutriologa",
         type: "new_appointment",
         citaId: nuevaCita._id,
-        identificadorPaciente: nuevaCita.identificadorPaciente
+        identificadorPaciente: nuevaCita.identificadorPaciente,
+        clientId
       });
     } catch (e) {
       console.error("Error al crear notificación de cita pública:", e);
@@ -130,8 +135,8 @@ export const crearCitaManual = async (req, res) => {
       return res.status(400).json({ message: "Todos los campos obligatorios deben ser completados" });
     }
 
-    // Buscar al paciente existente por su identificadorPaciente
-    const paciente = await Paciente.findOne({ identificadorPaciente });
+    // Buscar al paciente existente por su identificadorPaciente y clínica
+    const paciente = await Paciente.findOne({ identificadorPaciente, clientId: req.user.clientId });
     if (!paciente) {
       return res.status(404).json({ message: "Paciente no encontrado" });
     }
@@ -155,7 +160,8 @@ export const crearCitaManual = async (req, res) => {
       horaCita,
       area,
       identificadorPaciente,
-      esNuevoPaciente: false
+      esNuevoPaciente: false,
+      clientId: req.user.clientId
     });
 
     await nuevaCita.save();
@@ -168,7 +174,8 @@ export const crearCitaManual = async (req, res) => {
         area: area === "fisioterapia" || area === "fisioterapeuta" ? "fisioterapeuta" : "nutriologa",
         type: "new_appointment",
         citaId: nuevaCita._id,
-        identificadorPaciente: nuevaCita.identificadorPaciente
+        identificadorPaciente: nuevaCita.identificadorPaciente,
+        clientId: req.user.clientId
       });
     } catch (e) {
       console.error("Error al crear notificación de cita manual:", e);
@@ -190,7 +197,7 @@ export const obtenerCitas = async (req, res) => {
   console.log("- Obtener Citas: Obteniendo todas las citas por area...");
   try {
     const { area } = req.query;
-    let filtro = {};
+    let filtro = { clientId: req.user.clientId };
     if (area) {
       const areasABuscar = [area];
       if (area === "fisioterapia" || area === "fisioterapeuta") {
@@ -198,7 +205,7 @@ export const obtenerCitas = async (req, res) => {
       } else if (area === "nutriologa" || area === "nutricion" || area === "nutriología") {
         areasABuscar.push("nutriologa", "nutricion", "nutriología");
       }
-      filtro = { area: { $in: areasABuscar } };
+      filtro.area = { $in: areasABuscar };
     }
     const citas = await Cita.find(filtro).sort({ fechaCita: 1 });
     res.json(citas);
@@ -210,10 +217,10 @@ export const obtenerCitas = async (req, res) => {
 
 
 export const obtenerCitaPorId = async (req, res) => {
-  consuile.log("Obteniendo cita por ID...");
+  console.log("Obteniendo cita por ID...");
   try {
     const { id } = req.params;
-    const cita = await Cita.findById(id);
+    const cita = await Cita.findOne({ _id: id, clientId: req.user.clientId });
     if (!cita) return res.status(404).json({ message: "Cita no encontrada" });
     res.json(cita);
   } catch (err) {
@@ -227,7 +234,7 @@ export const eliminarCita = async (req, res) => {
   console.log("Eliminando cita...");
   try {
     const { id } = req.params;
-    const citaEliminada = await Cita.findByIdAndDelete(id);
+    const citaEliminada = await Cita.findOneAndDelete({ _id: id, clientId: req.user.clientId });
     if (!citaEliminada) return res.status(404).json({ message: "Cita no encontrada" });
     res.json({ message: "Cita eliminada correctamente" });
   } catch (err) {
@@ -252,7 +259,7 @@ export const obtenerCitasPorRol = async (req, res) => {
       areasABuscar.push("nutriologa", "nutricion", "nutriología");
     }
 
-    const citas = await Cita.find({ area: { $in: areasABuscar } }).sort({ fechaCita: 1 });
+    const citas = await Cita.find({ area: { $in: areasABuscar }, clientId: req.user.clientId }).sort({ fechaCita: 1 });
     res.json(citas);
   } catch (err) {
     console.error(" Error al obtener citas por rol:", err);
@@ -264,7 +271,7 @@ export const obtenerCitasPorRol = async (req, res) => {
 export const validarPacientesNoRegistrados = async (req, res) => {
   console.log("Validando pacientes no registrados...");
   try {
-    const citas = await Cita.find();
+    const citas = await Cita.find({ clientId: req.user.clientId });
 
     if (!citas.length) {
       return res.status(404).json({ message: "No hay citas registradas" });
@@ -277,7 +284,8 @@ export const validarPacientesNoRegistrados = async (req, res) => {
 
     
     const pacientesExistentes = await Paciente.find({
-      identificadorPaciente: { $in: identificadoresCitas }
+      identificadorPaciente: { $in: identificadoresCitas },
+      clientId: req.user.clientId
     }).select("identificadorPaciente");
 
     const idsExistentes = new Set(pacientesExistentes.map(p => p.identificadorPaciente));
@@ -292,13 +300,16 @@ export const validarPacientesNoRegistrados = async (req, res) => {
         console.log(`Registrando nuevo paciente: ${cita.nombres} ${cita.apellidos}`);
         const nuevoPaciente = new Paciente({
           nombres: cita.nombres,
+          apellidoPaterno: cita.apellidoPaterno,
+          apellidoMaterno: cita.apellidoMaterno || "",
           apellidos: cita.apellidos,
           edad: cita.edad,
           telefono: cita.telefono,
           identificadorPaciente: idPaciente,
           area: cita.area,
           esNuevo: true, 
-          fechaRegistro: new Date()
+          fechaRegistro: new Date(),
+          clientId: req.user.clientId
         });
 
         await nuevoPaciente.save();
@@ -326,7 +337,7 @@ export const ObtenerDetallesPaciente = async (req, res) => {
   try {
     const { id } = req.params;
     console.log("Obteniendo detalles del paciente con ID:", id);
-    const historial = await Cita.find({ identificadorPaciente: id })
+    const historial = await Cita.find({ identificadorPaciente: id, clientId: req.user.clientId })
       .sort({ fechaCitaStr: 1, horaCita: 1 });
 
     return res.status(200).json({
@@ -350,8 +361,8 @@ export const actualizarEstadoCita = async (req, res) => {
       return res.status(400).json({ message: "El campo 'estado' es requerido" });
     }
 
-    const citaActualizada = await Cita.findByIdAndUpdate(
-      id,
+    const citaActualizada = await Cita.findOneAndUpdate(
+      { _id: id, clientId: req.user.clientId },
       { estado },
       { new: true }
     );
@@ -389,8 +400,8 @@ export const actualizarCita = async (req, res) => {
       updateFields.area = area;
     }
 
-    const citaActualizada = await Cita.findByIdAndUpdate(
-      id,
+    const citaActualizada = await Cita.findOneAndUpdate(
+      { _id: id, clientId: req.user.clientId },
       updateFields,
       { new: true }
     );
@@ -418,9 +429,9 @@ export const crearCitaManualCompleta = async (req, res) => {
     let esNuevoPaciente = true;
     let pacienteExiste = null;
 
-    // Si se pasa un ID directo, buscar primero por ID
+    // Si se pasa un ID directo, buscar primero por ID y clínica
     if (identificadorPaciente) {
-      pacienteExiste = await Paciente.findOne({ identificadorPaciente });
+      pacienteExiste = await Paciente.findOne({ identificadorPaciente, clientId: req.user.clientId });
       if (pacienteExiste) {
         esNuevoPaciente = false;
         console.log(`Paciente existente encontrado por ID: ${identificadorPaciente}`);
@@ -434,10 +445,11 @@ export const crearCitaManualCompleta = async (req, res) => {
     const tieneDatosRelevantes = tieneNombres && tieneApellido && tieneTelefono;
 
     if (esNuevoPaciente && tieneDatosRelevantes) {
-      // 1. Verificar si el paciente ya existe en la base de datos
+      // 1. Verificar si el paciente ya existe en la base de datos de esta clínica
       const cleanEmail = email ? email.trim().toLowerCase() : "";
       if (cleanEmail !== "") {
         pacienteExiste = await Paciente.findOne({
+          clientId: req.user.clientId,
           $or: [
             {
               nombres: { $regex: new RegExp(`^${nombres.trim()}$`, "i") },
@@ -452,6 +464,7 @@ export const crearCitaManualCompleta = async (req, res) => {
         });
       } else {
         pacienteExiste = await Paciente.findOne({
+          clientId: req.user.clientId,
           nombres: { $regex: new RegExp(`^${nombres.trim()}$`, "i") },
           apellidoPaterno: { $regex: new RegExp(`^${apellidoPaterno.trim()}$`, "i") },
           apellidoMaterno: { $regex: new RegExp(`^${(apellidoMaterno || "").trim()}$`, "i") },
@@ -498,6 +511,7 @@ export const crearCitaManualCompleta = async (req, res) => {
         area,
         esNuevo: true,
         fechaRegistro: new Date(),
+        clientId: req.user.clientId
       });
       console.log("Paciente creado automáticamente desde cita manual.");
     } else {
@@ -524,7 +538,8 @@ export const crearCitaManualCompleta = async (req, res) => {
       horaCita,
       area,
       identificadorPaciente,
-      esNuevoPaciente
+      esNuevoPaciente,
+      clientId: req.user.clientId
     });
 
     await nuevaCita.save();

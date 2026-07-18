@@ -24,8 +24,8 @@ export const crearOBloquear = async (req, res) => {
       const note = typeof blockedNotes[fechaStr] === "string" ? blockedNotes[fechaStr] : "";
 
       const bloqueo = await Horarios.findOneAndUpdate(
-        { area, fechaStr },
-        { area, fecha, fechaStr, blockedHours: horas, note },
+        { area, fechaStr, clientId: req.user.clientId },
+        { area, fecha, fechaStr, blockedHours: horas, note, clientId: req.user.clientId },
         { new: true, upsert: true, setDefaultsOnInsert: true }
       );
 
@@ -35,9 +35,10 @@ export const crearOBloquear = async (req, res) => {
     await Horarios.deleteMany({
       area,
       fechaStr: { $nin: blockedDates },
+      clientId: req.user.clientId
     });
 
-    const actualizado = await Horarios.find({ area });
+    const actualizado = await Horarios.find({ area, clientId: req.user.clientId });
     res.status(200).json(actualizado);
   } catch (e) {
     console.error("Error al guardar bloqueos:", e);
@@ -47,6 +48,11 @@ export const crearOBloquear = async (req, res) => {
 
 export const obtenerBloqueos = async (req, res) => {
   const { area } = req.params;
+  const clientId = req.user?.clientId || req.query.clientId;
+
+  if (!clientId) {
+    return res.status(400).json({ error: "clientId es requerido para esta consulta" });
+  }
 
   // Unificar las variaciones de nombre de área
   const areasABuscar = [area];
@@ -58,7 +64,7 @@ export const obtenerBloqueos = async (req, res) => {
 
   try {
     // 1️⃣ Bloqueos manuales (admin)
-    const bloqueos = await Horarios.find({ area: { $in: areasABuscar } });
+    const bloqueos = await Horarios.find({ area: { $in: areasABuscar }, clientId });
     const blockedHoursAdmin = {};
     const blockedNotesAdmin = {};
     const blockedDatesAdmin = [];
@@ -72,7 +78,8 @@ export const obtenerBloqueos = async (req, res) => {
     // 2️⃣ Bloqueos por citas de pacientes (excluyendo canceladas)
     const citas = await Cita.find({ 
       area: { $in: areasABuscar },
-      estado: { $ne: "Cancelado" }
+      estado: { $ne: "Cancelado" },
+      clientId
     });
     const blockedHoursCitas = {};
     const blockedDatesPaciente = [];

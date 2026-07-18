@@ -10,7 +10,7 @@ const notaSchema = new mongoose.Schema({
     O: { type: String, required: true },
     A: { type: String, required: true },
     P: { type: String, required: true },
-
+    clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', required: true }
 }, { timestamps: true });
 
 export default mongoose.model("Nota", notaSchema);

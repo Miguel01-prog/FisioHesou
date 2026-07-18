@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useParams } from "react-router-dom";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import "../../styles/design-system.css";
@@ -11,6 +12,11 @@ import { FiChevronLeft, FiClock, FiCheckCircle } from "react-icons/fi";
 import LoadingSpinner from "../../components/layout/LoadingSpinner.jsx";
 
 export default function AppointmentForm() {
+  const { subdomain } = useParams();
+  const [clinic, setClinic] = useState(null);
+  const [loadingClinic, setLoadingClinic] = useState(true);
+  const [clinicError, setClinicError] = useState(false);
+
   const [tipoConsulta, setTipoConsulta] = useState("");
   const [blockedDatesAdmin, setBlockedDatesAdmin] = useState([]);
   const [blockedHoursAdmin, setBlockedHoursAdmin] = useState({});
@@ -52,13 +58,33 @@ export default function AppointmentForm() {
     return `${day}/${month}/${year}`;
   };
 
-  // 📅 Cargar bloqueos
+  // 🏥 Cargar datos de la clínica por subdominio
   useEffect(() => {
-    if (!tipoConsulta) return;
+    const fetchClinic = async () => {
+      try {
+        setLoadingClinic(true);
+        const { data } = await api.get(`/clients/subdomain/${subdomain}`);
+        setClinic(data.client);
+        setClinicError(false);
+      } catch (err) {
+        console.error("Error al cargar la clínica:", err);
+        setClinicError(true);
+      } finally {
+        setLoadingClinic(false);
+      }
+    };
+    if (subdomain) {
+      fetchClinic();
+    }
+  }, [subdomain]);
+
+  // 📅 Cargar bloqueos de horarios
+  useEffect(() => {
+    if (!tipoConsulta || !clinic) return;
     const fetchBlockedDates = async () => {
       try {
         setLoadingBlocks(true);
-        const { data } = await api.get(`/horarios/${tipoConsulta}`);
+        const { data } = await api.get(`/horarios/${tipoConsulta}?clientId=${clinic._id}`);
         setBlockedDatesAdmin(data.blockedDatesAdmin || []);
         setBlockedHoursAdmin(data.blockedHoursAdmin || {});
         setBlockedNotesAdmin(data.blockedNotesAdmin || {});
@@ -71,7 +97,7 @@ export default function AppointmentForm() {
       }
     };
     fetchBlockedDates();
-  }, [tipoConsulta]);
+  }, [tipoConsulta, clinic]);
 
   const handleTipoChange = (tipo) => {
     if (tipoConsulta === tipo) {
@@ -140,6 +166,8 @@ export default function AppointmentForm() {
       return showError("Campos incompletos", "Selecciona fecha y hora antes de guardar.");
     if (!formData.nombres || !formData.apellidoPaterno || !formData.edad || !formData.telefono || !formData.email)
       return showError("Campos vacíos", "Completa todos los campos obligatorios del formulario (incluyendo correo electrónico).");
+    if (!clinic)
+      return showError("Clínica no cargada", "No se puede agendar cita sin el contexto de la clínica");
 
     try {
       setSavingCita(true);
@@ -153,12 +181,13 @@ export default function AppointmentForm() {
         fechaCitaStr: selectedDate,
         horaCita: selectedHour,
         area: tipoConsulta,
+        clientId: clinic._id
       });
 
       if (data.pacienteNuevo) {
         showSuccess(
           "¡Cita y Expediente Creados!",
-          `Tu cita para ${formatDateDDMMYYYY(selectedDate)} a las ${selectedHour} se ha registrado con éxito. ¡Se ha creado tu nuevo expediente clínico en FisioHesou!`
+          `Tu cita para ${formatDateDDMMYYYY(selectedDate)} a las ${selectedHour} se ha registrado con éxito. ¡Se ha creado tu nuevo expediente clínico en ${clinic.name}!`
         );
       } else {
         showSuccess(
@@ -189,16 +218,42 @@ export default function AppointmentForm() {
     return bloqueadas.length >= allHours.length;
   };
 
+  if (loadingClinic) {
+    return (
+      <div className="auth-wrapper-public" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <LoadingSpinner size="large" />
+      </div>
+    );
+  }
+
+  if (clinicError || !clinic) {
+    return (
+      <div className="auth-wrapper-public" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <div className="auth-card text-center" style={{ maxWidth: '420px', padding: '2rem' }}>
+          <h2 style={{ color: '#ef4444', marginBottom: '1rem' }}>⚠️ Clínica No Encontrada</h2>
+          <p className="text-muted">La dirección a la que intentas acceder no corresponde a ninguna clínica registrada o activa en nuestro sistema.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const selectedService = (clinic?.services || []).find(s => s.key === tipoConsulta);
+  const serviceName = selectedService ? selectedService.name : tipoConsulta;
+
   return (
     <>
       <div className="auth-wrapper-public fade-in-up">
         <div className="auth-card card" style={{ maxWidth: "620px", width: "90%", padding: "2.5rem" }}>
 
           <div className="text-center mb-4">
-            <div className="brand-logo-sphere" style={{ margin: "0 auto 1rem auto", width: "50px", height: "50px", fontSize: "1.4rem" }}>
-              <span>H</span>
-            </div>
-            <h2 className="logo-agendar mb-1" style={{ color: "var(--primary)" }}>Hesou Citas</h2>
+            {clinic.logo ? (
+              <img src={clinic.logo} alt="Logo" style={{ maxHeight: "60px", marginBottom: "1rem" }} />
+            ) : (
+              <div className="brand-logo-sphere" style={{ margin: "0 auto 1rem auto", width: "50px", height: "50px", fontSize: "1.4rem" }}>
+                <span>{clinic.name ? clinic.name.substring(0, 1).toUpperCase() : "H"}</span>
+              </div>
+            )}
+            <h2 className="logo-agendar mb-1" style={{ color: "var(--primary)" }}>{clinic.name}</h2>
             <p className="text-muted">Completa tus datos para agendar tu consulta</p>
           </div>
 
@@ -287,33 +342,26 @@ export default function AppointmentForm() {
             </div>
           </form>
 
-          <h3 className="form-label mb-2" style={{ fontSize: "1rem", fontWeight: "600" }}>Área de consulta</h3>
+          <h3 className="form-label mb-2" style={{ fontSize: "1rem", fontWeight: "600" }}>Seleccionar Servicio</h3>
 
           {/* Modern Interactive Specialty Option Cards */}
           <div className="specialty-selector-grid mb-4">
-            <div
-              className={`specialty-card-glass ${tipoConsulta === "fisioterapia" ? "active" : ""}`}
-              onClick={() => handleTipoChange("fisioterapia")}
-            >
-              <div className="specialty-card-icon">🦽</div>
-              <div className="specialty-card-info">
-                <span className="specialty-title">Fisioterapia</span>
-                <span className="specialty-desc">Rehabilitación y terapia física</span>
+            {(clinic.services || []).map((service) => (
+              <div
+                key={service.key}
+                className={`specialty-card-glass ${tipoConsulta === service.key ? "active" : ""}`}
+                onClick={() => handleTipoChange(service.key)}
+              >
+                <div className="specialty-card-icon">{service.icon || "📅"}</div>
+                <div className="specialty-card-info">
+                  <span className="specialty-title">{service.name}</span>
+                  {service.description && (
+                    <span className="specialty-desc">{service.description}</span>
+                  )}
+                </div>
+                {tipoConsulta === service.key && <FiCheckCircle className="check-icon-active" />}
               </div>
-              {tipoConsulta === "fisioterapia" && <FiCheckCircle className="check-icon-active" />}
-            </div>
-
-            <div
-              className={`specialty-card-glass ${tipoConsulta === "nutriologa" ? "active" : ""}`}
-              onClick={() => handleTipoChange("nutriologa")}
-            >
-              <div className="specialty-card-icon">🍎</div>
-              <div className="specialty-card-info">
-                <span className="specialty-title">Nutrición</span>
-                <span className="specialty-desc">Planes y asesoría alimenticia</span>
-              </div>
-              {tipoConsulta === "nutriologa" && <FiCheckCircle className="check-icon-active" />}
-            </div>
+            ))}
           </div>
 
           {selectedDate && selectedHour && (
@@ -358,7 +406,7 @@ export default function AppointmentForm() {
               Seleccionar Fecha y Hora
             </h4>
             <p className="text-muted text-center mb-3" style={{ fontSize: "0.85rem", textTransform: "capitalize" }}>
-              Especialidad: <strong>{tipoConsulta}</strong>
+              Servicio: <strong>{serviceName}</strong>
             </p>
 
             {loadingBlocks ? (

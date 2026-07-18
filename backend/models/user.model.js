@@ -8,7 +8,8 @@ const userSchema = new mongoose.Schema({
     type: String, 
     enum: ['fisioterapeuta', 'nutriologa', 'superadmin'], 
     required: true 
-  }
+  },
+  clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', default: null }
 });
 
 export default mongoose.model('User', userSchema);

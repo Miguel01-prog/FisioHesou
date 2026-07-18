@@ -4,7 +4,10 @@ import Cita from "../models/cita.model.js";
 // Crear nota
 export const crearNota = async (req, res) => {
     try {
-        const nuevaNota = new Nota(req.body);
+        const nuevaNota = new Nota({
+            ...req.body,
+            clientId: req.user.clientId
+        });
         await nuevaNota.save();
 
         // Automatización: Cambiar estado de la cita más cercana a "Asistió"
@@ -12,7 +15,8 @@ export const crearNota = async (req, res) => {
             const ahora = new Date();
             const citasProgramadas = await Cita.find({
                 identificadorPaciente: nuevaNota.identificadorPaciente,
-                estado: "Programado"
+                estado: "Programado",
+                clientId: req.user.clientId
             });
 
             if (citasProgramadas.length > 0) {
@@ -45,7 +49,7 @@ export const crearNota = async (req, res) => {
 // Obtener todas las notas
 export const obtenerNotas = async (req, res) => {
     try {
-        const notas = await Nota.find();
+        const notas = await Nota.find({ clientId: req.user.clientId });
         res.json(notas);
     } catch (err) {
         res.status(500).json({ message: "Error al obtener notas", error: err.message });
@@ -55,7 +59,7 @@ export const obtenerNotas = async (req, res) => {
 // Obtener nota por ID
 export const obtenerNotaPorId = async (req, res) => {
     try {
-        const nota = await Nota.findById(req.params.id);
+        const nota = await Nota.findOne({ _id: req.params.id, clientId: req.user.clientId });
         if (!nota) return res.status(404).json({ message: "Nota no encontrada" });
 
         res.json(nota);
@@ -67,7 +71,7 @@ export const obtenerNotaPorId = async (req, res) => {
 // Obtener notas por historial
 export const obtenerNotasPorHistorial = async (req, res) => {
     try {
-        const notas = await Nota.find({ idHistorialFK: req.params.idHistorialFK });
+        const notas = await Nota.find({ idHistorialFK: req.params.idHistorialFK, clientId: req.user.clientId });
         res.json(notas);
     } catch (err) {
         res.status(500).json({ message: "Error al obtener notas", error: err.message });
@@ -77,7 +81,7 @@ export const obtenerNotasPorHistorial = async (req, res) => {
 // Obtener notas por paciente
 export const obtenerNotasPorPaciente = async (req, res) => {
     try {
-        const notas = await Nota.find({ identificadorPaciente: req.params.pacienteId });
+        const notas = await Nota.find({ identificadorPaciente: req.params.pacienteId, clientId: req.user.clientId });
         res.json(notas);
     } catch (err) {
         res.status(500).json({ message: "Error al obtener notas", error: err.message });
@@ -87,8 +91,8 @@ export const obtenerNotasPorPaciente = async (req, res) => {
 // Actualizar nota
 export const actualizarNota = async (req, res) => {
     try {
-        const notaActualizada = await Nota.findByIdAndUpdate(
-            req.params.id,
+        const notaActualizada = await Nota.findOneAndUpdate(
+            { _id: req.params.id, clientId: req.user.clientId },
             req.body,
             { new: true }
         );
@@ -105,7 +109,7 @@ export const actualizarNota = async (req, res) => {
 // Eliminar nota
 export const eliminarNota = async (req, res) => {
     try {
-        const notaEliminada = await Nota.findByIdAndDelete(req.params.id);
+        const notaEliminada = await Nota.findOneAndDelete({ _id: req.params.id, clientId: req.user.clientId });
 
         if (!notaEliminada)
             return res.status(404).json({ message: "Nota no encontrada" });
@@ -137,7 +141,8 @@ export const generaridHistoricoFk = async (req, res) => {
 
         // Contar cuántas notas tiene este paciente en el mes
         const cantidadNotas = await Nota.countDocuments({
-            identificadorPaciente
+            identificadorPaciente,
+            clientId: req.user.clientId
         });
 
         // Generar ID: iniciales + fecha + conteo + random

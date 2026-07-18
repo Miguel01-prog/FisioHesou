@@ -4,9 +4,12 @@ import confItemSchema from "../models/conf-item.model.js";
 
 // Crear nueva configuración
 export const crearConfiguracion = async (req, res) => {
-    console.log("crearConfiguracion: Inciiando creación de configuración");
+    console.log("crearConfiguracion: Iniciando creación de configuración");
     try {
-        const nuevaConfiguracion = new configuracion(req.body);
+        const nuevaConfiguracion = new configuracion({
+            ...req.body,
+            clientId: req.user.clientId
+        });
         const configuracionGuardada = await nuevaConfiguracion.save();
         res.status(201).json({ ok: true, configuracion: configuracionGuardada });
         console.log("crearConfiguracion: Configuración creada con éxito");
@@ -19,29 +22,30 @@ export const crearConfiguracion = async (req, res) => {
 export const obtenerConfiguraciones = async (req, res) => {
     console.log("obtenerConfiguraciones: Obteniendo configuraciones");
     try {
+        const clientId = req.user.clientId;
         // Asegurar que existan los antecedentes médicos iniciales
-        const medExists = await configuracion.findOne({ clave: "AntMed" });
+        const medExists = await configuracion.findOne({ clave: "AntMed", clientId });
         if (!medExists) {
-            await configuracion.create({ clave: "AntMed", descripcion: "Antecedentes Médicos" });
-            console.log("obtenerConfiguraciones: Creada configuración inicial AntMed");
+            await configuracion.create({ clave: "AntMed", descripcion: "Antecedentes Médicos", clientId });
+            console.log("obtenerConfiguraciones: Creada configuración inicial AntMed para cliente:", clientId);
         }
 
         // Asegurar que existan los antecedentes familiares iniciales
-        const famExists = await configuracion.findOne({ clave: "AntFam" });
+        const famExists = await configuracion.findOne({ clave: "AntFam", clientId });
         if (!famExists) {
-            await configuracion.create({ clave: "AntFam", descripcion: "Antecedentes Familiares" });
-            console.log("obtenerConfiguraciones: Creada configuración inicial AntFam");
+            await configuracion.create({ clave: "AntFam", descripcion: "Antecedentes Familiares", clientId });
+            console.log("obtenerConfiguraciones: Creada configuración inicial AntFam para cliente:", clientId);
         }
 
-        const configuraciones = await configuracion.find();
+        const configuraciones = await configuracion.find({ clientId });
         res.json({ ok: true, configuraciones });
         console.log("obtenerConfiguraciones: Configuraciones obtenidas con éxito");
     } catch (error) {
         res.status(500).json({ ok: false, error: error.message });
     }
 };
-// Crear nuevo ítem de configuración
 
+// Crear nuevo ítem de configuración
 export const crearItem = async (req, res) => {
   try {
     console.log("crearItem: Iniciando creación de ítem");
@@ -58,13 +62,12 @@ export const crearItem = async (req, res) => {
 
     const nuevo = await confItemSchema.create({
       configuracion: configId,
-      valor
+      valor,
+      clientId: req.user.clientId
     });
 
     res.status(201).json({ ok: true, data: nuevo });
-    if(res.status(201)){
-      console.log("crearItem: Ítem creado con éxito");
-    }
+    console.log("crearItem: Ítem creado con éxito");
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -74,22 +77,22 @@ export const crearItem = async (req, res) => {
   }
 };
 
-
 export const obtenerItemsPorClave = async (req, res) => {
   console.log("PARAMS RECIBIDOS:", req.params);
 
   try {
     const { clave } = req.params;
-    console.log("Clave recibida:", clave);
+    const clientId = req.user.clientId;
+    console.log("Clave recibida:", clave, "para cliente:", clientId);
 
-    let config = await configuracion.findOne({ clave });
+    let config = await configuracion.findOne({ clave, clientId });
 
     if (!config) {
       if (clave === "AntMed") {
-        config = await configuracion.create({ clave: "AntMed", descripcion: "Antecedentes Médicos" });
+        config = await configuracion.create({ clave: "AntMed", descripcion: "Antecedentes Médicos", clientId });
         console.log("obtenerItemsPorClave: Auto-creada configuración inicial AntMed");
       } else if (clave === "AntFam") {
-        config = await configuracion.create({ clave: "AntFam", descripcion: "Antecedentes Familiares" });
+        config = await configuracion.create({ clave: "AntFam", descripcion: "Antecedentes Familiares", clientId });
         console.log("obtenerItemsPorClave: Auto-creada configuración inicial AntFam");
       } else {
         return res.json({ ok: true, items: [] });
@@ -97,8 +100,9 @@ export const obtenerItemsPorClave = async (req, res) => {
     }
 
     const items = await confItemSchema.find({
-      configuracion: config._id
-    }).sort({ consecutivo: 1 });
+      configuracion: config._id,
+      clientId
+    });
 
     res.json({ ok: true, items });
   } catch (error) {
@@ -114,7 +118,10 @@ export const obtenerItemsPorClave = async (req, res) => {
 export const eliminarItem = async (req, res) => {
   try {
     const { itemId } = req.params;
-    const itemEliminado = await confItemSchema.findByIdAndDelete(itemId);
+    const itemEliminado = await confItemSchema.findOneAndDelete({
+      _id: itemId,
+      clientId: req.user.clientId
+    });
     if (!itemEliminado) {
       return res.status(404).json({ ok: false, message: "Ítem no encontrado" });
     }

@@ -39,6 +39,10 @@ export function toLocalISODate(date) {
 export function capitalizeWords(text = "") {
   if (!text || typeof text !== "string") return "";
   return text
-    .toLowerCase()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+    .split(/\s+/)
+    .map(word => {
+      if (!word) return "";
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(" ");
 }

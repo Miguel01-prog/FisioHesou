@@ -20,7 +20,7 @@ router.post('/register', verifyToken, checkRole('superadmin'), async (req, res) 
   console.log(' POST /api/register recibido', req.body);  // <--- agrega esto para depurar
 
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, clientId } = req.body;
 
     if (!name || !email || !password || !role) {
       return res.status(400).json({ message: 'Todos los campos son obligatorios' });
@@ -32,7 +32,13 @@ router.post('/register', verifyToken, checkRole('superadmin'), async (req, res) 
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ name, email, password: hashedPassword, role});
+    const user = new User({ 
+      name, 
+      email, 
+      password: hashedPassword, 
+      role,
+      clientId: clientId || null
+    });
     await user.save();
 
     res.status(201).json({ message: 'Usuario creado correctamente' });
@@ -58,7 +64,7 @@ router.post('/login', async (req, res) => {
     if (!isMatch) return res.status(401).json({ message: 'Contraseña incorrecta' });
 
     const token = jwt.sign(
-      { id: user._id, role: user.role, name: user.name },
+      { id: user._id, role: user.role, name: user.name, clientId: user.clientId || null },
       SECRET,
       { expiresIn: '12h' }
     );
@@ -90,9 +96,9 @@ router.post('/logout', (req, res) => {
 // Obtener datos del usuario actual
 router.get('/me', verifyToken, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
+    const user = await User.findById(req.user.id).select("-password").populate("clientId");
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
-    res.json({ role: user.role, name: user.name, email: user.email, id: user._id });
+    res.json({ role: user.role, name: user.name, email: user.email, id: user._id, client: user.clientId });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -197,6 +203,16 @@ router.put('/profile', verifyToken, async (req, res) => {
   } catch (error) {
     console.error('Error al actualizar perfil:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Obtener todos los usuarios especialistas (solo superadmin)
+router.get('/users', verifyToken, checkRole('superadmin'), async (req, res) => {
+  try {
+    const users = await User.find({ role: { $ne: 'superadmin' } }).populate('clientId').select('-password');
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

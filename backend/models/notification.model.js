@@ -7,7 +7,8 @@ const notificationSchema = new mongoose.Schema({
   type: { type: String, default: "info" }, // "new_appointment", "upcoming_appointment", etc.
   citaId: { type: mongoose.Schema.Types.ObjectId, ref: "Cita" },
   identificadorPaciente: { type: String },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', required: true }
 });
 
 export default mongoose.model("Notification", notificationSchema);

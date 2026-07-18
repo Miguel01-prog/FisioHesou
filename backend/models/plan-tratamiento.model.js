@@ -13,7 +13,8 @@ const planTratamientoSchema = new mongoose.Schema({
             frecuencia: { type: String, default: "" },
             notas: { type: String, default: "" }
         }
-    ]
+    ],
+    clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', required: true }
 });
 
 export default mongoose.model("PlanTratamiento", planTratamientoSchema);
