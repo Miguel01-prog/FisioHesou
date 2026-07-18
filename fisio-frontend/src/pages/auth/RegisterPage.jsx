@@ -18,7 +18,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       // Ajustar según la ruta real de registro en tu backend
-      await api.post('/auth/register', { nombre, email, password });
+      await api.post('/auth/register', { name: nombre, email, password, role: 'fisioterapeuta' });
       showSuccess('Éxito', 'Registro completado correctamente. Por favor inicia sesión.');
       navigate('/login');
     } catch (error) {
