@@ -8,7 +8,8 @@ import crypto from "crypto";
 export const obtenerTodosPacientes = async (req, res) => {
   console.log("- Obteniendo todos los pacientes...");
   try {
-    const pacientes = await Paciente.find().sort({ nombres: 1 });
+    const filter = req.user.role === 'superadmin' ? {} : { clientId: req.user.clientId };
+    const pacientes = await Paciente.find(filter).sort({ nombres: 1 });
 
     if (!pacientes.length) {
       return res.status(404).json({ message: "No hay pacientes registrados" });
@@ -32,10 +33,11 @@ export const crearPaciente = async (req, res) => {
 
     const cleanEmail = email ? email.trim().toLowerCase() : "";
 
-    // Verificar si ya existe
+    // Verificar si ya existe en la misma clínica
     let pacienteExiste = null;
     if (cleanEmail !== "") {
       pacienteExiste = await Paciente.findOne({
+        clientId: req.user.clientId,
         $or: [
           {
             nombres: { $regex: new RegExp(`^${nombres.trim()}$`, "i") },
@@ -48,6 +50,7 @@ export const crearPaciente = async (req, res) => {
       });
     } else {
       pacienteExiste = await Paciente.findOne({
+        clientId: req.user.clientId,
         nombres: { $regex: new RegExp(`^${nombres.trim()}$`, "i") },
         apellidoPaterno: { $regex: new RegExp(`^${apellidoPaterno.trim()}$`, "i") },
         apellidoMaterno: { $regex: new RegExp(`^${(apellidoMaterno || "").trim()}$`, "i") },
@@ -71,7 +74,8 @@ export const crearPaciente = async (req, res) => {
       area,
       identificadorPaciente,
       esNuevo: true,
-      fechaRegistro: new Date()
+      fechaRegistro: new Date(),
+      clientId: req.user.clientId
     });
 
     res.status(201).json({ message: "Paciente registrado correctamente", paciente: nuevoPaciente });
@@ -87,19 +91,19 @@ export const eliminarPaciente = async (req, res) => {
     const { id } = req.params;
 
     // 1. Buscar al paciente
-    const paciente = await Paciente.findOne({ identificadorPaciente: id });
+    const paciente = await Paciente.findOne({ identificadorPaciente: id, clientId: req.user.clientId });
     if (!paciente) {
       return res.status(404).json({ message: "Paciente no encontrado" });
     }
 
     // 2. Eliminar paciente
-    await Paciente.deleteOne({ identificadorPaciente: id });
+    await Paciente.deleteOne({ identificadorPaciente: id, clientId: req.user.clientId });
 
     // 3. Eliminar registros relacionados (Cascade Delete)
-    await Cita.deleteMany({ identificadorPaciente: id });
-    await HistorialPacientes.deleteMany({ identificadorPaciente: id });
-    await Nota.deleteMany({ identificadorPaciente: id });
-    await PlanTratamiento.deleteMany({ identificadorPaciente: id });
+    await Cita.deleteMany({ identificadorPaciente: id, clientId: req.user.clientId });
+    await HistorialPacientes.deleteMany({ identificadorPaciente: id, clientId: req.user.clientId });
+    await Nota.deleteMany({ identificadorPaciente: id, clientId: req.user.clientId });
+    await PlanTratamiento.deleteMany({ identificadorPaciente: id, clientId: req.user.clientId });
 
     res.json({ message: "Paciente y todos sus registros relacionados fueron eliminados correctamente" });
   } catch (err) {
@@ -112,7 +116,8 @@ export const obtenerPacientePorId = async (req, res) => {
   console.log("- Obteniendo paciente por ID:", req.params.id);
   try {
     const { id } = req.params;
-    const paciente = await Paciente.findOne({ identificadorPaciente: id });
+    const filter = req.user.role === 'superadmin' ? { identificadorPaciente: id } : { identificadorPaciente: id, clientId: req.user.clientId };
+    const paciente = await Paciente.findOne(filter);
     if (!paciente) {
       return res.status(404).json({ message: "Paciente no encontrado" });
     }

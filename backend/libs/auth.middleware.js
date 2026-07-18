@@ -5,7 +5,16 @@ dotenv.config();
 const SECRET = process.env.JWT_SECRET || 'mi_secreto_superseguro'; 
 
 export const verifyToken = (req, res, next) => {
-  const token = req.cookies?.token;
+  let token = req.cookies?.token;
+
+  // Soporte para Bearer token en cabecera Authorization (para peticiones Ajax locales sin cookies)
+  if (!token && req.headers.authorization) {
+    const parts = req.headers.authorization.split(' ');
+    if (parts.length === 2 && parts[0] === 'Bearer') {
+      token = parts[1];
+    }
+  }
+
   if (!token) return res.status(401).json({ message: 'No token provided' });
 
   jwt.verify(token, SECRET, (err, decoded) => {

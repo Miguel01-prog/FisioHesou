@@ -209,6 +209,25 @@ const FormularioHistorial = () => {
   const [itemsAntMed, setItemsAntMed] = useState([]);
   const [antecedenteMedico, setAntecedenteMedico] = useState("");
   const [edadEditable, setEdadEditable] = useState("");
+  const [hasDraft, setHasDraft] = useState(false);
+
+  // Auto-save draft on form input changes
+  useEffect(() => {
+    // Avoid saving initial empty states
+    if (!formData.motivoConsulta && !formData.ocupacion && !newPatientData.nombres && !formData.contenidoNota) {
+      return;
+    }
+    const draft = {
+      formData,
+      lesiones,
+      obser,
+      antecedentesNoPatologicos,
+      isNewPatient,
+      newPatientData,
+      paciente
+    };
+    localStorage.setItem("historial_clinico_borrador", JSON.stringify(draft));
+  }, [formData, lesiones, obser, antecedentesNoPatologicos, isNewPatient, newPatientData, paciente]);
 
   const getValorAntFam = (id) => {
     const found = itemsAntFam.find(item => item._id === id);
@@ -361,6 +380,25 @@ const FormularioHistorial = () => {
     cargarAntecedentesFamiliares();
     cargarAntecedentesMedicos();
 
+    // Check for draft and load it if exists
+    const savedDraft = localStorage.getItem("historial_clinico_borrador");
+    if (savedDraft) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        if (draft.formData) setFormData(draft.formData);
+        if (draft.lesiones) setLesiones(draft.lesiones);
+        if (draft.obser) setObser(draft.obser);
+        if (draft.antecedentesNoPatologicos) setAntecedentesNoPatologicos(draft.antecedentesNoPatologicos);
+        if (draft.isNewPatient !== undefined) setIsNewPatient(draft.isNewPatient);
+        if (draft.newPatientData) setNewPatientData(draft.newPatientData);
+        if (draft.paciente) setPaciente(draft.paciente);
+        setHasDraft(true);
+        return; // Skip loading normal patient data to preserve draft!
+      } catch (err) {
+        console.error("Error cargando borrador:", err);
+      }
+    }
+
     if (!datosPaciente) {
       console.warn("dataPaciente es null — se activará el modo de creación manual");
       setIsNewPatient(true);
@@ -494,7 +532,6 @@ const FormularioHistorial = () => {
     if (!formData.motivoConsulta || formData.motivoConsulta.trim() === "") faltantes.push("Motivo de consulta");
     if (!formData.fechaNacimiento) faltantes.push("Fecha de nacimiento");
     if (!formData.sexo) faltantes.push("Sexo");
-    if (!formData.contenidoNota || formData.contenidoNota.trim() === "") faltantes.push("Contenido general de la Nota SOAP");
 
     if (faltantes.length > 0) {
       showError("Faltan campos obligatorios", `Por favor completa los siguientes campos: ${faltantes.join(", ")}`);
@@ -642,7 +679,11 @@ const FormularioHistorial = () => {
         notaData: notaDataLimpio
       });
 
-      showSuccess("¡Historial Guardado!", "El historial y la nota SOAP se han creado exitosamente.");
+      showSuccess("¡Historial Guardado!", "El historial se ha creado exitosamente.");
+
+      // Clear draft locally
+      localStorage.removeItem("historial_clinico_borrador");
+      setHasDraft(false);
 
       if (isNewPatient) {
         localStorage.removeItem("dataPaciente");
@@ -671,11 +712,44 @@ const FormularioHistorial = () => {
           </div>
           <hr style={{ marginBottom: "1.5rem" }} />
 
+          {hasDraft && (
+            <div style={{
+              background: "rgba(245, 158, 11, 0.1)",
+              border: "1px solid rgba(245, 158, 11, 0.25)",
+              color: "#f59e0b",
+              padding: "0.85rem 1.25rem",
+              borderRadius: "10px",
+              fontSize: "0.85rem",
+              marginBottom: "1.5rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between"
+            }}>
+              <span>
+                ⚠️ <strong>Borrador local cargado:</strong> Tienes cambios sin guardar localmente en este navegador. Recuerda presionar "Guardar Historial" al final para registrarlos en el servidor.
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.removeItem("historial_clinico_borrador");
+                  setHasDraft(false);
+                  window.location.reload();
+                }}
+                className="btn btn-outline"
+                style={{ padding: "4px 8px", fontSize: "0.75rem", height: "26px", borderColor: "rgba(245,158,11,0.3)", color: "#f59e0b" }}
+              >
+                Descartar Borrador
+              </button>
+            </div>
+          )}
+
           <div className="tabs" style={{ marginBottom: "2rem" }}>
             <button type="button" className={`tab ${activeTab === "datosPersonales" ? "active" : ""}`} onClick={() => setActiveTab("datosPersonales")}>Resumen</button>
             <button type="button" className={`tab ${activeTab === "AnaAnte" ? "active" : ""}`} onClick={() => setActiveTab("AnaAnte")}>Anamnesis y Antecedentes</button>
             <button type="button" className={`tab ${activeTab === "evaluacion" ? "active" : ""}`} onClick={() => setActiveTab("evaluacion")}>Evaluación Física</button>
-            <button type="button" className={`tab ${activeTab === "soap" ? "active" : ""}`} onClick={() => setActiveTab("soap")}>Notas SOAP</button>
+            <button type="button" className={`tab ${activeTab === "soap" ? "active" : ""}`} onClick={() => setActiveTab("soap")}>
+              Notas SOAP {!formData.contenidoNota?.trim() && <span style={{ color: "#ef4444", fontSize: "0.8rem", marginLeft: "4px" }} title="Nota SOAP pendiente de registrar">⚠️</span>}
+            </button>
             <button type="button" className={`tab ${activeTab === "consentimiento" ? "active" : ""}`} onClick={() => setActiveTab("consentimiento")}>Consentimiento Informado</button>
           </div>
 

@@ -14,6 +14,8 @@ import configuracionRoutes from "./routes/configuracion.routes.js";
 import ejerciciosRoutes from "./routes/ejercicios.routes.js";
 import planesRoutes from "./routes/planes.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
+import clientRoutes from "./routes/client.routes.js";
+import moduleRoutes from "./routes/module.routes.js";
 import path from "path";
 
 const app = express();
@@ -95,6 +97,8 @@ app.use("/api/configuracion", configuracionRoutes);
 app.use("/api/ejercicios", ejerciciosRoutes);
 app.use("/api/planes", planesRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/clients", clientRoutes);
+app.use("/api/modules", moduleRoutes);
 
 
 export default app;

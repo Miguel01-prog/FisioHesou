@@ -15,7 +15,8 @@ const citaSchema = new mongoose.Schema({
   fechaCreado: { type: Date, default: Date.now },
   identificadorPaciente: { type: String, required: true },
   esNuevoPaciente: { type: Boolean, default: false },
-  estado: { type: String, default: "Programado" }
+  estado: { type: String, default: "Programado" },
+  clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', required: true }
 });
 
 // Middleware pre-save para asegurar consistencia del campo 'apellidos'

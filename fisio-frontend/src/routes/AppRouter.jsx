@@ -11,6 +11,9 @@ import NutriologaLayout from '../components/layout/NutriologaLayout';
 // Páginas
 import Dashboard from '../pages/admin/Dashboard';
 import UsersPage from '../pages/admin/UsersPage';
+import ClinicasPage from '../pages/admin/ClinicasPage';
+import CrearClinicaPage from '../pages/admin/CrearClinicaPage';
+import ModulosPage from '../pages/admin/ModulosPage';
 import AppointmentForm from '../pages/public/AppointmentForm.jsx';
 import DashboardFisio from '../pages/fisioterapeuta/Dashboard-fisio.jsx';
 import DashboardNutri from '../pages/nutriologa/Dashboard-nutri.jsx';
@@ -48,7 +51,7 @@ export default function AppRouter() {
       {/* Públicas */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/citas" element={<AppointmentForm />} />
+      <Route path="/citas/:subdomain" element={<AppointmentForm />} />
 
       {/* Superadmin */}
       <Route
@@ -60,7 +63,11 @@ export default function AppRouter() {
         }
       >
         <Route index element={<Dashboard />} />
+        <Route path="clinicas" element={<ClinicasPage />} />
+        <Route path="clinicas/crear" element={<CrearClinicaPage />} />
+        <Route path="clinicas/editar/:id" element={<CrearClinicaPage />} />
         <Route path="users" element={<UsersPage />} />
+        <Route path="modules" element={<ModulosPage />} />
         <Route path="perfil" element={<ProfilePage />} />
       </Route>
 

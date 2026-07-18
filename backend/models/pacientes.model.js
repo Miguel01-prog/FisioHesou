@@ -11,7 +11,8 @@ const pacienteSchema = new mongoose.Schema({
   email: { type: String, default: "" }, // Campo único amarrado para evitar duplicados
   area: { type: String, required: true },       
   fechaRegistro: { type: Date, default: Date.now },
-  esNuevo: { type: Boolean, default: true }       
+  esNuevo: { type: Boolean, default: true },
+  clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', required: true }
 });
 
 // Middleware pre-save para rellenar de forma transparente 'apellidos' y garantizar compatibilidad

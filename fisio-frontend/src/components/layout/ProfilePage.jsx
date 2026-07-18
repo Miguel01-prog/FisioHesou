@@ -102,7 +102,7 @@ export default function ProfilePage() {
     <div className="auth-wrapper-content fade-in-up" style={{ padding: "1.5rem" }}>
       <div style={{ maxWidth: "600px", width: "100%", margin: "0 auto" }}>
         
-        <div className="auth-card" style={{ position: "relative", padding: "2.5rem", borderRadius: "18px" }}>
+        <div className="auth-card card" style={{ position: "relative", padding: "2.5rem", borderRadius: "18px" }}>
           {saving && <div className="spinner-overlay" style={{ borderRadius: "18px" }}><LoadingSpinner /></div>}
 
           <div className="card-header-split" style={{ marginBottom: "1.5rem" }}>

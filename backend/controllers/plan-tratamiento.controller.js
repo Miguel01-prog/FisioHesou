@@ -7,7 +7,8 @@ export const crearPlan = async (req, res) => {
         const nuevoPlan = new PlanTratamiento({
             identificadorPaciente,
             notasGenerales,
-            ejercicios
+            ejercicios,
+            clientId: req.user.clientId
         });
 
         const planGuardado = await nuevoPlan.save();
@@ -21,7 +22,7 @@ export const crearPlan = async (req, res) => {
 export const obtenerPlanesPorPaciente = async (req, res) => {
     try {
         const { idPaciente } = req.params;
-        const planes = await PlanTratamiento.find({ identificadorPaciente: idPaciente, estado: "Activo" })
+        const planes = await PlanTratamiento.find({ identificadorPaciente: idPaciente, estado: "Activo", clientId: req.user.clientId })
             .populate("ejercicios.ejercicio")
             .sort({ fechaCreacion: -1 });
             
@@ -35,7 +36,7 @@ export const obtenerPlanesPorPaciente = async (req, res) => {
 export const obtenerPlanPorId = async (req, res) => {
     try {
         const { id } = req.params;
-        const plan = await PlanTratamiento.findById(id).populate("ejercicios.ejercicio");
+        const plan = await PlanTratamiento.findOne({ _id: id, clientId: req.user.clientId }).populate("ejercicios.ejercicio");
         
         if (!plan) {
             return res.status(404).json({ ok: false, msg: "Plan no encontrado" });
@@ -43,7 +44,7 @@ export const obtenerPlanPorId = async (req, res) => {
         
         res.json({ ok: true, plan });
     } catch (error) {
-        console.error("Error al obtener el plan:", error);
+        console.error("Error al obtener the plan:", error);
         res.status(500).json({ ok: false, error: "Error al obtener el plan de tratamiento" });
     }
 };
@@ -53,8 +54,8 @@ export const actualizarPlan = async (req, res) => {
         const { id } = req.params;
         const { notasGenerales, ejercicios } = req.body;
         
-        const planActualizado = await PlanTratamiento.findByIdAndUpdate(
-            id,
+        const planActualizado = await PlanTratamiento.findOneAndUpdate(
+            { _id: id, clientId: req.user.clientId },
             { notasGenerales, ejercicios },
             { new: true }
         ).populate("ejercicios.ejercicio");

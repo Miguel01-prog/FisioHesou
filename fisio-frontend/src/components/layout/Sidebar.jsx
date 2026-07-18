@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
+import api from '../../api';
+import * as Icons from 'react-icons/fi';
 import './Sidebar.css';
 import {
   FiGrid,
@@ -11,7 +13,8 @@ import {
   FiClock,
   FiBookOpen,
   FiActivity,
-  FiLogOut
+  FiLogOut,
+  FiCpu
 } from 'react-icons/fi';
 
 /**
@@ -27,6 +30,24 @@ export default function Sidebar({
   const location = useLocation();
   const navigate = useNavigate();
   const [activeSubmenu, setActiveSubmenu] = useState(null);
+  const [allModules, setAllModules] = useState([]);
+
+  useEffect(() => {
+    const loadModules = async () => {
+      try {
+        const res = await api.get("/modules");
+        setAllModules(res.data.modules || []);
+      } catch (err) {
+        console.error("Error al cargar módulos en Sidebar:", err);
+      }
+    };
+    loadModules();
+  }, []);
+
+  const renderIcon = (iconName) => {
+    const IconComponent = Icons[iconName] || Icons.FiGrid;
+    return <IconComponent />;
+  };
 
   const handleLogout = () => {
     logout();
@@ -34,40 +55,92 @@ export default function Sidebar({
   };
 
   const getNavItemsByRole = (role) => {
+    const clientModules = user?.client?.modules || ["agenda", "pacientes", "bloquear"];
+    const patientLabel = user?.client?.patientLabelPlural || "Pacientes";
+    const specialistLabel = user?.client?.specialistLabelPlural || "Especialistas";
+
     switch (role) {
       case 'superadmin':
         return [
           { label: 'Dashboard', icon: <FiGrid />, path: '/admin' },
+          { label: 'Negocios SaaS', icon: <FiSettings />, path: '/admin/clinicas' },
           { label: 'Usuarios', icon: <FiUsers />, path: '/admin/users' },
-          { label: 'Citas', icon: <FiCalendar />, path: '#' },
-          { label: 'Ejercicios', icon: <FiActivity />, path: '#' },
-          { label: 'Informes', icon: <FiBookOpen />, path: '#' },
-          { label: 'Configuración', icon: <FiSettings />, path: '#' }
+          { label: 'Módulos', icon: <FiCpu />, path: '/admin/modules' }
         ];
       case 'fisioterapeuta':
-        return [
-          { label: 'Dashboard', icon: <FiGrid />, path: '/fisioterapeuta' },
-          { label: 'Citas', icon: <FiCalendar />, path: '/fisioterapeuta/agenda' },
-          { label: 'Pacientes', icon: <FiUsers />, path: '/fisioterapeuta/pacientes' },
-          {
-            label: 'Configuración',
-            icon: <FiSettings />,
-            path: '#',
-            children: [
-              { label: 'Bloquear días', icon: <FiClock />, path: '/fisioterapeuta/bloquear' },
-              { label: 'Antecedentes', icon: <FiBookOpen />, path: '/fisioterapeuta/antecedentes' },
-              { label: 'Ejercicios', icon: <FiActivity />, path: '/fisioterapeuta/ejercicios' }
-            ]
+      case 'nutriologa': {
+        const items = [
+          { label: 'Dashboard', icon: <FiGrid />, path: `/${role}` }
+        ];
+
+        // Mapear módulos dinámicos desde la base de datos
+        // Si aún no se cargan de la DB, cargamos los básicos por defecto para evitar parpadeos
+        const modulesToMap = allModules.length > 0 ? allModules : [
+          { key: "agenda", label: "Citas", path: "agenda", icon: "FiCalendar", active: true, parentKey: null },
+          { key: "pacientes", label: patientLabel, path: "pacientes", icon: "FiUsers", active: true, parentKey: null },
+          { key: "configuracion", label: "Configuración", path: "#", icon: "FiSettings", active: true, parentKey: null },
+          { key: "bloquear", label: "Bloquear días", path: "bloquear", icon: "FiClock", active: true, parentKey: "configuracion" },
+          { key: "ejercicios", label: "Ejercicios", path: "ejercicios", icon: "FiActivity", active: true, parentKey: "configuracion" },
+          { key: "planes", label: "Planes Alimenticios", path: "planes", icon: "FiActivity", active: true, parentKey: "configuracion" },
+          { key: "antecedentes", label: "Antecedentes", path: "antecedentes", icon: "FiBookOpen", active: true, parentKey: "configuracion" }
+        ];
+
+        // 1. Separar padres e hijos activos para este cliente
+        const parentModules = [];
+        const childrenMap = {}; // parentKey -> array de hijos
+
+        modulesToMap.forEach((m) => {
+          // El módulo padre contenedor (ej. configuracion) se incluye si está activo globalmente
+          if (m.active) {
+            if (!m.parentKey) {
+              parentModules.push(m);
+            } else {
+              if (clientModules.includes(m.key)) {
+                if (!childrenMap[m.parentKey]) {
+                  childrenMap[m.parentKey] = [];
+                }
+                
+                let label = m.label;
+                if (m.key === "pacientes") label = patientLabel;
+
+                childrenMap[m.parentKey].push({
+                  label,
+                  icon: renderIcon(m.icon),
+                  path: `/${role}/${m.path}`
+                });
+              }
+            }
           }
-        ];
-      case 'nutriologa':
-        return [
-          { label: 'Dashboard', icon: <FiGrid />, path: '/nutriologa' },
-          { label: 'Citas', icon: <FiCalendar />, path: '/nutriologa/agenda' },
-          { label: 'Pacientes', icon: <FiUsers />, path: '/nutriologa/pacientes' },
-          { label: 'Planes Alimenticios', icon: <FiActivity />, path: '/nutriologa/planes' },
-          { label: 'Configuración', icon: <FiSettings />, path: '/nutriologa/bloquear' }
-        ];
+        });
+
+        // 2. Construir la navegación principal
+        parentModules.forEach((pm) => {
+          if (pm.path === "#") {
+            const children = childrenMap[pm.key] || [];
+            if (children.length > 0) {
+              items.push({
+                label: pm.label,
+                icon: renderIcon(pm.icon),
+                path: "#",
+                children
+              });
+            }
+          } else {
+            if (clientModules.includes(pm.key)) {
+              let label = pm.label;
+              if (pm.key === "pacientes") label = patientLabel;
+
+              items.push({
+                label,
+                icon: renderIcon(pm.icon),
+                path: `/${role}/${pm.path}`
+              });
+            }
+          }
+        });
+
+        return items;
+      }
       default:
         return [];
     }
@@ -127,11 +200,23 @@ export default function Sidebar({
 
         {/* Header - Clinic Branding */}
         <div className="sidebar-header">
-          <div className="sidebar-brand-wrapper">
-            <div className="brand-logo-sphere">
-              <span>H</span>
-            </div>
-            {!isCollapsed && <span className="brand-name">Hesou</span>}
+          <div className="sidebar-brand-wrapper" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            {user?.client?.logo ? (
+              <img
+                src={user.client.logo}
+                alt="Logo"
+                style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit: "contain" }}
+              />
+            ) : (
+              <div className="brand-logo-sphere">
+                <span>{user?.client?.name ? user.client.name.substring(0, 1).toUpperCase() : "H"}</span>
+              </div>
+            )}
+            {!isCollapsed && (
+              <span className="brand-name" style={{ fontSize: "1.1rem", fontWeight: "700" }}>
+                {user?.client?.name || "Hesou"}
+              </span>
+            )}
           </div>
 
           {/* Desktop Toggle Button */}
