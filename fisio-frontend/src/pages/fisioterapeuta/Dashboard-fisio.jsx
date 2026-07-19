@@ -36,6 +36,7 @@ export default function DashboardFisio() {
     completadasHoy: 0,
     alertasDolor: 0
   });
+  const [pendingNotes, setPendingNotes] = useState([]);
 
   const handleAction = (patient, path) => {
     if (patient.rawPatientData) {
@@ -103,6 +104,17 @@ export default function DashboardFisio() {
       });
 
       // Default fallbacks if no clinic appointments exist yet
+      // Fetch notes to identify pending SOAP notes
+      let notesData = [];
+      try {
+        const notesRes = await api.get('/notas');
+        notesData = notesRes.data || [];
+      } catch (err) {
+        console.warn("Could not fetch notes for alerts:", err.message);
+      }
+
+
+
       if (formattedPatients.length === 0) {
         setPatients([
           { id: 1, name: 'Gabriela Ortiz', treatment: 'Drenaje linfático - Tobillo izquierdo', hour: '09:00 AM', pain: '7/10', painLevel: 'high', status: 'En Espera', identificadorPaciente: '1', rawPatientData: { identificadorPaciente: '1', nombres: 'Gabriela', apellidos: 'Ortiz', edad: 28, telefono: '5551234567' } },
@@ -118,6 +130,7 @@ export default function DashboardFisio() {
           completadasHoy: 1,
           alertasDolor: 2
         });
+        setPendingNotes([]);
       } else {
         const highPainCount = formattedPatients.filter(p => p.painLevel === 'high').length;
         const completedToday = formattedPatients.filter(p => p.status === 'Completado').length;
@@ -130,6 +143,20 @@ export default function DashboardFisio() {
           completadasHoy: completedToday,
           alertasDolor: highPainCount
         });
+
+        // Filter out completed or attended sessions lacking a SOAP note today
+        const pending = formattedPatients.filter(p => {
+          const hadAppointment = p.status === 'Completado' || p.status === 'Asistió';
+          if (!hadAppointment) return false;
+
+          const hasNoteToday = notesData.some(n => {
+            const noteDate = new Date(n.fechaNota || n.createdAt).toISOString().split('T')[0];
+            return n.identificadorPaciente === p.identificadorPaciente && noteDate === hoyStr;
+          });
+
+          return !hasNoteToday;
+        });
+        setPendingNotes(pending);
       }
     } catch (err) {
       console.error("Error al cargar panel de control:", err);
@@ -424,6 +451,64 @@ export default function DashboardFisio() {
             </div>
 
           </div>
+
+          {/* 🔔 Recordatorios de Notas SOAP Pendientes */}
+          {pendingNotes.length > 0 && (
+            <div className="auth-card" style={{
+              background: "rgba(239, 68, 68, 0.05)",
+              border: "1px solid rgba(239, 68, 68, 0.15)",
+              padding: "1.25rem",
+              borderRadius: "12px",
+              marginBottom: "1.5rem",
+              boxShadow: "var(--shadow-sm)"
+            }}>
+              <h3 style={{
+                fontSize: "0.95rem",
+                fontWeight: "700",
+                color: "var(--danger)",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                margin: "0 0 0.75rem 0"
+              }}>
+                <FiAlertCircle /> Recordatorio: Notas SOAP Pendientes de Citas de Hoy
+              </h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                {pendingNotes.map(pn => (
+                  <div key={pn.id} style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "0.5rem 0.75rem",
+                    background: "rgba(255,255,255,0.02)",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(255,255,255,0.05)",
+                    flexWrap: "wrap",
+                    gap: "0.5rem"
+                  }}>
+                    <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                      La cita de <strong style={{ color: "var(--text-main)" }}>{pn.name}</strong> ({pn.hour}) no tiene registrada su nota SOAP de hoy.
+                    </span>
+                    <button
+                      className="btn btn-primary"
+                      style={{
+                        padding: "4px 10px",
+                        height: "28px",
+                        fontSize: "0.75rem",
+                        width: "auto",
+                        background: "rgba(16, 185, 129, 0.15)",
+                        color: "var(--success)",
+                        borderColor: "rgba(16, 185, 129, 0.25)"
+                      }}
+                      onClick={() => handleAction(pn, `/fisioterapeuta/notas`)}
+                    >
+                      Registrar Nota
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* 🧱 2. Dual Column Layout (Table & Showcase Sandbox) */}
           <div className="main-dashboard-content">
