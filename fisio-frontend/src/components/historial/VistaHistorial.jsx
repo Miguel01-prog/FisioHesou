@@ -50,10 +50,17 @@ const VistaHistorial = () => {
   const getValorAntFam = (id) => {
     if (!id) return "";
     
-    // Normalize id to string ID
+    // Normalize id to string ID and parse year
     let idStr = "";
+    let year = "";
     if (typeof id === "string") {
-      idStr = id;
+      if (id.includes("|")) {
+        const parts = id.split("|");
+        idStr = parts[0];
+        year = parts[1];
+      } else {
+        idStr = id;
+      }
     } else if (typeof id === "object") {
       idStr = id._id ? id._id.toString() : id.toString();
     }
@@ -64,24 +71,24 @@ const VistaHistorial = () => {
       return item._id.toString() === idStr;
     });
 
-    if (found) return found.valor;
-
-    // Fallback if not found in list but has a valor/name attribute
-    if (typeof id === "object") {
-      if (id.valor) return id.valor;
-      if (id.name) return id.name;
-    }
-    
-    return idStr || JSON.stringify(id);
+    const label = found ? found.valor : (typeof id === "object" && id.valor ? id.valor : idStr);
+    return year ? `${label} (${year})` : label;
   };
 
   const getValorAntMed = (id) => {
     if (!id) return "";
     
-    // Normalize id to string ID
+    // Normalize id to string ID and parse year
     let idStr = "";
+    let year = "";
     if (typeof id === "string") {
-      idStr = id;
+      if (id.includes("|")) {
+        const parts = id.split("|");
+        idStr = parts[0];
+        year = parts[1];
+      } else {
+        idStr = id;
+      }
     } else if (typeof id === "object") {
       idStr = id._id ? id._id.toString() : id.toString();
     }
@@ -92,15 +99,8 @@ const VistaHistorial = () => {
       return item._id.toString() === idStr;
     });
 
-    if (found) return found.valor;
-
-    // Fallback if not found in list but has a valor/name attribute
-    if (typeof id === "object") {
-      if (id.valor) return id.valor;
-      if (id.name) return id.name;
-    }
-    
-    return idStr || JSON.stringify(id);
+    const label = found ? found.valor : (typeof id === "object" && id.valor ? id.valor : idStr);
+    return year ? `${label} (${year})` : label;
   };
 
   useEffect(() => {
@@ -184,13 +184,13 @@ const VistaHistorial = () => {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <h2 className="title_card" style={{ margin: 0 }}>Historial Clínico</h2>
-              <span style={{ 
-                fontSize: "0.8rem", 
-                background: "rgba(99, 102, 241, 0.08)", 
-                color: "var(--primary)", 
-                border: "1px solid rgba(99, 102, 241, 0.15)", 
-                padding: "4px 12px", 
-                borderRadius: "20px", 
+              <span style={{
+                fontSize: "0.8rem",
+                background: "rgba(99, 102, 241, 0.08)",
+                color: "var(--primary)",
+                border: "1px solid rgba(99, 102, 241, 0.15)",
+                padding: "4px 12px",
+                borderRadius: "20px",
                 fontWeight: "600",
                 letterSpacing: "0.3px",
                 display: "inline-flex",
@@ -293,22 +293,22 @@ const VistaHistorial = () => {
                   <div className="clinical-grid-3">
                     <div className="col">
                       <label className="form-label">Escala EVA</label>
-                      <input 
-                        type="text" 
-                        className="input" 
+                      <input
+                        type="text"
+                        className="input"
                         value={
-                          formData.eva !== undefined && formData.eva !== "" 
-                            ? `${formData.eva} - ${formData.eva === 0 || formData.eva === "0" ? "Sin Dolor" : formData.eva === 10 || formData.eva === "10" ? "Dolor Insoportable" : `Nivel ${formData.eva}`}` 
+                          formData.eva !== undefined && formData.eva !== ""
+                            ? `${formData.eva} - ${formData.eva === 0 || formData.eva === "0" ? "Sin Dolor" : formData.eva === 10 || formData.eva === "10" ? "Dolor Insoportable" : `Nivel ${formData.eva}`}`
                             : "Sin especificar"
-                        } 
-                        disabled 
+                        }
+                        disabled
                       />
                     </div>
                     <div className="col">
                       <label className="form-label">Tipo de dolor</label>
-                      <input 
-                        type="text" 
-                        className="input" 
+                      <input
+                        type="text"
+                        className="input"
                         value={
                           {
                             ardon: "Ardor",
@@ -318,15 +318,15 @@ const VistaHistorial = () => {
                             muscular: "Muscular",
                             otra: "Otra"
                           }[formData.tipo] || formData.tipo || "Sin especificar"
-                        } 
-                        disabled 
+                        }
+                        disabled
                       />
                     </div>
                     <div className="col">
                       <label className="form-label">Sensación</label>
-                      <input 
-                        type="text" 
-                        className="input" 
+                      <input
+                        type="text"
+                        className="input"
                         value={
                           {
                             hormigueo: "Hormigueo",
@@ -335,8 +335,8 @@ const VistaHistorial = () => {
                             rigidez: "Rigidez",
                             otra: "Otra"
                           }[formData.sensacion] || formData.sensacion || "Sin especificar"
-                        } 
-                        disabled 
+                        }
+                        disabled
                       />
                     </div>
                     <div className="col" style={{ gridColumn: "span 2" }}>
@@ -405,62 +405,62 @@ const VistaHistorial = () => {
                   <div className="clinical-grid-3" style={{ marginBottom: "1rem" }}>
                     <div className="col">
                       <label className="form-label">Actividad física</label>
-                      <input 
-                        type="text" 
-                        className="input" 
+                      <input
+                        type="text"
+                        className="input"
                         value={
                           {
                             ligera: "Ligera",
                             moderada: "Moderada",
                             fuerte: "Fuerte"
                           }[antecedentesNoPatologicos.actividadFisica] || antecedentesNoPatologicos.actividadFisica || "Sin especificar"
-                        } 
-                        disabled 
+                        }
+                        disabled
                       />
                     </div>
                     <div className="col">
                       <label className="form-label">Alimentación</label>
-                      <input 
-                        type="text" 
-                        className="input" 
+                      <input
+                        type="text"
+                        className="input"
                         value={
                           {
                             buena: "Buena",
                             regular: "Regular",
                             mala: "Mala"
                           }[antecedentesNoPatologicos.alimentacion] || antecedentesNoPatologicos.alimentacion || "Sin especificar"
-                        } 
-                        disabled 
+                        }
+                        disabled
                       />
                     </div>
                     <div className="col">
                       <label className="form-label">Descanso</label>
-                      <input 
-                        type="text" 
-                        className="input" 
+                      <input
+                        type="text"
+                        className="input"
                         value={
                           {
                             bueno: "Bueno",
                             regular: "Regular",
                             malo: "Malo"
                           }[antecedentesNoPatologicos.descanso] || antecedentesNoPatologicos.descanso || "Sin especificar"
-                        } 
-                        disabled 
+                        }
+                        disabled
                       />
                     </div>
                     <div className="col">
                       <label className="form-label">Nivel de estrés</label>
-                      <input 
-                        type="text" 
-                        className="input" 
+                      <input
+                        type="text"
+                        className="input"
                         value={
                           {
                             ligero: "Ligero",
                             moderado: "Moderado",
                             fuerte: "Fuerte"
                           }[antecedentesNoPatologicos.estres] || antecedentesNoPatologicos.estres || "Sin especificar"
-                        } 
-                        disabled 
+                        }
+                        disabled
                       />
                     </div>
                     <div className="col" style={{ gridColumn: "span 2" }}>

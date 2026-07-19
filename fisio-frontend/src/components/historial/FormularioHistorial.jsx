@@ -202,8 +202,6 @@ const FormularioHistorial = () => {
       }));
     }
   }, [newPatientData.nombres, newPatientData.apellidoPaterno, newPatientData.apellidoMaterno, isNewPatient]);
-  const [nuevoID, setNuevoID] = useState("");
-  const [mesAñoNota, setMesAñoNota] = useState("");
   const [itemsAntFam, setItemsAntFam] = useState([]);
   const [antecedenteSeleccionado, setAntecedenteSeleccionado] = useState("");
   const [itemsAntMed, setItemsAntMed] = useState([]);
@@ -211,33 +209,7 @@ const FormularioHistorial = () => {
   const [edadEditable, setEdadEditable] = useState("");
   const [hasDraft, setHasDraft] = useState(false);
 
-  // Auto-save draft on form input changes
-  useEffect(() => {
-    // Avoid saving initial empty states
-    if (!formData.motivoConsulta && !formData.ocupacion && !newPatientData.nombres && !formData.contenidoNota) {
-      return;
-    }
-    const draft = {
-      formData,
-      lesiones,
-      obser,
-      antecedentesNoPatologicos,
-      isNewPatient,
-      newPatientData,
-      paciente
-    };
-    localStorage.setItem("historial_clinico_borrador", JSON.stringify(draft));
-  }, [formData, lesiones, obser, antecedentesNoPatologicos, isNewPatient, newPatientData, paciente]);
 
-  const getValorAntFam = (id) => {
-    const found = itemsAntFam.find(item => item._id === id);
-    return found ? found.valor : id;
-  };
-
-  const getValorAntMed = (id) => {
-    const found = itemsAntMed.find(item => item._id === id);
-    return found ? found.valor : id;
-  };
   const [openLesiones, setOpenLesiones] = useState(false);
   const [lesiones, setLesiones] = useState({
     caidas: { activo: false, detalle: "" },
@@ -314,6 +286,223 @@ const FormularioHistorial = () => {
     fechaFirmaPaciente: new Date().toISOString().split('T')[0],
     fechaFirmaProfesional: new Date().toISOString().split('T')[0],
   });
+
+  const [aplicaFam, setAplicaFam] = useState(false);
+  const [aplicaMed, setAplicaMed] = useState(false);
+
+  useEffect(() => {
+    if (formData.antecedentesFamiliares && formData.antecedentesFamiliares.length > 0) {
+      setAplicaFam(true);
+    }
+    if (formData.antecedentesMedicos && formData.antecedentesMedicos.length > 0) {
+      setAplicaMed(true);
+    }
+  }, [formData.antecedentesFamiliares, formData.antecedentesMedicos]);
+
+  const toggleAplicaFam = (checked) => {
+    setAplicaFam(checked);
+    if (!checked) {
+      setFormData(prev => ({ ...prev, antecedentesFamiliares: [] }));
+    }
+  };
+
+  const toggleAplicaMed = (checked) => {
+    setAplicaMed(checked);
+    if (!checked) {
+      setFormData(prev => ({ ...prev, antecedentesMedicos: [] }));
+    }
+  };
+
+  const getValorAntFam = (id) => {
+    if (!id) return "";
+    const [cleanId, year] = id.split("|");
+    const found = itemsAntFam.find(item => item._id === cleanId);
+    const label = found ? found.valor : cleanId;
+    return year ? `${label} (${year})` : label;
+  };
+
+  const getValorAntMed = (id) => {
+    if (!id) return "";
+    const [cleanId, year] = id.split("|");
+    const found = itemsAntMed.find(item => item._id === cleanId);
+    const label = found ? found.valor : cleanId;
+    return year ? `${label} (${year})` : label;
+  };
+
+  const handleSelectAntecedent = (val, isFamily) => {
+    const listKey = isFamily ? "antecedentesFamiliares" : "antecedentesMedicos";
+    const currentList = formData[listKey] || [];
+    const cleanVal = val.split("|")[0];
+    if (val && !currentList.some(x => x && x.split("|")[0] === cleanVal)) {
+      setFormData(prev => ({
+        ...prev,
+        [listKey]: [...currentList.filter(Boolean), `${cleanVal}|`]
+      }));
+    }
+  };
+
+  const handleRemoveAntecedent = (cleanId, isFamily) => {
+    const listKey = isFamily ? "antecedentesFamiliares" : "antecedentesMedicos";
+    const currentList = formData[listKey] || [];
+    setFormData(prev => ({
+      ...prev,
+      [listKey]: currentList.filter(x => x && x.split("|")[0] !== cleanId)
+    }));
+  };
+
+  const handleTagYearChange = (cleanId, yearVal, isFamily) => {
+    const listKey = isFamily ? "antecedentesFamiliares" : "antecedentesMedicos";
+    const currentList = formData[listKey] || [];
+    setFormData(prev => ({
+      ...prev,
+      [listKey]: currentList.map(x => {
+        if (x && x.split("|")[0] === cleanId) {
+          return `${cleanId}|${yearVal.trim()}`;
+        }
+        return x;
+      })
+    }));
+  };
+
+  const [aplicaMedActual, setAplicaMedActual] = useState(false);
+
+  useEffect(() => {
+    if (formData.medActual && formData.medActual !== "Ninguna" && formData.medActual.trim() !== "") {
+      setAplicaMedActual(true);
+    } else {
+      setAplicaMedActual(false);
+    }
+  }, [formData.medActual]);
+
+  const toggleAplicaMedActual = (checked) => {
+    setAplicaMedActual(checked);
+    setFormData(prev => ({
+      ...prev,
+      medActual: checked ? "" : "Ninguna"
+    }));
+  };
+
+  const [aplicaQuirurgico, setAplicaQuirurgico] = useState(false);
+  const [surgicalEntries, setSurgicalEntries] = useState([{ id: 1, name: "", date: "" }]);
+
+  useEffect(() => {
+    if (formData.antecedentesQuirurgicos && formData.antecedentesQuirurgicos !== "Ninguno" && formData.antecedentesQuirurgicos.trim() !== "") {
+      setAplicaQuirurgico(true);
+      
+      const parts = formData.antecedentesQuirurgicos.split(", ");
+      const parsed = parts.map((part, index) => {
+        const match = part.match(/(.*)\s*\((.*)\)/);
+        if (match) {
+          return { id: index + 1, name: match[1].trim(), date: match[2].trim() };
+        }
+        return { id: index + 1, name: part.trim(), date: "" };
+      });
+      if (parsed.length > 0) {
+        setSurgicalEntries(parsed);
+      }
+    } else {
+      setAplicaQuirurgico(false);
+    }
+  }, [formData.antecedentesQuirurgicos]);
+
+  useEffect(() => {
+    if (!aplicaQuirurgico) {
+      if (formData.antecedentesQuirurgicos !== "Ninguno") {
+        setFormData(prev => ({ ...prev, antecedentesQuirurgicos: "Ninguno", anioQuirurgico: "" }));
+      }
+      return;
+    }
+
+    const formatted = surgicalEntries
+      .filter(e => e.name.trim())
+      .map(e => e.date ? `${e.name.trim()} (${e.date})` : e.name.trim())
+      .join(", ");
+    
+    const firstDate = surgicalEntries.find(e => e.date)?.date || "";
+    
+    if (formData.antecedentesQuirurgicos !== formatted || formData.anioQuirurgico !== firstDate) {
+      setFormData(prev => ({
+        ...prev,
+        antecedentesQuirurgicos: formatted || "Ninguno",
+        anioQuirurgico: firstDate
+      }));
+    }
+  }, [surgicalEntries, aplicaQuirurgico]);
+
+  const addSurgicalEntry = () => {
+    setSurgicalEntries(prev => [...prev, { id: Date.now() + Math.random(), name: "", date: "" }]);
+  };
+
+  const removeSurgicalEntry = (id) => {
+    setSurgicalEntries(prev => {
+      const filtered = prev.filter(e => e.id !== id);
+      return filtered.length > 0 ? filtered : [{ id: Date.now(), name: "", date: "" }];
+    });
+  };
+
+  const updateSurgicalEntry = (id, field, value) => {
+    setSurgicalEntries(prev => prev.map(e => {
+      if (e.id === id) {
+        return { ...e, [field]: value };
+      }
+      return e;
+    }));
+  };
+
+  const [nuevoID, setNuevoID] = useState("");
+  const [mesAñoNota, setMesAñoNota] = useState("");
+
+  // Generar ID de nota de forma automática cuando se ingresen nombres y apellidos para pacientes nuevos manuales
+  useEffect(() => {
+    if (!isNewPatient) return;
+
+    const name = newPatientData.nombres?.trim();
+    const paterno = newPatientData.apellidoPaterno?.trim();
+
+    if (!name || !paterno || !mesAñoNota) {
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const fakePaciente = {
+          nombres: name,
+          apellidos: `${paterno} ${newPatientData.apellidoMaterno || ""}`.trim(),
+          identificadorPaciente: "NUEVO"
+        };
+        const idGenerado = await generarIdNotaFront(fakePaciente, mesAñoNota);
+        if (idGenerado) {
+          setNuevoID(idGenerado);
+          setFormData(prev => ({
+            ...prev,
+            idHistoricoFk: idGenerado
+          }));
+        }
+      } catch (err) {
+        console.error("Error generando ID para paciente manual:", err);
+      }
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [newPatientData.nombres, newPatientData.apellidoPaterno, newPatientData.apellidoMaterno, isNewPatient, mesAñoNota]);
+
+  // Auto-save draft on form input changes
+  useEffect(() => {
+    // Avoid saving initial empty states
+    if (!formData.motivoConsulta && !formData.ocupacion && !newPatientData.nombres && !formData.contenidoNota) {
+      return;
+    }
+    const draft = {
+      formData,
+      lesiones,
+      obser,
+      antecedentesNoPatologicos,
+      isNewPatient,
+      newPatientData,
+      paciente
+    };
+    localStorage.setItem("historial_clinico_borrador", JSON.stringify(draft));
+  }, [formData, lesiones, obser, antecedentesNoPatologicos, isNewPatient, newPatientData, paciente]);
 
   const updateSignature = (field, value) => {
     setFormData(prev => ({
@@ -445,7 +634,50 @@ const FormularioHistorial = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    let cleaned = value;
+    if (typeof value === "string") {
+      if (value.endsWith(" ")) {
+        cleaned = value.replace(/\s+/g, " ");
+      } else {
+        cleaned = value.replace(/\s+/g, " ").trimStart();
+      }
+    }
+    setFormData((prev) => ({ ...prev, [name]: cleaned }));
+  };
+
+  const handleInputBlur = (e) => {
+    const { name, value } = e.target;
+    if (!name) return;
+
+    if (typeof value === "string") {
+      const cleaned = value.replace(/\s+/g, " ").trim();
+
+      // If it is one of the new patient fields, update newPatientData
+      if (["nombres", "apellidoPaterno", "apellidoMaterno", "edad", "telefono"].includes(name)) {
+        setNewPatientData(prev => ({
+          ...prev,
+          [name]: cleaned
+        }));
+      } else {
+        // Otherwise update formData
+        setFormData((prev) => ({
+          ...prev,
+          [name]: cleaned
+        }));
+      }
+    }
+  };
+
+  const handleNewPatientChange = (field, value) => {
+    let cleaned = value;
+    if (typeof value === "string") {
+      if (value.endsWith(" ")) {
+        cleaned = value.replace(/\s+/g, " ");
+      } else {
+        cleaned = value.replace(/\s+/g, " ").trimStart();
+      }
+    }
+    setNewPatientData(prev => ({ ...prev, [field]: cleaned }));
   };
 
   const handleDynamicChange = (campo, index, value) => {
@@ -744,16 +976,16 @@ const FormularioHistorial = () => {
           )}
 
           <div className="tabs" style={{ marginBottom: "2rem" }}>
-            <button type="button" className={`tab ${activeTab === "datosPersonales" ? "active" : ""}`} onClick={() => setActiveTab("datosPersonales")}>Resumen</button>
-            <button type="button" className={`tab ${activeTab === "AnaAnte" ? "active" : ""}`} onClick={() => setActiveTab("AnaAnte")}>Anamnesis y Antecedentes</button>
-            <button type="button" className={`tab ${activeTab === "evaluacion" ? "active" : ""}`} onClick={() => setActiveTab("evaluacion")}>Evaluación Física</button>
+            <button type="button" className={`tab ${activeTab === "datosPersonales" ? "active" : ""}`} onClick={() => setActiveTab("datosPersonales")}>👤 Resumen</button>
+            <button type="button" className={`tab ${activeTab === "AnaAnte" ? "active" : ""}`} onClick={() => setActiveTab("AnaAnte")}>🏥 Anamnesis y Antecedentes</button>
+            <button type="button" className={`tab ${activeTab === "evaluacion" ? "active" : ""}`} onClick={() => setActiveTab("evaluacion")}>🔍 Evaluación Física</button>
             <button type="button" className={`tab ${activeTab === "soap" ? "active" : ""}`} onClick={() => setActiveTab("soap")}>
-              Notas SOAP {!formData.contenidoNota?.trim() && <span style={{ color: "#ef4444", fontSize: "0.8rem", marginLeft: "4px" }} title="Nota SOAP pendiente de registrar">⚠️</span>}
+              📝 Notas SOAP {!formData.contenidoNota?.trim() && <span style={{ color: "#ef4444", fontSize: "0.8rem", marginLeft: "4px" }} title="Nota SOAP pendiente de registrar">⚠️</span>}
             </button>
-            <button type="button" className={`tab ${activeTab === "consentimiento" ? "active" : ""}`} onClick={() => setActiveTab("consentimiento")}>Consentimiento Informado</button>
+            <button type="button" className={`tab ${activeTab === "consentimiento" ? "active" : ""}`} onClick={() => setActiveTab("consentimiento")}>✍️ Consentimiento</button>
           </div>
 
-          <form className="form" onSubmit={handleSubmit}>
+          <form className="form" onSubmit={handleSubmit} onBlur={handleInputBlur}>
             {activeTab === "datosPersonales" && paciente && (
               <div className="tab-content">
                 <div className="clinical-form-section">
@@ -765,9 +997,10 @@ const FormularioHistorial = () => {
                           <label className="form-label">Nombres *</label>
                           <input
                             type="text"
+                            name="nombres"
                             className="input"
                             value={newPatientData.nombres}
-                            onChange={(e) => setNewPatientData(prev => ({ ...prev, nombres: e.target.value }))}
+                            onChange={(e) => handleNewPatientChange("nombres", e.target.value)}
                             required
                             placeholder="Nombres"
                           />
@@ -776,9 +1009,10 @@ const FormularioHistorial = () => {
                           <label className="form-label">Apellido Paterno *</label>
                           <input
                             type="text"
+                            name="apellidoPaterno"
                             className="input"
                             value={newPatientData.apellidoPaterno}
-                            onChange={(e) => setNewPatientData(prev => ({ ...prev, apellidoPaterno: e.target.value }))}
+                            onChange={(e) => handleNewPatientChange("apellidoPaterno", e.target.value)}
                             required
                             placeholder="Apellido Paterno"
                           />
@@ -787,9 +1021,10 @@ const FormularioHistorial = () => {
                           <label className="form-label">Apellido Materno</label>
                           <input
                             type="text"
+                            name="apellidoMaterno"
                             className="input"
                             value={newPatientData.apellidoMaterno}
-                            onChange={(e) => setNewPatientData(prev => ({ ...prev, apellidoMaterno: e.target.value }))}
+                            onChange={(e) => handleNewPatientChange("apellidoMaterno", e.target.value)}
                             placeholder="Apellido Materno"
                           />
                         </div>
@@ -797,9 +1032,10 @@ const FormularioHistorial = () => {
                           <label className="form-label">Edad *</label>
                           <input
                             type="number"
+                            name="edad"
                             className="input"
                             value={newPatientData.edad}
-                            onChange={(e) => setNewPatientData(prev => ({ ...prev, edad: e.target.value }))}
+                            onChange={(e) => handleNewPatientChange("edad", e.target.value)}
                             required
                             placeholder="Ej. 30"
                             min="1"
@@ -872,9 +1108,10 @@ const FormularioHistorial = () => {
                       {isNewPatient ? (
                         <input
                           type="text"
+                          name="telefono"
                           className="input"
                           value={newPatientData.telefono}
-                          onChange={(e) => setNewPatientData(prev => ({ ...prev, telefono: e.target.value }))}
+                          onChange={(e) => handleNewPatientChange("telefono", e.target.value)}
                           required
                           placeholder="Ej. 5512345678"
                         />
@@ -911,7 +1148,7 @@ const FormularioHistorial = () => {
                   <div style={{ marginBottom: "1.5rem" }}>
                     <h4 style={{ fontWeight: "800", color: "var(--primary)", borderBottom: "1px solid var(--border-light)", paddingBottom: "4px", marginBottom: "8px", fontSize: "1rem" }}>1. Información General</h4>
                     <p style={{ margin: 0, fontSize: "0.95rem", textAlign: "justify" }}>
-                      Yo, <input type="text" value={formData.nombrePacienteFirma} onChange={(e) => updateSignature("nombrePacienteFirma", e.target.value)} style={{ border: "none", borderBottom: "1px solid #1e293b", padding: "0 5px", fontWeight: "700", color: "var(--primary)", width: "320px", background: "transparent" }} placeholder="Nombre del paciente" /> declaro que he sido debidamente informado/a sobre la naturaleza del tratamiento que recibiré en este consultorio, incluyendo los beneficios, riesgos y alternativas disponibles.
+                      Yo, <input type="text" name="nombrePacienteFirma" value={formData.nombrePacienteFirma} onChange={(e) => updateSignature("nombrePacienteFirma", e.target.value)} style={{ border: "none", borderBottom: "1px solid #1e293b", padding: "0 5px", fontWeight: "700", color: "var(--primary)", width: "320px", background: "transparent" }} placeholder="Nombre del paciente" /> declaro que he sido debidamente informado/a sobre la naturaleza del tratamiento que recibiré en este consultorio, incluyendo los beneficios, riesgos y alternativas disponibles.
                     </p>
                   </div>
 
@@ -921,7 +1158,7 @@ const FormularioHistorial = () => {
                       <strong>Tipo de tratamiento:</strong> Fisioterapia
                     </p>
                     <p style={{ margin: "0 0 10px 0", fontSize: "0.95rem" }}>
-                      <strong>Profesional a cargo:</strong> <input type="text" value={formData.nombreProfesionalFirma} onChange={(e) => updateSignature("nombreProfesionalFirma", e.target.value)} style={{ border: "none", borderBottom: "1px solid #1e293b", padding: "0 5px", fontWeight: "700", color: "var(--primary)", width: "320px", background: "transparent" }} placeholder="Nombre del profesional" />
+                      <strong>Profesional a cargo:</strong> <input type="text" name="nombreProfesionalFirma" value={formData.nombreProfesionalFirma} onChange={(e) => updateSignature("nombreProfesionalFirma", e.target.value)} style={{ border: "none", borderBottom: "1px solid #1e293b", padding: "0 5px", fontWeight: "700", color: "var(--primary)", width: "320px", background: "transparent" }} placeholder="Nombre del profesional" />
                     </p>
                     <p style={{ margin: "0 0 4px 0", fontSize: "0.95rem", fontWeight: "700" }}>
                       Descripción del procedimiento o intervención:
@@ -1078,72 +1315,245 @@ const FormularioHistorial = () => {
 
                 <div className="clinical-form-section">
                   <h3 className="clinical-section-title">🩺 Antecedentes Clínicos</h3>
-                  <div className="clinical-grid-2" style={{ marginBottom: "1rem" }}>
-                    <div className="col">
-                      <label className="form-label">Seleccionar Antecedentes familiares</label>
-                      <select className="input" value={antecedenteSeleccionado} onChange={(e) => {
-                        const val = e.target.value;
-                        if (val && !formData.antecedentesFamiliares.includes(val)) {
-                          setFormData(prev => ({ ...prev, antecedentesFamiliares: [...prev.antecedentesFamiliares.filter(Boolean), val] }));
-                        }
-                        setAntecedenteSeleccionado("");
-                      }}>
-                        <option value="">Añadir antecedente familiar...</option>
-                        {itemsAntFam.map((item) => (
-                          <option key={item._id} value={item._id}>{item.valor}</option>
-                        ))}
-                      </select>
-                      <div className="selected-tags-container">
-                        {formData.antecedentesFamiliares.filter(Boolean).map((id, index) => (
-                          <span key={index} className="glass-tag">
-                            {getValorAntFam(id)}
-                            <button type="button" className="tag-remove-btn" onClick={() => {
-                              setFormData({ ...formData, antecedentesFamiliares: formData.antecedentesFamiliares.filter(x => x !== id) });
-                            }}>×</button>
-                          </span>
-                        ))}
-                      </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem", marginBottom: "1rem" }}>
+                    
+                    {/* Antecedentes Familiares */}
+                    <div className="col" style={{ background: "rgba(255,255,255,0.01)", padding: "1.25rem", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)" }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", fontWeight: "700", fontSize: "0.95rem", color: "var(--primary)", margin: "0 0 1rem 0" }}>
+                        <input
+                          type="checkbox"
+                          checked={aplicaFam}
+                          onChange={(e) => toggleAplicaFam(e.target.checked)}
+                          style={{ width: "16px", height: "16px", accentColor: "var(--primary)" }}
+                        />
+                        <span>👨‍👩‍👧‍👦 ¿Aplica antecedentes familiares?</span>
+                      </label>
+                      
+                      {aplicaFam && (
+                        <div className="fade-in-up" style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                          <label className="form-label" style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "4px" }}>Seleccionar Antecedentes familiares</label>
+                          <select className="input" value={antecedenteSeleccionado} onChange={(e) => {
+                            handleSelectAntecedent(e.target.value, true);
+                            setAntecedenteSeleccionado("");
+                          }}>
+                            <option value="">Añadir antecedente familiar...</option>
+                            {itemsAntFam.map((item) => (
+                              <option key={item._id} value={item._id}>{item.valor}</option>
+                            ))}
+                          </select>
+
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "1rem" }}>
+                            {formData.antecedentesFamiliares?.filter(Boolean).map((id, index) => {
+                              const [cleanId, year] = id.split("|");
+                              const label = itemsAntFam.find(x => x._id === cleanId)?.valor || cleanId;
+                              return (
+                                <span key={index} className="glass-tag" style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                  padding: "4px 8px",
+                                  borderRadius: "20px",
+                                  background: "rgba(99, 102, 241, 0.08)",
+                                  border: "1px solid rgba(99, 102, 241, 0.15)",
+                                  fontSize: "0.8rem",
+                                  color: "var(--text-main)"
+                                }}>
+                                  <span>{label}</span>
+                                  <input
+                                    type="text"
+                                    placeholder="Año"
+                                    value={year || ""}
+                                    onChange={(e) => handleTagYearChange(cleanId, e.target.value, true)}
+                                    style={{
+                                      width: "55px",
+                                      height: "22px",
+                                      padding: "0 4px",
+                                      fontSize: "0.75rem",
+                                      borderRadius: "4px",
+                                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                                      background: "rgba(0, 0, 0, 0.2)",
+                                      color: "var(--text-main)",
+                                      textAlign: "center"
+                                    }}
+                                  />
+                                  <button type="button" className="tag-remove-btn" onClick={() => handleRemoveAntecedent(cleanId, true)} style={{ fontSize: "1rem", lineHeight: "1", padding: 0 }}>×</button>
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    <div className="col">
-                      <label className="form-label">Seleccionar Antecedentes médicos</label>
-                      <select className="input" value={antecedenteMedico} onChange={(e) => {
-                        const val = e.target.value;
-                        if (val && !formData.antecedentesMedicos.includes(val)) {
-                          setFormData(prev => ({ ...prev, antecedentesMedicos: [...prev.antecedentesMedicos.filter(Boolean), val] }));
-                        }
-                        setAntecedenteMedico("");
-                      }}>
-                        <option value="">Añadir antecedente médico...</option>
-                        {itemsAntMed.map((item) => (
-                          <option key={item._id} value={item._id}>{item.valor}</option>
-                        ))}
-                      </select>
-                      <div className="selected-tags-container">
-                        {formData.antecedentesMedicos.filter(Boolean).map((id, index) => (
-                          <span key={index} className="glass-tag">
-                            {getValorAntMed(id)}
-                            <button type="button" className="tag-remove-btn" onClick={() => {
-                              setFormData({ ...formData, antecedentesMedicos: formData.antecedentesMedicos.filter(x => x !== id) });
-                            }}>×</button>
-                          </span>
-                        ))}
-                      </div>
+                    {/* Antecedentes Médicos */}
+                    <div className="col" style={{ background: "rgba(255,255,255,0.01)", padding: "1.25rem", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)" }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", fontWeight: "700", fontSize: "0.95rem", color: "var(--primary)", margin: "0 0 1rem 0" }}>
+                        <input
+                          type="checkbox"
+                          checked={aplicaMed}
+                          onChange={(e) => toggleAplicaMed(e.target.checked)}
+                          style={{ width: "16px", height: "16px", accentColor: "var(--primary)" }}
+                        />
+                        <span>🏥 ¿Aplica antecedentes médicos?</span>
+                      </label>
+                      
+                      {aplicaMed && (
+                        <div className="fade-in-up" style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                          <label className="form-label" style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "4px" }}>Seleccionar Antecedentes médicos</label>
+                          <select className="input" value={antecedenteMedico} onChange={(e) => {
+                            handleSelectAntecedent(e.target.value, false);
+                            setAntecedenteMedico("");
+                          }}>
+                            <option value="">Añadir antecedente médico...</option>
+                            {itemsAntMed.map((item) => (
+                              <option key={item._id} value={item._id}>{item.valor}</option>
+                            ))}
+                          </select>
+
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "1rem" }}>
+                            {formData.antecedentesMedicos?.filter(Boolean).map((id, index) => {
+                              const [cleanId, year] = id.split("|");
+                              const label = itemsAntMed.find(x => x._id === cleanId)?.valor || cleanId;
+                              return (
+                                <span key={index} className="glass-tag" style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                  padding: "4px 8px",
+                                  borderRadius: "20px",
+                                  background: "rgba(99, 102, 241, 0.08)",
+                                  border: "1px solid rgba(99, 102, 241, 0.15)",
+                                  fontSize: "0.8rem",
+                                  color: "var(--text-main)"
+                                }}>
+                                  <span>{label}</span>
+                                  <input
+                                    type="text"
+                                    placeholder="Año"
+                                    value={year || ""}
+                                    onChange={(e) => handleTagYearChange(cleanId, e.target.value, false)}
+                                    style={{
+                                      width: "55px",
+                                      height: "22px",
+                                      padding: "0 4px",
+                                      fontSize: "0.75rem",
+                                      borderRadius: "4px",
+                                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                                      background: "rgba(0, 0, 0, 0.2)",
+                                      color: "var(--text-main)",
+                                      textAlign: "center"
+                                    }}
+                                  />
+                                  <button type="button" className="tag-remove-btn" onClick={() => handleRemoveAntecedent(cleanId, false)} style={{ fontSize: "1rem", lineHeight: "1", padding: 0 }}>×</button>
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
+
                   </div>
 
                   <div className="clinical-grid-3">
-                    <div className="col" style={{ gridColumn: "span 2" }}>
-                      <label className="form-label">Medicación actual</label>
-                      <textarea name="medActual" className="textarea" placeholder="Listado de fármacos y dosis..." value={formData.medActual} onChange={handleInputChange} style={{ height: "60px" }} />
+                    <div className="col col-span-2" style={{ background: "rgba(255,255,255,0.01)", padding: "1.25rem", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)" }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", fontWeight: "700", fontSize: "0.95rem", color: "var(--primary)", margin: "0 0 1rem 0" }}>
+                        <input
+                          type="checkbox"
+                          checked={aplicaMedActual}
+                          onChange={(e) => toggleAplicaMedActual(e.target.checked)}
+                          style={{ width: "16px", height: "16px", accentColor: "var(--primary)" }}
+                        />
+                        <span>💊 ¿Lleva medicación actual?</span>
+                      </label>
+                      
+                      {aplicaMedActual && (
+                        <div className="fade-in-up">
+                          <label className="form-label" style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "4px" }}>Especifique fármacos y dosis</label>
+                          <textarea name="medActual" className="textarea" placeholder="Listado de fármacos y dosis..." value={formData.medActual === "Ninguna" ? "" : formData.medActual} onChange={handleInputChange} style={{ height: "60px" }} />
+                        </div>
+                      )}
                     </div>
-                    <div className="col">
-                      <label className="form-label">Antecedentes quirúrgicos</label>
-                      <textarea name="antecedentesQuirurgicos" className="textarea" placeholder="Cirugías previas..." value={formData.antecedentesQuirurgicos} onChange={handleInputChange} style={{ height: "60px" }} />
-                    </div>
-                    <div className="col">
-                      <label className="form-label">Año quirúrgico</label>
-                      <input type="date" name="anioQuirurgico" className="input" value={formData.anioQuirurgico} onChange={handleInputChange} />
+                    <div className="col col-span-3" style={{ background: "rgba(255,255,255,0.01)", padding: "1.25rem", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)", marginTop: "1rem" }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", fontWeight: "700", fontSize: "0.95rem", color: "var(--primary)", margin: "0 0 1rem 0" }}>
+                        <input
+                          type="checkbox"
+                          checked={aplicaQuirurgico}
+                          onChange={(e) => {
+                            setAplicaQuirurgico(e.target.checked);
+                            if (!e.target.checked) {
+                              setFormData(prev => ({ ...prev, antecedentesQuirurgicos: "Ninguno", anioQuirurgico: "" }));
+                            }
+                          }}
+                          style={{ width: "16px", height: "16px", accentColor: "var(--primary)" }}
+                        />
+                        <span>🔪 ¿Tiene antecedentes quirúrgicos?</span>
+                      </label>
+
+                      {aplicaQuirurgico && (
+                        <div className="fade-in-up" style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                          {surgicalEntries.map((entry) => (
+                            <div key={entry.id} style={{ display: "grid", gridTemplateColumns: "2fr 1fr auto", gap: "1rem", alignItems: "center" }}>
+                              <div>
+                                <label className="form-label" style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "4px" }}>Cirugía / Procedimiento</label>
+                                <input
+                                  type="text"
+                                  className="input"
+                                  placeholder="Ej. Apendicectomía"
+                                  value={entry.name}
+                                  onChange={(e) => updateSurgicalEntry(entry.id, "name", e.target.value)}
+                                />
+                              </div>
+                              <div>
+                                <label className="form-label" style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "4px" }}>Fecha de cirugía</label>
+                                <input
+                                  type="date"
+                                  className="input"
+                                  value={entry.date}
+                                  onChange={(e) => updateSurgicalEntry(entry.id, "date", e.target.value)}
+                                />
+                              </div>
+                              <div style={{ alignSelf: "end" }}>
+                                <button
+                                  type="button"
+                                  className="btn btn-outline"
+                                  onClick={() => removeSurgicalEntry(entry.id)}
+                                  style={{
+                                    borderColor: "rgba(239, 68, 68, 0.2)",
+                                    color: "var(--danger)",
+                                    height: "38px",
+                                    padding: "0 12px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center"
+                                  }}
+                                  title="Eliminar cirugía"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+
+                          <button
+                            type="button"
+                            className="btn btn-outline"
+                            onClick={addSurgicalEntry}
+                            style={{
+                              marginTop: "0.5rem",
+                              alignSelf: "flex-start",
+                              fontSize: "0.8rem",
+                              padding: "6px 12px",
+                              height: "32px",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "4px"
+                            }}
+                          >
+                            ➕ Agregar Cirugía
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1294,7 +1704,7 @@ const FormularioHistorial = () => {
                   </div>
                   <div className="clinical-grid-1">
                     <div className="col">
-                      <label className="form-label">Contenido general de la sesión *</label>
+                      <label className="form-label">Diagnóstico de fisioterapia *</label>
                       <textarea name="contenidoNota" className="textarea" placeholder="Escriba un resumen global del estado del paciente en la sesión actual..." value={formData.contenidoNota || ""} onChange={handleInputChange} required style={{ height: "100px" }} />
                     </div>
                   </div>
@@ -1326,10 +1736,46 @@ const FormularioHistorial = () => {
 
 
 
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "2rem" }}>
-              <button type="submit" className="btn btn-primary btn-size-lg hover-grow glow-pulse-purple" disabled={loading} style={{ height: "50px", minWidth: "220px", fontSize: "1.05rem" }}>
-                {loading ? <LoadingSpinner size="small" color="#fff" /> : "💾 Guardar expediente clínico"}
-              </button>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "3rem", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "1.5rem" }}>
+              <div>
+                {activeTab !== "datosPersonales" && (
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={() => {
+                      const tabs = ["datosPersonales", "AnaAnte", "evaluacion", "soap", "consentimiento"];
+                      const prevIndex = tabs.indexOf(activeTab) - 1;
+                      if (prevIndex >= 0) setActiveTab(tabs[prevIndex]);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    style={{ height: "46px", width: "auto", padding: "0 20px", display: "flex", alignItems: "center", gap: "6px" }}
+                  >
+                    ⬅️ Anterior
+                  </button>
+                )}
+              </div>
+              
+              <div style={{ display: "flex", gap: "1rem" }}>
+                {activeTab !== "consentimiento" ? (
+                  <button
+                    type="button"
+                    className="btn btn-primary hover-grow"
+                    onClick={() => {
+                      const tabs = ["datosPersonales", "AnaAnte", "evaluacion", "soap", "consentimiento"];
+                      const nextIndex = tabs.indexOf(activeTab) + 1;
+                      if (nextIndex < tabs.length) setActiveTab(tabs[nextIndex]);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    style={{ height: "46px", width: "auto", padding: "0 20px", display: "flex", alignItems: "center", gap: "6px" }}
+                  >
+                    Siguiente ➡️
+                  </button>
+                ) : (
+                  <button type="submit" className="btn btn-primary btn-size-lg hover-grow glow-pulse-purple" disabled={loading} style={{ height: "46px", minWidth: "220px", fontSize: "1rem", display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
+                    {loading ? <LoadingSpinner size="small" color="#fff" /> : <>💾 Guardar expediente clínico</>}
+                  </button>
+                )}
+              </div>
             </div>
           </form>
 
