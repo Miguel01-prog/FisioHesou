@@ -17,6 +17,32 @@ const ConstructorPlan = () => {
   const [ejerciciosPlan, setEjerciciosPlan] = useState([]);
   const [guardando, setGuardando] = useState(false);
   const [mostrarModal, setMostrarModal] = useState(false);
+  const backendUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/api$/, "");
+
+  const customStyles = `
+    .plan-exercise-card {
+      background: var(--card-bg, rgba(255,255,255,0.02));
+      border: 1px solid var(--border-light, rgba(255,255,255,0.08));
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: var(--shadow-sm);
+    }
+    .plan-exercise-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+      border-color: rgba(139, 92, 246, 0.25) !important;
+    }
+    .plan-exercise-card:hover .exercise-img {
+      transform: scale(1.04);
+    }
+    .add-to-plan-btn:hover {
+      background: var(--primary-hover, #7c3aed) !important;
+      transform: translateY(-1px);
+    }
+  `;
 
   useEffect(() => {
     cargarDatos();
@@ -180,7 +206,7 @@ const ConstructorPlan = () => {
                   
                   <div style={{ display: 'flex', gap: '15px', marginBottom: '15px', flexWrap: 'wrap' }}>
                     {item.ejercicio.imagenUrl && (
-                        <img src={`http://localhost:5000${item.ejercicio.imagenUrl}`} alt={item.ejercicio.nombre} style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '4px' }} />
+                        <img src={`${backendUrl}${item.ejercicio.imagenUrl}`} alt={item.ejercicio.nombre} style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '4px' }} />
                     )}
                     <div style={{ flex: '1 1 200px' }}>
                         <h4 style={{ margin: '0 0 5px 0', color: '#42133B' }}>{item.ejercicio.nombre}</h4>
@@ -216,9 +242,10 @@ const ConstructorPlan = () => {
       {/* Modal del Catálogo de Ejercicios */}
       {mostrarModal && createPortal(
         <div className="modal-backdrop" onClick={() => setMostrarModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px', width: '90%', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <style>{customStyles}</style>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px', width: '90%', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: 'var(--card-bg)', border: '1px solid var(--border-light)', borderRadius: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-              <h2 className="title_card" style={{ margin: 0 }}>Catálogo de Ejercicios</h2>
+              <h2 className="title_card" style={{ margin: 0, color: 'var(--primary)' }}>Catálogo de Ejercicios</h2>
               <button className="close-btn" onClick={() => setMostrarModal(false)} style={{ position: 'relative', right: '0', top: '0', margin: '0' }}>✕</button>
             </div>
             
@@ -230,19 +257,51 @@ const ConstructorPlan = () => {
               ) : ejerciciosCatalogo.length === 0 ? (
                 <p className="text-muted">No hay ejercicios en el catálogo.</p>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '15px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '15px' }}>
                   {ejerciciosCatalogo.map((ej) => (
-                    <div key={ej._id} style={{ border: '1px solid #ddd', borderRadius: '8px', padding: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', textAlign: 'center' }}>
-                      {ej.imagenUrl && (
-                        <img src={`http://localhost:5000${ej.imagenUrl}`} alt={ej.nombre} style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '4px' }} />
+                    <div
+                      key={ej._id}
+                      className="plan-exercise-card"
+                    >
+                      {ej.imagenUrl ? (
+                        <div style={{ width: '100%', height: '110px', overflow: 'hidden', position: 'relative', background: '#000' }}>
+                          <img
+                            src={`${backendUrl}${ej.imagenUrl}`}
+                            alt={ej.nombre}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s' }}
+                            className="exercise-img"
+                          />
+                        </div>
+                      ) : (
+                        <div style={{ width: '100%', height: '110px', background: 'rgba(139, 92, 246, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: '1.5rem' }}>🧘</span>
+                        </div>
                       )}
-                      <h4 style={{ margin: '0', fontSize: '14px', color: '#42133B' }}>{ej.nombre}</h4>
-                      <button 
-                        onClick={() => agregarEjercicioAlPlan(ej)}
-                        style={{ background: '#42133B', color: 'white', border: 'none', borderRadius: '4px', padding: '5px 10px', width: '100%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
-                      >
-                        <FaPlus size={10}/> Agregar al plan
-                      </button>
+                      <div style={{ padding: '0.85rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'space-between' }}>
+                        <h4 style={{ margin: '0', fontSize: '0.9rem', color: 'var(--primary)', fontWeight: '700', textAlign: 'center', lineHeight: '1.3' }}>{ej.nombre}</h4>
+                        <button 
+                          onClick={() => agregarEjercicioAlPlan(ej)}
+                          style={{
+                            background: 'var(--primary)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            padding: '6px 12px',
+                            width: '100%',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            fontSize: '0.8rem',
+                            fontWeight: '600',
+                            transition: 'all 0.2s'
+                          }}
+                          className="add-to-plan-btn"
+                        >
+                          <FaPlus size={8}/> Agregar al plan
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

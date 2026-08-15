@@ -11,6 +11,17 @@ import { useAuth } from "../../context/AuthContext";
 import LoadingSpinner from "../layout/LoadingSpinner";
 import { useNavigate } from "react-router-dom";
 
+const getEvaTextDescription = (val) => {
+  const v = Number(val);
+  if (v === 0) return "Nada";
+  if (v === 1 || v === 2 || v === 3) return "Poco";
+  if (v === 4 || v === 5) return "Moderado";
+  if (v === 6 || v === 7) return "Fuerte";
+  if (v === 8 || v === 9) return "Muy fuerte";
+  if (v === 10) return "Insoportable";
+  return "";
+};
+
 const SignaturePad = ({ label, value, onChange, placeholderName, nameValue, onNameChange, dateValue, onDateChange, readOnly }) => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -252,7 +263,9 @@ const FormularioHistorial = () => {
     descanso: "",
     adicciones: {
       tabaquismo: false,
-      alcohol: false
+      alcohol: false,
+      otro: false,
+      otroDetalle: ""
     },
     estres: ""
   });
@@ -1410,8 +1423,20 @@ const FormularioHistorial = () => {
                       <label className="form-label">Escala EVA *</label>
                       <select name="eva" className="input" value={formData.eva} onChange={handleInputChange} required>
                         <option value="">Seleccione EVA</option>
-                        {[...Array(11).keys()].map((num) => (
-                          <option key={num} value={num}>{num} - {num === 0 ? "Sin Dolor" : num === 10 ? "Dolor Insoportable" : `Nivel ${num}`}</option>
+                        {[
+                          { val: 0, text: "0 - Nada" },
+                          { val: 1, text: "1 - Poco" },
+                          { val: 2, text: "2 - Poco" },
+                          { val: 3, text: "3 - Poco" },
+                          { val: 4, text: "4 - Moderado" },
+                          { val: 5, text: "5 - Moderado" },
+                          { val: 6, text: "6 - Fuerte" },
+                          { val: 7, text: "7 - Fuerte" },
+                          { val: 8, text: "8 - Muy fuerte" },
+                          { val: 9, text: "9 - Muy fuerte" },
+                          { val: 10, text: "10 - Insoportable" }
+                        ].map(({ val, text }) => (
+                          <option key={val} value={val}>{text}</option>
                         ))}
                       </select>
                     </div>
@@ -1557,8 +1582,20 @@ const FormularioHistorial = () => {
                           style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
                         >
                           <option value="">-- EVA --</option>
-                          {[...Array(11).keys()].map((num) => (
-                            <option key={num} value={num}>{num} {num === 0 ? "(Sin dolor)" : num === 10 ? "(Máximo)" : ""}</option>
+                          {[
+                            { val: 0, text: "0 - Nada" },
+                            { val: 1, text: "1 - Poco" },
+                            { val: 2, text: "2 - Poco" },
+                            { val: 3, text: "3 - Poco" },
+                            { val: 4, text: "4 - Moderado" },
+                            { val: 5, text: "5 - Moderado" },
+                            { val: 6, text: "6 - Fuerte" },
+                            { val: 7, text: "7 - Fuerte" },
+                            { val: 8, text: "8 - Muy fuerte" },
+                            { val: 9, text: "9 - Muy fuerte" },
+                            { val: 10, text: "10 - Insoportable" }
+                          ].map(({ val, text }) => (
+                            <option key={val} value={val}>{text}</option>
                           ))}
                         </select>
                       </div>
@@ -1631,7 +1668,7 @@ const FormularioHistorial = () => {
                                     textAlign: "center"
                                   }}
                                 >
-                                  EVA: {dz.eva}/10
+                                  EVA: {dz.eva} ({getEvaTextDescription(dz.eva)})
                                 </span>
                                 {dz.comentario && (
                                   <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontStyle: "italic", borderLeft: "2px solid rgba(139, 92, 246, 0.2)", paddingLeft: "10px" }}>
@@ -2082,15 +2119,35 @@ const FormularioHistorial = () => {
                     </div>
                     <div className="col" style={{ gridColumn: "span 2" }}>
                       <label className="form-label">Adicciones y sustancias</label>
-                      <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.6rem" }}>
+                      <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.6rem", flexWrap: "wrap", alignItems: "center" }}>
                         <label className="checkbox-label-modern">
-                          <input type="checkbox" checked={antecedentesNoPatologicos.adicciones.tabaquismo} onChange={() => toggleAdiccion("tabaquismo")} />
+                          <input type="checkbox" checked={antecedentesNoPatologicos.adicciones?.tabaquismo || false} onChange={() => toggleAdiccion("tabaquismo")} />
                           <span>Tabaquismo</span>
                         </label>
                         <label className="checkbox-label-modern">
-                          <input type="checkbox" checked={antecedentesNoPatologicos.adicciones.alcohol} onChange={() => toggleAdiccion("alcohol")} />
+                          <input type="checkbox" checked={antecedentesNoPatologicos.adicciones?.alcohol || false} onChange={() => toggleAdiccion("alcohol")} />
                           <span>Consumo de Alcohol</span>
                         </label>
+                        <label className="checkbox-label-modern">
+                          <input type="checkbox" checked={antecedentesNoPatologicos.adicciones?.otro || false} onChange={() => toggleAdiccion("otro")} />
+                          <span>Otro</span>
+                        </label>
+                        {(antecedentesNoPatologicos.adicciones?.otro) && (
+                          <input
+                            type="text"
+                            className="input fade-in-up"
+                            placeholder="Especifique..."
+                            value={antecedentesNoPatologicos.adicciones?.otroDetalle || ""}
+                            onChange={(e) => setAntecedentesNoPatologicos(prev => ({
+                              ...prev,
+                              adicciones: {
+                                ...prev.adicciones,
+                                otroDetalle: e.target.value
+                              }
+                            }))}
+                            style={{ width: "200px", padding: "0.35rem 0.55rem", fontSize: "0.85rem", height: "30px" }}
+                          />
+                        )}
                       </div>
                     </div>
                   </div>

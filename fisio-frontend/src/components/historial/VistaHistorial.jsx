@@ -5,6 +5,17 @@ import InformacionClinica from "../layout/InformacionClinica";
 import api from "../../api";
 import LoadingSpinner from "../layout/LoadingSpinner";
 
+const getEvaTextDescription = (val) => {
+  const v = Number(val);
+  if (v === 0) return "Nada";
+  if (v === 1 || v === 2 || v === 3) return "Poco";
+  if (v === 4 || v === 5) return "Moderado";
+  if (v === 6 || v === 7) return "Fuerte";
+  if (v === 8 || v === 9) return "Muy fuerte";
+  if (v === 10) return "Insoportable";
+  return "";
+};
+
 const VistaHistorial = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -300,7 +311,7 @@ const VistaHistorial = () => {
                         className="input"
                         value={
                           formData.eva !== undefined && formData.eva !== ""
-                            ? `${formData.eva} - ${formData.eva === 0 || formData.eva === "0" ? "Sin Dolor" : formData.eva === 10 || formData.eva === "10" ? "Dolor Insoportable" : `Nivel ${formData.eva}`}`
+                            ? `${formData.eva} - ${getEvaTextDescription(formData.eva)}`
                             : "Sin especificar"
                         }
                         disabled
@@ -408,7 +419,7 @@ const VistaHistorial = () => {
                                   textAlign: "center"
                                 }}
                               >
-                                EVA: {dz.eva}/10
+                                EVA: {dz.eva} ({getEvaTextDescription(dz.eva)})
                               </span>
                               {dz.comentario && (
                                 <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontStyle: "italic", borderLeft: "2px solid rgba(139, 92, 246, 0.2)", paddingLeft: "10px" }}>
@@ -557,7 +568,7 @@ const VistaHistorial = () => {
                     </div>
                     <div className="col" style={{ gridColumn: "span 2" }}>
                       <label className="form-label">Adicciones y sustancias</label>
-                      <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.6rem" }}>
+                      <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.6rem", flexWrap: "wrap", alignItems: "center" }}>
                         <label className="checkbox-label-modern" style={{ cursor: "default" }}>
                           <input type="checkbox" checked={antecedentesNoPatologicos.adicciones?.tabaquismo || false} disabled />
                           <span>Tabaquismo</span>
@@ -566,6 +577,15 @@ const VistaHistorial = () => {
                           <input type="checkbox" checked={antecedentesNoPatologicos.adicciones?.alcohol || false} disabled />
                           <span>Consumo de Alcohol</span>
                         </label>
+                        <label className="checkbox-label-modern" style={{ cursor: "default" }}>
+                          <input type="checkbox" checked={antecedentesNoPatologicos.adicciones?.otro || false} disabled />
+                          <span>Otro</span>
+                        </label>
+                        {antecedentesNoPatologicos.adicciones?.otro && antecedentesNoPatologicos.adicciones?.otroDetalle && (
+                          <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontStyle: "italic", borderLeft: "2px solid rgba(139, 92, 246, 0.2)", paddingLeft: "10px" }}>
+                            {antecedentesNoPatologicos.adicciones.otroDetalle}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
