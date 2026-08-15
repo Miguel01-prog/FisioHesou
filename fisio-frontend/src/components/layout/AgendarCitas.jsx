@@ -80,11 +80,13 @@ export default function AgendaCitas() {
               tileDisabled={({ date }) => {
                 const iso = toLocalISODate(date);
                 const hoy = toLocalISODate(new Date());
+                if (user?.client?.blockSundays && date.getDay() === 0) return true;
                 return iso < hoy;
               }}
               tileClassName={({ date }) => {
                 const iso = toLocalISODate(date);
                 const hoy = toLocalISODate(new Date());
+                if (user?.client?.blockSundays && date.getDay() === 0) return "sunday-blocked";
                 if (iso < hoy) return "past-day";
                 if (blockedDatesAdmin.includes(iso)) return "blocked-admin";
                 if (blockedDatesPaciente.includes(iso)) return "blocked-paciente";

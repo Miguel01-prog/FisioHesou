@@ -98,7 +98,7 @@ router.get('/me', verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password").populate("clientId");
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
-    res.json({ role: user.role, name: user.name, email: user.email, id: user._id, client: user.clientId });
+    res.json({ role: user.role, name: user.name, email: user.email, id: user._id, client: user.clientId, signature: user.signature });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -168,7 +168,7 @@ router.put('/change-password', verifyToken, async (req, res) => {
 // Actualizar perfil (nombre, email, y/o nueva contraseña)
 router.put('/profile', verifyToken, async (req, res) => {
   try {
-    const { name, email, newPassword } = req.body;
+    const { name, email, newPassword, signature } = req.body;
     const userId = req.user.id;
 
     const user = await User.findById(userId);
@@ -194,11 +194,15 @@ router.put('/profile', verifyToken, async (req, res) => {
       user.password = hashedPassword;
     }
 
+    if (signature !== undefined) {
+      user.signature = signature;
+    }
+
     await user.save();
 
     res.json({ 
       message: 'Perfil actualizado correctamente', 
-      user: { name: user.name, email: user.email, role: user.role } 
+      user: { name: user.name, email: user.email, role: user.role, signature: user.signature } 
     });
   } catch (error) {
     console.error('Error al actualizar perfil:', error);

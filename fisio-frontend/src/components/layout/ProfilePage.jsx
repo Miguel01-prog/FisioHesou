@@ -4,16 +4,22 @@ import { showSuccess, showError } from "../../utils/alerts.js";
 import { FiUser, FiMail, FiLock, FiKey, FiEye, FiEyeOff, FiSave, FiRefreshCw, FiCopy } from "react-icons/fi";
 import LoadingSpinner from "./LoadingSpinner.jsx";
 import { capitalizeWords } from "../../utils/utils.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 export default function ProfilePage() {
+  const { updateUser } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [signature, setSignature] = useState("");
   
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const canvasRef = React.useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
 
   // Load active user profile details
   useEffect(() => {
@@ -21,10 +27,10 @@ export default function ProfilePage() {
       setLoading(true);
       try {
         const { data } = await api.get("/auth/me");
-        // Get full details from backend if needed, or initialize from /me
         setName(data.name || "");
         setRole(data.role || "");
         setEmail(data.email || "");
+        setSignature(data.signature || "");
       } catch (err) {
         console.error("Error al cargar perfil:", err);
         showError("Error", "No se pudieron obtener los detalles del usuario.");
@@ -34,6 +40,88 @@ export default function ProfilePage() {
     };
     fetchProfile();
   }, []);
+
+  useEffect(() => {
+    if (loading) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.strokeStyle = "#1e1b4b"; // Indigo stroke
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    if (signature) {
+      const img = new Image();
+      img.onload = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+      };
+      img.src = signature;
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }, [signature, loading]);
+
+  const getCoordinates = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    let clientX, clientY;
+    if (e.touches && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    const x = ((clientX - rect.left) / rect.width) * canvas.width;
+    const y = ((clientY - rect.top) / rect.height) * canvas.height;
+    return { x, y };
+  };
+
+  const startDrawing = (e) => {
+    if (e.type === "touchstart") {
+      e.preventDefault();
+    }
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const { x, y } = getCoordinates(e);
+    const ctx = canvas.getContext("2d");
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    setIsDrawing(true);
+  };
+
+  const draw = (e) => {
+    if (!isDrawing) return;
+    if (e.type === "touchmove") {
+      e.preventDefault();
+    }
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const { x, y } = getCoordinates(e);
+    const ctx = canvas.getContext("2d");
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+
+  const stopDrawing = () => {
+    if (!isDrawing) return;
+    setIsDrawing(false);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dataUrl = canvas.toDataURL("image/png");
+    setSignature(dataUrl);
+  };
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setSignature("");
+  };
 
   // Generate a strong random password
   const handleGeneratePassword = () => {
@@ -70,14 +158,16 @@ export default function ProfilePage() {
       const { data } = await api.put("/auth/profile", {
         name,
         email,
-        newPassword: newPassword || undefined
+        newPassword: newPassword || undefined,
+        signature
       });
 
-      // Update user details in Local Storage
-      const storedUser = JSON.parse(localStorage.getItem("user")) || {};
-      storedUser.name = name;
-      storedUser.email = email;
-      localStorage.setItem("user", JSON.stringify(storedUser));
+      // Update user details in Local Storage and Context
+      updateUser({
+        name,
+        email,
+        signature
+      });
 
       showSuccess("Perfil Guardado", "Tus datos han sido actualizados con éxito.");
       setNewPassword("");
@@ -233,6 +323,53 @@ export default function ProfilePage() {
               >
                 <FiRefreshCw size={14} /> Generar Contraseña Segura
               </button>
+            </div>
+
+            <hr style={{ margin: "0.5rem 0", border: "0", borderTop: "1px solid var(--border-light)" }} />
+
+            {/* Firma Profesional Pregrabada */}
+            <div className="col" style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <label className="form-label" style={{ display: "flex", alignItems: "center", gap: "0.4rem", margin: 0, fontWeight: "700", color: "var(--primary)" }}>
+                🩺 Mi Firma Profesional Pregrabada
+              </label>
+              <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: 0 }}>
+                Dibuja tu firma en el recuadro de abajo. Esta firma se colocará automáticamente en los consentimientos informados de todos tus expedientes.
+              </p>
+
+              <div className="canvas-wrapper" style={{ position: "relative", background: "#ffffff", border: "1px dashed rgba(139, 92, 246, 0.25)", borderRadius: "8px", overflow: "hidden", height: "160px", width: "100%", maxWidth: "400px" }}>
+                <canvas
+                  ref={canvasRef}
+                  width={400}
+                  height={160}
+                  style={{ width: "100%", height: "100%", cursor: "crosshair", touchAction: "none" }}
+                  onMouseDown={startDrawing}
+                  onMouseMove={draw}
+                  onMouseUp={stopDrawing}
+                  onMouseLeave={stopDrawing}
+                  onTouchStart={startDrawing}
+                  onTouchMove={draw}
+                  onTouchEnd={stopDrawing}
+                />
+                <button
+                  type="button"
+                  onClick={clearCanvas}
+                  style={{
+                    position: "absolute",
+                    bottom: "10px",
+                    right: "10px",
+                    background: "rgba(239, 68, 68, 0.1)",
+                    color: "var(--danger)",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "4px 10px",
+                    fontSize: "0.75rem",
+                    fontWeight: "700",
+                    cursor: "pointer"
+                  }}
+                >
+                  Limpiar
+                </button>
+              </div>
             </div>
 
             {/* Acciones */}

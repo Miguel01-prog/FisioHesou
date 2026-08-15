@@ -39,6 +39,8 @@ const historialPacienteSchema = new mongoose.Schema({
     indicacionesMedicas: { type: String, default: "" },
     dolorPalpacion: { type: String, default: "" },
     espasmoPalpacion: { type: String, default: "" },
+    dolorZonas: { type: [Object], default: [] },
+    actividadesDeficiencia: { type: String, default: "" },
     antecedentesNoPatologicos: { type: Object, default: {} },
     lesiones: { type: Object, default: {} },
     obser: { type: Object, default: {} },

@@ -9,7 +9,8 @@ const userSchema = new mongoose.Schema({
     enum: ['fisioterapeuta', 'nutriologa', 'superadmin'], 
     required: true 
   },
-  clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', default: null }
+  clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', default: null },
+  signature: { type: String, default: "" }
 });
 
 export default mongoose.model('User', userSchema);

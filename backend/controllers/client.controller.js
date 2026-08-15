@@ -13,7 +13,8 @@ export const crearCliente = async (req, res) => {
       specialistLabelPlural, 
       services, 
       modules,
-      logo 
+      logo,
+      blockSundays
     } = req.body;
 
     if (!name || !subdomain) {
@@ -34,7 +35,8 @@ export const crearCliente = async (req, res) => {
       specialistLabelPlural: specialistLabelPlural || "Especialistas",
       services: Array.isArray(services) && services.length > 0 ? services : undefined,
       modules: Array.isArray(modules) ? modules : ["agenda", "pacientes", "bloquear"],
-      logo: logo || ""
+      logo: logo || "",
+      blockSundays: blockSundays !== undefined ? blockSundays : false
     });
 
     await nuevoCliente.save();
@@ -82,7 +84,8 @@ export const actualizarCliente = async (req, res) => {
     services, 
     modules, 
     logo,
-    active
+    active,
+    blockSundays
   } = req.body;
 
   try {
@@ -103,7 +106,8 @@ export const actualizarCliente = async (req, res) => {
         services,
         modules,
         logo,
-        active
+        active,
+        blockSundays
       },
       { new: true }
     );

@@ -298,7 +298,7 @@ export default function PacienteDetalle() {
               <hr style={{ margin: '1rem 0' }} />
 
               {notas.length === 0 ? (
-                <p className="text-muted">No hay notas SOAP registradas para este paciente.</p>
+                <p className="text-muted">No existe registros para este paciente.</p>
               ) : (
                 <>
                   {/* Desktop Table View */}

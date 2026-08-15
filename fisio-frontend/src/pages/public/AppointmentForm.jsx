@@ -420,11 +420,13 @@ export default function AppointmentForm() {
                   tileDisabled={({ date }) => {
                     const iso = toLocalISODate(date);
                     const hoy = toLocalISODate(new Date());
+                    if (clinic?.blockSundays && date.getDay() === 0) return true;
                     return iso < hoy || isDayFullyBlocked(iso);
                   }}
                   tileClassName={({ date }) => {
                     const iso = toLocalISODate(date);
                     const hoy = toLocalISODate(new Date());
+                    if (clinic?.blockSundays && date.getDay() === 0) return "sunday-blocked";
                     if (iso < hoy) return "past-day";
 
                     if (blockedDatesAdmin.includes(iso)) return "blocked-admin";

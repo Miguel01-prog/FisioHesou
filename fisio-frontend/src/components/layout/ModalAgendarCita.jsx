@@ -4,8 +4,10 @@ import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import api from "../../api.js";
 import { showSuccess, showError } from "../../utils/alerts.js";
+import { useAuth } from "../../context/AuthContext";
 
 export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = null }) {
+  const { user } = useAuth();
   const [blockedDatesAdmin, setBlockedDatesAdmin] = useState([]);
   const [blockedHoursAdmin, setBlockedHoursAdmin] = useState({});
   const [blockedNotesAdmin, setBlockedNotesAdmin] = useState({});
@@ -190,11 +192,13 @@ export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = n
             tileDisabled={({ date }) => {
               const iso = toLocalISODate(date);
               const hoy = toLocalISODate(new Date());
+              if (user?.client?.blockSundays && date.getDay() === 0) return true;
               return iso < hoy || isDayFullyBlocked(iso);
             }}
             tileClassName={({ date }) => {
               const iso = toLocalISODate(date);
               const hoy = toLocalISODate(new Date());
+              if (user?.client?.blockSundays && date.getDay() === 0) return "sunday-blocked";
               if (iso < hoy) return "past-day";
               if (blockedDatesAdmin.includes(iso)) return "blocked-admin";
               if (blockedDatesPaciente.includes(iso)) return "blocked-paciente";
