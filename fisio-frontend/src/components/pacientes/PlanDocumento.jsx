@@ -15,6 +15,7 @@ const PlanDocumento = () => {
   const [cargando, setCargando] = useState(true);
 
   const componentRef = useRef(null);
+  const backendUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/api$/, "");
 
   const handlePrint = useReactToPrint({
     contentRef: componentRef,
@@ -214,7 +215,7 @@ const PlanDocumento = () => {
             <div key={index} style={{ display: 'flex', gap: '20px', borderBottom: '1px solid #eee', paddingBottom: '20px' }}>
               {item.ejercicio?.imagenUrl ? (
                 <img
-                  src={`http://localhost:5000${item.ejercicio.imagenUrl}`}
+                  src={`${backendUrl}${item.ejercicio.imagenUrl}`}
                   alt={item.ejercicio.nombre}
                   style={{ width: '180px', height: '180px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }}
                 />

@@ -1,4 +1,5 @@
 import { IoIosAddCircle } from "react-icons/io";
+import { FiTrash2 } from "react-icons/fi";
 import { IoCaretDown } from "react-icons/io5";
 import { IoCaretUp } from "react-icons/io5";
 import { useState, useEffect, useRef } from "react";
@@ -10,13 +11,30 @@ import { useAuth } from "../../context/AuthContext";
 import LoadingSpinner from "../layout/LoadingSpinner";
 import { useNavigate } from "react-router-dom";
 
-const SignaturePad = ({ label, value, onChange, placeholderName, nameValue, onNameChange, dateValue, onDateChange }) => {
+const getEvaTextDescription = (val) => {
+  const v = Number(val);
+  if (v === 0) return "Nada";
+  if (v === 1 || v === 2 || v === 3) return "Poco";
+  if (v === 4 || v === 5) return "Moderado";
+  if (v === 6 || v === 7) return "Fuerte";
+  if (v === 8 || v === 9) return "Muy fuerte";
+  if (v === 10) return "Insoportable";
+  return "";
+};
+
+const SignaturePad = ({ label, value, onChange, placeholderName, nameValue, onNameChange, dateValue, onDateChange, readOnly }) => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
+  console.log("SignaturePad rendering [" + label + "], value length:", value ? value.length : 0);
+
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      console.log("SignaturePad canvas is null for label:", label);
+      return;
+    }
+    console.log("SignaturePad drawing image for label:", label, "value length:", value ? value.length : 0);
     const ctx = canvas.getContext("2d");
     ctx.strokeStyle = "#1e1b4b"; // Indigo stroke
     ctx.lineWidth = 3;
@@ -30,6 +48,8 @@ const SignaturePad = ({ label, value, onChange, placeholderName, nameValue, onNa
         ctx.drawImage(img, 0, 0);
       };
       img.src = value;
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
   }, [value]);
 
@@ -54,6 +74,7 @@ const SignaturePad = ({ label, value, onChange, placeholderName, nameValue, onNa
   };
 
   const startDrawing = (e) => {
+    if (readOnly) return;
     if (e.type === "touchstart") {
       // Prevent scrolling on iOS when signing
       e.preventDefault();
@@ -69,7 +90,7 @@ const SignaturePad = ({ label, value, onChange, placeholderName, nameValue, onNa
   };
 
   const draw = (e) => {
-    if (!isDrawing) return;
+    if (readOnly || !isDrawing) return;
     if (e.type === "touchmove") {
       e.preventDefault();
     }
@@ -83,7 +104,7 @@ const SignaturePad = ({ label, value, onChange, placeholderName, nameValue, onNa
   };
 
   const stopDrawing = () => {
-    if (!isDrawing) return;
+    if (readOnly || !isDrawing) return;
     setIsDrawing(false);
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -92,6 +113,7 @@ const SignaturePad = ({ label, value, onChange, placeholderName, nameValue, onNa
   };
 
   const clearCanvas = () => {
+    if (readOnly) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -108,7 +130,7 @@ const SignaturePad = ({ label, value, onChange, placeholderName, nameValue, onNa
           ref={canvasRef}
           width={400}
           height={160}
-          style={{ width: "100%", height: "100%", cursor: "crosshair", touchAction: "none" }}
+          style={{ width: "100%", height: "100%", cursor: readOnly ? "default" : "crosshair", touchAction: "none" }}
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={stopDrawing}
@@ -117,37 +139,40 @@ const SignaturePad = ({ label, value, onChange, placeholderName, nameValue, onNa
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
         />
-        <button
-          type="button"
-          onClick={clearCanvas}
-          style={{
-            position: "absolute",
-            bottom: "10px",
-            right: "10px",
-            background: "rgba(239, 68, 68, 0.1)",
-            color: "var(--danger)",
-            border: "none",
-            borderRadius: "6px",
-            padding: "4px 10px",
-            fontSize: "0.75rem",
-            fontWeight: "700",
-            cursor: "pointer"
-          }}
-        >
-          Limpiar
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={clearCanvas}
+            style={{
+              position: "absolute",
+              bottom: "10px",
+              right: "10px",
+              background: "rgba(239, 68, 68, 0.1)",
+              color: "var(--danger)",
+              border: "none",
+              borderRadius: "6px",
+              padding: "4px 10px",
+              fontSize: "0.75rem",
+              fontWeight: "700",
+              cursor: "pointer"
+            }}
+          >
+            Limpiar
+          </button>
+        )}
       </div>
 
-      <div className="signature-fields" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+      <div className="signature-fields" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px" }}>
         <div>
           <label className="form-label" style={{ fontSize: "0.8rem", marginBottom: "4px", fontWeight: "600" }}>Nombre firma</label>
           <input
             type="text"
             className="input"
-            style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
+            style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem", background: "rgba(226, 232, 240, 0.45)", fontWeight: "600" }}
             placeholder={placeholderName}
             value={nameValue}
-            onChange={(e) => onNameChange(e.target.value)}
+            onChange={(e) => !readOnly && onNameChange(e.target.value)}
+            readOnly={true}
           />
         </div>
         <div>
@@ -155,9 +180,10 @@ const SignaturePad = ({ label, value, onChange, placeholderName, nameValue, onNa
           <input
             type="date"
             className="input"
-            style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
+            style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem", background: "rgba(226, 232, 240, 0.45)", fontWeight: "600" }}
             value={dateValue}
-            onChange={(e) => onDateChange(e.target.value)}
+            onChange={(e) => !readOnly && onDateChange(e.target.value)}
+            readOnly={true}
           />
         </div>
       </div>
@@ -167,6 +193,7 @@ const SignaturePad = ({ label, value, onChange, placeholderName, nameValue, onNa
 
 const FormularioHistorial = () => {
   const { user } = useAuth();
+  console.log("FormularioHistorial render. user signature length:", user?.signature ? user.signature.length : 0);
   const navigate = useNavigate();
   const [paciente, setPaciente] = useState(null);
   const [isNewPatient, setIsNewPatient] = useState(false);
@@ -204,8 +231,10 @@ const FormularioHistorial = () => {
   }, [newPatientData.nombres, newPatientData.apellidoPaterno, newPatientData.apellidoMaterno, isNewPatient]);
   const [itemsAntFam, setItemsAntFam] = useState([]);
   const [antecedenteSeleccionado, setAntecedenteSeleccionado] = useState("");
+  const [familiarSeleccionado, setFamiliarSeleccionado] = useState("");
   const [itemsAntMed, setItemsAntMed] = useState([]);
   const [antecedenteMedico, setAntecedenteMedico] = useState("");
+  const [anioSeleccionado, setAnioSeleccionado] = useState("");
   const [edadEditable, setEdadEditable] = useState("");
   const [hasDraft, setHasDraft] = useState(false);
 
@@ -234,7 +263,9 @@ const FormularioHistorial = () => {
     descanso: "",
     adicciones: {
       tabaquismo: false,
-      alcohol: false
+      alcohol: false,
+      otro: false,
+      otroDetalle: ""
     },
     estres: ""
   });
@@ -279,8 +310,10 @@ const FormularioHistorial = () => {
     indicacionesMedicas: "",
     dolorPalpacion: "",
     espasmoPalpacion: "",
+    dolorZonas: [],
+    actividadesDeficiencia: "",
     firmaPaciente: "",
-    firmaProfesional: "",
+    firmaProfesional: user?.signature || "",
     nombrePacienteFirma: "",
     nombreProfesionalFirma: user?.name || "",
     fechaFirmaPaciente: new Date().toISOString().split('T')[0],
@@ -289,6 +322,98 @@ const FormularioHistorial = () => {
 
   const [aplicaFam, setAplicaFam] = useState(false);
   const [aplicaMed, setAplicaMed] = useState(false);
+
+  // States for adding multiple pain zones
+  const [nuevaZona, setNuevaZona] = useState("");
+  const [nuevaZonaEva, setNuevaZonaEva] = useState("");
+  const [nuevaZonaComentario, setNuevaZonaComentario] = useState("");
+  const [nuevaZonaOtra, setNuevaZonaOtra] = useState("");
+
+  const agregarDolorZona = () => {
+    const zonaFinal = nuevaZona === "otra" ? nuevaZonaOtra : nuevaZona;
+    if (!zonaFinal || zonaFinal.trim() === "") {
+      showError("Datos faltantes", "Por favor seleccione o escriba la zona que duele.");
+      return;
+    }
+    if (nuevaZonaEva === "") {
+      showError("Datos faltantes", "Por favor seleccione el nivel de dolor (EVA) para esta zona.");
+      return;
+    }
+
+    const nuevaZonaObj = {
+      zona: zonaFinal.trim(),
+      eva: Number(nuevaZonaEva),
+      comentario: nuevaZonaComentario.trim()
+    };
+
+    setFormData(prev => ({
+      ...prev,
+      dolorZonas: [...(prev.dolorZonas || []), nuevaZonaObj]
+    }));
+
+    // Reset local inputs
+    setNuevaZona("");
+    setNuevaZonaEva("");
+    setNuevaZonaComentario("");
+    setNuevaZonaOtra("");
+  };
+
+  const eliminarDolorZona = (index) => {
+    setFormData(prev => {
+      const copia = [...(prev.dolorZonas || [])];
+      copia.splice(index, 1);
+      return { ...prev, dolorZonas: copia };
+    });
+  };
+  const [selectedSensaciones, setSelectedSensaciones] = useState([]);
+  const [sensacionOtra, setSensacionOtra] = useState("");
+
+  const handleSensacionCheckboxChange = (option, checked) => {
+    setSelectedSensaciones(prev => {
+      let updated = [...prev];
+      if (checked) {
+        if (!updated.includes(option)) updated.push(option);
+      } else {
+        updated = updated.filter(item => item !== option);
+      }
+
+      // Sync with formData
+      let finalSensaciones = [...updated];
+      const index = finalSensaciones.indexOf("otra");
+      if (index !== -1) {
+        if (sensacionOtra.trim() !== "") {
+          finalSensaciones[index] = sensacionOtra.trim();
+        } else {
+          finalSensaciones.splice(index, 1);
+        }
+      }
+      setFormData(prevForm => ({
+        ...prevForm,
+        sensacion: finalSensaciones.join(", ")
+      }));
+
+      return updated;
+    });
+  };
+
+  const handleSensacionOtraChange = (val) => {
+    setSensacionOtra(val);
+
+    // Sync with formData
+    let finalSensaciones = [...selectedSensaciones];
+    const index = finalSensaciones.indexOf("otra");
+    if (index !== -1) {
+      if (val.trim() !== "") {
+        finalSensaciones[index] = val.trim();
+      } else {
+        finalSensaciones.splice(index, 1);
+      }
+    }
+    setFormData(prev => ({
+      ...prev,
+      sensacion: finalSensaciones.join(", ")
+    }));
+  };
 
   useEffect(() => {
     if (formData.antecedentesFamiliares && formData.antecedentesFamiliares.length > 0) {
@@ -388,7 +513,7 @@ const FormularioHistorial = () => {
   useEffect(() => {
     if (formData.antecedentesQuirurgicos && formData.antecedentesQuirurgicos !== "Ninguno" && formData.antecedentesQuirurgicos.trim() !== "") {
       setAplicaQuirurgico(true);
-      
+
       const parts = formData.antecedentesQuirurgicos.split(", ");
       const parsed = parts.map((part, index) => {
         const match = part.match(/(.*)\s*\((.*)\)/);
@@ -417,9 +542,9 @@ const FormularioHistorial = () => {
       .filter(e => e.name.trim())
       .map(e => e.date ? `${e.name.trim()} (${e.date})` : e.name.trim())
       .join(", ");
-    
+
     const firstDate = surgicalEntries.find(e => e.date)?.date || "";
-    
+
     if (formData.antecedentesQuirurgicos !== formatted || formData.anioQuirurgico !== firstDate) {
       setFormData(prev => ({
         ...prev,
@@ -485,6 +610,18 @@ const FormularioHistorial = () => {
 
     return () => clearTimeout(timer);
   }, [newPatientData.nombres, newPatientData.apellidoPaterno, newPatientData.apellidoMaterno, isNewPatient, mesAñoNota]);
+
+  // Pre-fill professional signature when user profile data loads
+  useEffect(() => {
+    console.log("Pre-fill effect triggered. user signature:", !!user?.signature, "formData.firmaProfesional:", !!formData.firmaProfesional);
+    if (user?.signature && !formData.firmaProfesional) {
+      console.log("Pre-filling professional signature into formData with length:", user.signature.length);
+      setFormData(prev => ({
+        ...prev,
+        firmaProfesional: user.signature
+      }));
+    }
+  }, [user?.signature, formData.firmaProfesional]);
 
   // Auto-save draft on form input changes
   useEffect(() => {
@@ -574,7 +711,20 @@ const FormularioHistorial = () => {
     if (savedDraft) {
       try {
         const draft = JSON.parse(savedDraft);
-        if (draft.formData) setFormData(draft.formData);
+        if (draft.formData) {
+          setFormData(draft.formData);
+          if (draft.formData.sensacion) {
+            const list = draft.formData.sensacion.split(", ").map(s => s.trim());
+            const predefined = ["hormigueo", "adormecimiento", "calambre", "rigidez"];
+            const currentSelected = list.filter(item => predefined.includes(item.toLowerCase()));
+            const customList = list.filter(item => !predefined.includes(item.toLowerCase()));
+            if (customList.length > 0) {
+              currentSelected.push("otra");
+              setSensacionOtra(customList.join(", "));
+            }
+            setSelectedSensaciones(currentSelected);
+          }
+        }
         if (draft.lesiones) setLesiones(draft.lesiones);
         if (draft.obser) setObser(draft.obser);
         if (draft.antecedentesNoPatologicos) setAntecedentesNoPatologicos(draft.antecedentesNoPatologicos);
@@ -879,6 +1029,8 @@ const FormularioHistorial = () => {
         indicacionesMedicas: formData.indicacionesMedicas,
         dolorPalpacion: formData.dolorPalpacion,
         espasmoPalpacion: formData.espasmoPalpacion,
+        dolorZonas: formData.dolorZonas || [],
+        actividadesDeficiencia: formData.actividadesDeficiencia || "",
         antecedentesNoPatologicos: antecedentesNoPatologicos,
         lesiones: lesiones,
         obser: obser,
@@ -1148,7 +1300,7 @@ const FormularioHistorial = () => {
                   <div style={{ marginBottom: "1.5rem" }}>
                     <h4 style={{ fontWeight: "800", color: "var(--primary)", borderBottom: "1px solid var(--border-light)", paddingBottom: "4px", marginBottom: "8px", fontSize: "1rem" }}>1. Información General</h4>
                     <p style={{ margin: 0, fontSize: "0.95rem", textAlign: "justify" }}>
-                      Yo, <input type="text" name="nombrePacienteFirma" value={formData.nombrePacienteFirma} onChange={(e) => updateSignature("nombrePacienteFirma", e.target.value)} style={{ border: "none", borderBottom: "1px solid #1e293b", padding: "0 5px", fontWeight: "700", color: "var(--primary)", width: "320px", background: "transparent" }} placeholder="Nombre del paciente" /> declaro que he sido debidamente informado/a sobre la naturaleza del tratamiento que recibiré en este consultorio, incluyendo los beneficios, riesgos y alternativas disponibles.
+                      Yo, <strong style={{ borderBottom: "1px solid #1e293b", padding: "0 5px", fontWeight: "700", color: "var(--primary)" }}>{formData.nombrePacienteFirma || (paciente && `${paciente.nombres} ${paciente.apellidoPaterno} ${paciente.apellidoMaterno || ""}`.trim())}</strong> declaro que he sido debidamente informado/a sobre la naturaleza del tratamiento que recibiré en este consultorio, incluyendo los beneficios, riesgos y alternativas disponibles.
                     </p>
                   </div>
 
@@ -1158,7 +1310,7 @@ const FormularioHistorial = () => {
                       <strong>Tipo de tratamiento:</strong> Fisioterapia
                     </p>
                     <p style={{ margin: "0 0 10px 0", fontSize: "0.95rem" }}>
-                      <strong>Profesional a cargo:</strong> <input type="text" name="nombreProfesionalFirma" value={formData.nombreProfesionalFirma} onChange={(e) => updateSignature("nombreProfesionalFirma", e.target.value)} style={{ border: "none", borderBottom: "1px solid #1e293b", padding: "0 5px", fontWeight: "700", color: "var(--primary)", width: "320px", background: "transparent" }} placeholder="Nombre del profesional" />
+                      <strong>Profesional a cargo:</strong> <strong style={{ borderBottom: "1px solid #1e293b", padding: "0 5px", fontWeight: "700", color: "var(--primary)" }}>{formData.nombreProfesionalFirma || user?.name || ""}</strong>
                     </p>
                     <p style={{ margin: "0 0 4px 0", fontSize: "0.95rem", fontWeight: "700" }}>
                       Descripción del procedimiento o intervención:
@@ -1213,7 +1365,7 @@ const FormularioHistorial = () => {
                     </ul>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem", borderTop: "1px dashed var(--border-light)", paddingTop: "2rem" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "2rem", borderTop: "1px dashed var(--border-light)", paddingTop: "2rem" }}>
                     <SignaturePad
                       label="✍️ Firma del Paciente"
                       value={formData.firmaPaciente}
@@ -1234,6 +1386,7 @@ const FormularioHistorial = () => {
                       onNameChange={(val) => updateSignature("nombreProfesionalFirma", val)}
                       dateValue={formData.fechaFirmaProfesional}
                       onDateChange={(val) => updateSignature("fechaFirmaProfesional", val)}
+                      readOnly={true}
                     />
                   </div>
 
@@ -1245,18 +1398,20 @@ const FormularioHistorial = () => {
               <div className="tab-content">
                 <div className="clinical-form-section">
                   <h3 className="clinical-section-title">🏥 Anamnesis General</h3>
-                  <div className="clinical-grid-1">
-                    <div className="col">
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1.5rem" }}>
+                    <div className="col" style={{ margin: 0 }}>
                       <label className="form-label">Motivo de consulta *</label>
-                      <textarea name="motivoConsulta" className="textarea" placeholder="Describa a detalle el motivo de la consulta..." value={formData.motivoConsulta} onChange={handleInputChange} required />
+                      <textarea name="motivoConsulta" className="textarea" placeholder="Describa a detalle el motivo de la consulta..." value={formData.motivoConsulta} onChange={handleInputChange} required style={{ height: "100px" }} />
                     </div>
-                    <div className="col">
+                    <div className="col" style={{ margin: 0 }}>
                       <label className="form-label">Diagnóstico médico</label>
-                      <textarea name="diagnosticoMedico" className="textarea" placeholder="Diagnóstico oficial emitido por especialista..." value={formData.diagnosticoMedico} onChange={handleInputChange} />
+                      <textarea name="diagnosticoMedico" className="textarea" placeholder="Diagnóstico oficial emitido por especialista..." value={formData.diagnosticoMedico} onChange={handleInputChange} style={{ height: "100px" }} />
                     </div>
-                    <div className="col">
+                  </div>
+                  <div className="clinical-grid-1">
+                    <div className="col" style={{ margin: 0 }}>
                       <label className="form-label">Indicaciones médicas</label>
-                      <textarea name="indicacionesMedicas" className="textarea" placeholder="Indicaciones particulares dadas por el médico..." value={formData.indicacionesMedicas} onChange={handleInputChange} />
+                      <textarea name="indicacionesMedicas" className="textarea" placeholder="Indicaciones particulares dadas por el médico..." value={formData.indicacionesMedicas} onChange={handleInputChange} style={{ height: "80px" }} />
                     </div>
                   </div>
                 </div>
@@ -1268,8 +1423,20 @@ const FormularioHistorial = () => {
                       <label className="form-label">Escala EVA *</label>
                       <select name="eva" className="input" value={formData.eva} onChange={handleInputChange} required>
                         <option value="">Seleccione EVA</option>
-                        {[...Array(11).keys()].map((num) => (
-                          <option key={num} value={num}>{num} - {num === 0 ? "Sin Dolor" : num === 10 ? "Dolor Insoportable" : `Nivel ${num}`}</option>
+                        {[
+                          { val: 0, text: "0 - Nada" },
+                          { val: 1, text: "1 - Poco" },
+                          { val: 2, text: "2 - Poco" },
+                          { val: 3, text: "3 - Poco" },
+                          { val: 4, text: "4 - Moderado" },
+                          { val: 5, text: "5 - Moderado" },
+                          { val: 6, text: "6 - Fuerte" },
+                          { val: 7, text: "7 - Fuerte" },
+                          { val: 8, text: "8 - Muy fuerte" },
+                          { val: 9, text: "9 - Muy fuerte" },
+                          { val: 10, text: "10 - Insoportable" }
+                        ].map(({ val, text }) => (
+                          <option key={val} value={val}>{text}</option>
                         ))}
                       </select>
                     </div>
@@ -1288,27 +1455,269 @@ const FormularioHistorial = () => {
                         <input type="text" className="input mt-2" value={formData.tipoOtra || ""} onChange={(e) => setFormData({ ...formData, tipoOtra: e.target.value })} placeholder="Especifique tipo..." style={{ marginTop: "8px" }} />
                       )}
                     </div>
-                    <div className="col">
-                      <label className="form-label">Sensación</label>
-                      <select name="sensacion" className="input" value={formData.sensacion} onChange={handleInputChange}>
-                        <option value="">Seleccione</option>
-                        <option value="hormigueo">Hormigueo</option>
-                        <option value="adormecimiento">Adormecimiento</option>
-                        <option value="calambre">Calambre</option>
-                        <option value="rigidez">Rigidez</option>
-                        <option value="otra">Otra</option>
-                      </select>
-                      {formData.sensacion === "otra" && (
-                        <input type="text" className="input mt-2" value={formData.sensacionOtra || ""} onChange={(e) => setFormData({ ...formData, sensacionOtra: e.target.value })} placeholder="Especifique sensación..." style={{ marginTop: "8px" }} />
+                    <div className="col" style={{ gridColumn: "1 / -1" }}>
+                      <label className="form-label" style={{ marginBottom: "0.75rem" }}>Sensación (Seleccione varias si aplica)</label>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "1.5rem", padding: "0.5rem 0" }}>
+                        {[
+                          { key: "hormigueo", label: "Hormigueo" },
+                          { key: "adormecimiento", label: "Adormecimiento" },
+                          { key: "calambre", label: "Calambre" },
+                          { key: "rigidez", label: "Rigidez" },
+                          { key: "otra", label: "Otra" }
+                        ].map((opt) => (
+                          <label
+                            key={opt.key}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                              cursor: "pointer",
+                              fontSize: "0.9rem",
+                              color: "var(--text-main)",
+                              fontWeight: "600"
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedSensaciones.includes(opt.key)}
+                              onChange={(e) => handleSensacionCheckboxChange(opt.key, e.target.checked)}
+                              style={{
+                                width: "17px",
+                                height: "17px",
+                                accentColor: "var(--primary)",
+                                cursor: "pointer"
+                              }}
+                            />
+                            {opt.label}
+                          </label>
+                        ))}
+                      </div>
+
+                      {selectedSensaciones.includes("otra") && (
+                        <input
+                          type="text"
+                          className="input"
+                          value={sensacionOtra}
+                          onChange={(e) => handleSensacionOtraChange(e.target.value)}
+                          placeholder="Especifique otra sensación..."
+                          style={{ marginTop: "10px", width: "100%", maxWidth: "350px" }}
+                        />
                       )}
                     </div>
-                    <div className="col" style={{ gridColumn: "span 2" }}>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginTop: "1.5rem" }}>
+                    <div className="col" style={{ margin: 0 }}>
                       <label className="form-label">Dolor últimas 24hrs</label>
                       <textarea name="dolor24hrs" className="textarea" placeholder="Describa el comportamiento del dolor en las últimas 24 horas..." value={formData.dolor24hrs} onChange={handleInputChange} style={{ height: "80px" }} />
                     </div>
-                    <div className="col">
+                    <div className="col" style={{ margin: 0 }}>
                       <label className="form-label">Factores que lo modifican</label>
                       <textarea name="facModifica" className="textarea" placeholder="¿Qué aumenta o disminuye el malestar?" value={formData.facModifica} onChange={handleInputChange} style={{ height: "80px" }} />
+                    </div>
+                  </div>
+
+                  {/* Selector de Múltiples Zonas de Dolor */}
+                  <div style={{ marginTop: "2rem", paddingTop: "1.5rem", borderTop: "1px dashed rgba(139, 92, 246, 0.15)" }}>
+                    <h4 style={{ fontWeight: "700", fontSize: "0.95rem", color: "var(--primary)", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                      📍 Detallar Zonas Específicas de Dolor (Múltiples)
+                    </h4>
+
+                    <div style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "1rem",
+                      alignItems: "flex-end",
+                      background: "rgba(139, 92, 246, 0.03)",
+                      padding: "1.25rem",
+                      borderRadius: "10px",
+                      border: "1px solid rgba(139, 92, 246, 0.08)"
+                    }}>
+                      <div className="col" style={{ margin: 0, flex: "1 1 200px" }}>
+                        <label className="form-label" style={{ fontSize: "0.82rem", marginBottom: "4px" }}>Seleccionar Zona</label>
+                        <select
+                          className="input"
+                          value={nuevaZona}
+                          onChange={(e) => setNuevaZona(e.target.value)}
+                          style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
+                        >
+                          <option value="">-- Seleccionar --</option>
+                          <option value="Cervical">Cervical</option>
+                          <option value="Dorsal">Dorsal</option>
+                          <option value="Lumbar">Lumbar</option>
+                          <option value="Hombro Izquierdo">Hombro Izquierdo</option>
+                          <option value="Hombro Derecho">Hombro Derecho</option>
+                          <option value="Codo Izquierdo">Codo Izquierdo</option>
+                          <option value="Codo Derecho">Codo Derecho</option>
+                          <option value="Muñeca Izquierda">Muñeca Izquierda</option>
+                          <option value="Muñeca Derecha">Muñeca Derecha</option>
+                          <option value="Cadera Izquierda">Cadera Izquierda</option>
+                          <option value="Cadera Derecha">Cadera Derecha</option>
+                          <option value="Rodilla Izquierda">Rodilla Izquierda</option>
+                          <option value="Rodilla Derecha">Rodilla Derecha</option>
+                          <option value="Tobillo Izquierdo">Tobillo Izquierdo</option>
+                          <option value="Tobillo Derecho">Tobillo Derecho</option>
+                          <option value="Cabeza">Cabeza</option>
+                          <option value="Pecho">Pecho</option>
+                          <option value="Abdomen">Abdomen</option>
+                          <option value="otra">Otra zona (Especificar)...</option>
+                        </select>
+                        {nuevaZona === "otra" && (
+                          <input
+                            type="text"
+                            className="input"
+                            value={nuevaZonaOtra}
+                            onChange={(e) => setNuevaZonaOtra(e.target.value)}
+                            placeholder="Escriba la zona..."
+                            style={{ marginTop: "8px", padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
+                          />
+                        )}
+                      </div>
+
+                      <div className="col" style={{ margin: 0, flex: "1 1 120px" }}>
+                        <label className="form-label" style={{ fontSize: "0.82rem", marginBottom: "4px" }}>Dolor EVA</label>
+                        <select
+                          className="input"
+                          value={nuevaZonaEva}
+                          onChange={(e) => setNuevaZonaEva(e.target.value)}
+                          style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
+                        >
+                          <option value="">-- EVA --</option>
+                          {[
+                            { val: 0, text: "0 - Nada" },
+                            { val: 1, text: "1 - Poco" },
+                            { val: 2, text: "2 - Poco" },
+                            { val: 3, text: "3 - Poco" },
+                            { val: 4, text: "4 - Moderado" },
+                            { val: 5, text: "5 - Moderado" },
+                            { val: 6, text: "6 - Fuerte" },
+                            { val: 7, text: "7 - Fuerte" },
+                            { val: 8, text: "8 - Muy fuerte" },
+                            { val: 9, text: "9 - Muy fuerte" },
+                            { val: 10, text: "10 - Insoportable" }
+                          ].map(({ val, text }) => (
+                            <option key={val} value={val}>{text}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="col" style={{ margin: 0, flex: "2 1 250px" }}>
+                        <label className="form-label" style={{ fontSize: "0.82rem", marginBottom: "4px" }}>Detalle / Comentario de la zona</label>
+                        <input
+                          type="text"
+                          className="input"
+                          value={nuevaZonaComentario}
+                          onChange={(e) => setNuevaZonaComentario(e.target.value)}
+                          placeholder="Ej: Dolor agudo al flexionar o rotar..."
+                          style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={agregarDolorZona}
+                        className="save-btn"
+                        style={{ margin: 0, padding: "0.55rem", width: "42px", height: "42px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.1rem", borderRadius: "8px", flexShrink: 0 }}
+                        title="Agregar zona de dolor"
+                      >
+                        ➕
+                      </button>
+                    </div>
+
+                    {/* Mostrar lista de zonas añadidas */}
+                    <div style={{ marginTop: "1.25rem", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                      {formData.dolorZonas && formData.dolorZonas.length > 0 ? (
+                        formData.dolorZonas.map((dz, idx) => {
+                          const getEvaColor = (val) => {
+                            if (val >= 7) return "rgba(239, 68, 68, 0.15)";
+                            if (val >= 4) return "rgba(245, 158, 11, 0.15)";
+                            return "rgba(16, 185, 129, 0.15)";
+                          };
+                          const getEvaTextColor = (val) => {
+                            if (val >= 7) return "var(--danger)";
+                            if (val >= 4) return "var(--warning)";
+                            return "var(--success)";
+                          };
+
+                          return (
+                            <div
+                              key={idx}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                background: "rgba(255, 255, 255, 0.02)",
+                                border: "1px solid var(--border-light)",
+                                borderRadius: "8px",
+                                padding: "0.6rem 1rem",
+                                gap: "1rem"
+                              }}
+                            >
+                              <div style={{ display: "flex", alignItems: "center", gap: "1rem", flex: 1 }}>
+                                <span style={{ fontWeight: "700", fontSize: "0.9rem", color: "var(--text-main)", display: "flex", alignItems: "center", gap: "4px" }}>
+                                  📍 {dz.zona}
+                                </span>
+                                <span
+                                  style={{
+                                    background: getEvaColor(dz.eva),
+                                    color: getEvaTextColor(dz.eva),
+                                    fontWeight: "800",
+                                    fontSize: "0.75rem",
+                                    padding: "3px 8px",
+                                    borderRadius: "12px",
+                                    minWidth: "75px",
+                                    textAlign: "center"
+                                  }}
+                                >
+                                  EVA: {dz.eva} ({getEvaTextDescription(dz.eva)})
+                                </span>
+                                {dz.comentario && (
+                                  <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontStyle: "italic", borderLeft: "2px solid rgba(139, 92, 246, 0.2)", paddingLeft: "10px" }}>
+                                    {dz.comentario}
+                                  </span>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => eliminarDolorZona(idx)}
+                                style={{
+                                  background: "transparent",
+                                  border: "none",
+                                  color: "var(--danger)",
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  padding: "4px",
+                                  borderRadius: "6px"
+                                }}
+                                title="Eliminar zona"
+                              >
+                                <FiTrash2 size={15} />
+                              </button>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--text-muted)", fontStyle: "italic" }}>
+                          No se han detallado zonas de dolor adicionales.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="clinical-form-section">
+                  <h3 className="clinical-section-title">🏃 Actividades y Participaciones con Deficiencia</h3>
+                  <div className="clinical-grid-1">
+                    <div className="col">
+                      <label className="form-label">Describa las limitaciones en actividades y participación (de la vida diaria, laboral, deportiva, etc.)</label>
+                      <textarea
+                        name="actividadesDeficiencia"
+                        className="textarea"
+                        placeholder="Ej: Dificultad para agacharse, limitaciones al estar sentado más de 30 minutos, imposibilidad de cargar objetos pesados, limitación en la práctica de running..."
+                        value={formData.actividadesDeficiencia}
+                        onChange={handleInputChange}
+                        style={{ height: "100px" }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -1316,7 +1725,7 @@ const FormularioHistorial = () => {
                 <div className="clinical-form-section">
                   <h3 className="clinical-section-title">🩺 Antecedentes Clínicos</h3>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem", marginBottom: "1rem" }}>
-                    
+
                     {/* Antecedentes Familiares */}
                     <div className="col" style={{ background: "rgba(255,255,255,0.01)", padding: "1.25rem", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)" }}>
                       <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", fontWeight: "700", fontSize: "0.95rem", color: "var(--primary)", margin: "0 0 1rem 0" }}>
@@ -1328,55 +1737,107 @@ const FormularioHistorial = () => {
                         />
                         <span>👨‍👩‍👧‍👦 ¿Aplica antecedentes familiares?</span>
                       </label>
-                      
+
                       {aplicaFam && (
                         <div className="fade-in-up" style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                          <label className="form-label" style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "4px" }}>Seleccionar Antecedentes familiares</label>
-                          <select className="input" value={antecedenteSeleccionado} onChange={(e) => {
-                            handleSelectAntecedent(e.target.value, true);
-                            setAntecedenteSeleccionado("");
-                          }}>
-                            <option value="">Añadir antecedente familiar...</option>
-                            {itemsAntFam.map((item) => (
-                              <option key={item._id} value={item._id}>{item.valor}</option>
-                            ))}
-                          </select>
+                          <label className="form-label" style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "4px" }}>Seleccionar Antecedente y Familiar</label>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center" }}>
+                            <select
+                              className="input"
+                              value={antecedenteSeleccionado}
+                              onChange={(e) => setAntecedenteSeleccionado(e.target.value)}
+                              style={{ flex: "2 1 200px", minWidth: "150px", padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
+                            >
+                              <option value="">Añadir antecedente familiar...</option>
+                              {itemsAntFam.map((item) => (
+                                <option key={item._id} value={item._id}>{item.valor}</option>
+                              ))}
+                            </select>
+                            
+                            <select
+                              className="input"
+                              value={familiarSeleccionado}
+                              onChange={(e) => setFamiliarSeleccionado(e.target.value)}
+                              style={{ flex: "1 1 150px", minWidth: "120px", padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
+                            >
+                              <option value="">Familiar...</option>
+                              <option value="Papá">Papá</option>
+                              <option value="Mamá">Mamá</option>
+                              <option value="Abuelo materno">Abuelo materno</option>
+                              <option value="Abuela materna">Abuela materna</option>
+                              <option value="Abuelo paterno">Abuelo paterno</option>
+                              <option value="Abuela paterna">Abuela paterna</option>
+                            </select>
+
+                            <button
+                              type="button"
+                              className="save-btn"
+                              onClick={() => {
+                                if (!antecedenteSeleccionado) return;
+                                const cleanVal = antecedenteSeleccionado.split("|")[0];
+                                const currentList = formData.antecedentesFamiliares || [];
+                                if (!currentList.some(x => x && x.split("|")[0] === cleanVal)) {
+                                  const valWithRelation = familiarSeleccionado ? `${cleanVal}|${familiarSeleccionado}` : `${cleanVal}|`;
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    antecedentesFamiliares: [...currentList.filter(Boolean), valWithRelation]
+                                  }));
+                                }
+                                setAntecedenteSeleccionado("");
+                                setFamiliarSeleccionado("");
+                              }}
+                              disabled={!antecedenteSeleccionado}
+                              style={{
+                                margin: 0,
+                                padding: "0.55rem",
+                                width: "36px",
+                                height: "36px",
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                fontSize: "1rem",
+                                borderRadius: "8px",
+                                flexShrink: 0,
+                                opacity: antecedenteSeleccionado ? 1 : 0.4,
+                                cursor: antecedenteSeleccionado ? "pointer" : "not-allowed",
+                                background: antecedenteSeleccionado ? "var(--primary)" : "rgba(255,255,255,0.05)",
+                                border: antecedenteSeleccionado ? "none" : "1px solid rgba(255,255,255,0.1)",
+                                color: antecedenteSeleccionado ? "#ffffff" : "var(--text-muted)",
+                                transition: "all 0.2s"
+                              }}
+                              title="Agregar antecedente"
+                            >
+                              ➕
+                            </button>
+                          </div>
 
                           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "1rem" }}>
                             {formData.antecedentesFamiliares?.filter(Boolean).map((id, index) => {
-                              const [cleanId, year] = id.split("|");
+                              const [cleanId, relation] = id.split("|");
                               const label = itemsAntFam.find(x => x._id === cleanId)?.valor || cleanId;
                               return (
                                 <span key={index} className="glass-tag" style={{
                                   display: "inline-flex",
                                   alignItems: "center",
                                   gap: "6px",
-                                  padding: "4px 8px",
+                                  padding: "6px 12px",
                                   borderRadius: "20px",
                                   background: "rgba(99, 102, 241, 0.08)",
                                   border: "1px solid rgba(99, 102, 241, 0.15)",
-                                  fontSize: "0.8rem",
-                                  color: "var(--text-main)"
+                                  fontSize: "0.85rem",
+                                  color: "var(--text-main)",
+                                  wordBreak: "break-word"
                                 }}>
-                                  <span>{label}</span>
-                                  <input
-                                    type="text"
-                                    placeholder="Año"
-                                    value={year || ""}
-                                    onChange={(e) => handleTagYearChange(cleanId, e.target.value, true)}
-                                    style={{
-                                      width: "55px",
-                                      height: "22px",
-                                      padding: "0 4px",
-                                      fontSize: "0.75rem",
-                                      borderRadius: "4px",
-                                      border: "1px solid rgba(255, 255, 255, 0.1)",
-                                      background: "rgba(0, 0, 0, 0.2)",
-                                      color: "var(--text-main)",
-                                      textAlign: "center"
-                                    }}
-                                  />
-                                  <button type="button" className="tag-remove-btn" onClick={() => handleRemoveAntecedent(cleanId, true)} style={{ fontSize: "1rem", lineHeight: "1", padding: 0 }}>×</button>
+                                  <span>{label} {relation ? `(${relation})` : ""}</span>
+                                  <button
+                                    type="button"
+                                    className="tag-remove-btn"
+                                    onClick={() => handleRemoveAntecedent(cleanId, true)}
+                                    style={{ fontSize: "1rem", lineHeight: "1", padding: 0, background: "none", border: "none", color: "var(--danger)", cursor: "pointer", marginLeft: "4px" }}
+                                    title="Eliminar"
+                                  >
+                                    ×
+                                  </button>
                                 </span>
                               );
                             })}
@@ -1396,19 +1857,73 @@ const FormularioHistorial = () => {
                         />
                         <span>🏥 ¿Aplica antecedentes médicos?</span>
                       </label>
-                      
+
                       {aplicaMed && (
                         <div className="fade-in-up" style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                          <label className="form-label" style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "4px" }}>Seleccionar Antecedentes médicos</label>
-                          <select className="input" value={antecedenteMedico} onChange={(e) => {
-                            handleSelectAntecedent(e.target.value, false);
-                            setAntecedenteMedico("");
-                          }}>
-                            <option value="">Añadir antecedente médico...</option>
-                            {itemsAntMed.map((item) => (
-                              <option key={item._id} value={item._id}>{item.valor}</option>
-                            ))}
-                          </select>
+                          <label className="form-label" style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "4px" }}>Seleccionar Antecedente y Año</label>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center" }}>
+                            <select
+                              className="input"
+                              value={antecedenteMedico}
+                              onChange={(e) => setAntecedenteMedico(e.target.value)}
+                              style={{ flex: "2 1 200px", minWidth: "150px", padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
+                            >
+                              <option value="">Añadir antecedente médico...</option>
+                              {itemsAntMed.map((item) => (
+                                <option key={item._id} value={item._id}>{item.valor}</option>
+                              ))}
+                            </select>
+
+                            <input
+                              type="text"
+                              className="input"
+                              placeholder="Año (ej. 2018)"
+                              value={anioSeleccionado}
+                              onChange={(e) => setAnioSeleccionado(e.target.value)}
+                              style={{ flex: "1 1 100px", minWidth: "80px", padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
+                            />
+
+                            <button
+                              type="button"
+                              className="save-btn"
+                              onClick={() => {
+                                if (!antecedenteMedico) return;
+                                const cleanVal = antecedenteMedico.split("|")[0];
+                                const currentList = formData.antecedentesMedicos || [];
+                                if (!currentList.some(x => x && x.split("|")[0] === cleanVal)) {
+                                  const valWithYear = anioSeleccionado ? `${cleanVal}|${anioSeleccionado}` : `${cleanVal}|`;
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    antecedentesMedicos: [...currentList.filter(Boolean), valWithYear]
+                                  }));
+                                }
+                                setAntecedenteMedico("");
+                                setAnioSeleccionado("");
+                              }}
+                              disabled={!antecedenteMedico}
+                              style={{
+                                margin: 0,
+                                padding: "0.55rem",
+                                width: "36px",
+                                height: "36px",
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                fontSize: "1rem",
+                                borderRadius: "8px",
+                                flexShrink: 0,
+                                opacity: antecedenteMedico ? 1 : 0.4,
+                                cursor: antecedenteMedico ? "pointer" : "not-allowed",
+                                background: antecedenteMedico ? "var(--primary)" : "rgba(255,255,255,0.05)",
+                                border: antecedenteMedico ? "none" : "1px solid rgba(255,255,255,0.1)",
+                                color: antecedenteMedico ? "#ffffff" : "var(--text-muted)",
+                                transition: "all 0.2s"
+                              }}
+                              title="Agregar antecedente"
+                            >
+                              ➕
+                            </button>
+                          </div>
 
                           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "1rem" }}>
                             {formData.antecedentesMedicos?.filter(Boolean).map((id, index) => {
@@ -1419,32 +1934,24 @@ const FormularioHistorial = () => {
                                   display: "inline-flex",
                                   alignItems: "center",
                                   gap: "6px",
-                                  padding: "4px 8px",
+                                  padding: "6px 12px",
                                   borderRadius: "20px",
                                   background: "rgba(99, 102, 241, 0.08)",
                                   border: "1px solid rgba(99, 102, 241, 0.15)",
-                                  fontSize: "0.8rem",
-                                  color: "var(--text-main)"
+                                  fontSize: "0.85rem",
+                                  color: "var(--text-main)",
+                                  wordBreak: "break-word"
                                 }}>
-                                  <span>{label}</span>
-                                  <input
-                                    type="text"
-                                    placeholder="Año"
-                                    value={year || ""}
-                                    onChange={(e) => handleTagYearChange(cleanId, e.target.value, false)}
-                                    style={{
-                                      width: "55px",
-                                      height: "22px",
-                                      padding: "0 4px",
-                                      fontSize: "0.75rem",
-                                      borderRadius: "4px",
-                                      border: "1px solid rgba(255, 255, 255, 0.1)",
-                                      background: "rgba(0, 0, 0, 0.2)",
-                                      color: "var(--text-main)",
-                                      textAlign: "center"
-                                    }}
-                                  />
-                                  <button type="button" className="tag-remove-btn" onClick={() => handleRemoveAntecedent(cleanId, false)} style={{ fontSize: "1rem", lineHeight: "1", padding: 0 }}>×</button>
+                                  <span>{label} {year ? `(${year})` : ""}</span>
+                                  <button
+                                    type="button"
+                                    className="tag-remove-btn"
+                                    onClick={() => handleRemoveAntecedent(cleanId, false)}
+                                    style={{ fontSize: "1rem", lineHeight: "1", padding: 0, background: "none", border: "none", color: "var(--danger)", cursor: "pointer", marginLeft: "4px" }}
+                                    title="Eliminar"
+                                  >
+                                    ×
+                                  </button>
                                 </span>
                               );
                             })}
@@ -1452,11 +1959,10 @@ const FormularioHistorial = () => {
                         </div>
                       )}
                     </div>
-
                   </div>
 
-                  <div className="clinical-grid-3">
-                    <div className="col col-span-2" style={{ background: "rgba(255,255,255,0.01)", padding: "1.25rem", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1.5rem" }}>
+                    <div className="col" style={{ background: "rgba(255,255,255,0.01)", padding: "1.25rem", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)", margin: 0 }}>
                       <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", fontWeight: "700", fontSize: "0.95rem", color: "var(--primary)", margin: "0 0 1rem 0" }}>
                         <input
                           type="checkbox"
@@ -1466,7 +1972,7 @@ const FormularioHistorial = () => {
                         />
                         <span>💊 ¿Lleva medicación actual?</span>
                       </label>
-                      
+
                       {aplicaMedActual && (
                         <div className="fade-in-up">
                           <label className="form-label" style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "4px" }}>Especifique fármacos y dosis</label>
@@ -1474,27 +1980,56 @@ const FormularioHistorial = () => {
                         </div>
                       )}
                     </div>
-                    <div className="col col-span-3" style={{ background: "rgba(255,255,255,0.01)", padding: "1.25rem", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)", marginTop: "1rem" }}>
-                      <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", fontWeight: "700", fontSize: "0.95rem", color: "var(--primary)", margin: "0 0 1rem 0" }}>
-                        <input
-                          type="checkbox"
-                          checked={aplicaQuirurgico}
-                          onChange={(e) => {
-                            setAplicaQuirurgico(e.target.checked);
-                            if (!e.target.checked) {
-                              setFormData(prev => ({ ...prev, antecedentesQuirurgicos: "Ninguno", anioQuirurgico: "" }));
-                            }
-                          }}
-                          style={{ width: "16px", height: "16px", accentColor: "var(--primary)" }}
-                        />
-                        <span>🔪 ¿Tiene antecedentes quirúrgicos?</span>
-                      </label>
+                    <div className="col" style={{ background: "rgba(255,255,255,0.01)", padding: "1.25rem", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)", margin: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", margin: "0 0 1rem 0" }}>
+                        <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", fontWeight: "700", fontSize: "0.95rem", color: "var(--primary)", margin: 0 }}>
+                          <input
+                            type="checkbox"
+                            checked={aplicaQuirurgico}
+                            onChange={(e) => {
+                              setAplicaQuirurgico(e.target.checked);
+                              if (!e.target.checked) {
+                                setFormData(prev => ({ ...prev, antecedentesQuirurgicos: "Ninguno", anioQuirurgico: "" }));
+                              }
+                            }}
+                            style={{ width: "16px", height: "16px", accentColor: "var(--primary)" }}
+                          />
+                          <span>🔪 ¿Tiene antecedentes quirúrgicos?</span>
+                        </label>
+                        {aplicaQuirurgico && (
+                          <button
+                            type="button"
+                            className="save-btn"
+                            onClick={addSurgicalEntry}
+                            style={{
+                              margin: 0,
+                              padding: "0.55rem",
+                              width: "36px",
+                              height: "36px",
+                              display: "flex",
+                              justifyContent: "center",
+                              alignItems: "center",
+                              fontSize: "1rem",
+                              borderRadius: "8px",
+                              flexShrink: 0,
+                              background: "var(--primary)",
+                              border: "none",
+                              color: "#ffffff",
+                              cursor: "pointer",
+                              transition: "all 0.2s"
+                            }}
+                            title="Agregar cirugía"
+                          >
+                            ➕
+                          </button>
+                        )}
+                      </div>
 
                       {aplicaQuirurgico && (
                         <div className="fade-in-up" style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                           {surgicalEntries.map((entry) => (
-                            <div key={entry.id} style={{ display: "grid", gridTemplateColumns: "2fr 1fr auto", gap: "1rem", alignItems: "center" }}>
-                              <div>
+                            <div key={entry.id} style={{ display: "flex", flexWrap: "wrap", gap: "1rem", alignItems: "end" }}>
+                              <div style={{ flex: "2 1 200px" }}>
                                 <label className="form-label" style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "4px" }}>Cirugía / Procedimiento</label>
                                 <input
                                   type="text"
@@ -1502,18 +2037,20 @@ const FormularioHistorial = () => {
                                   placeholder="Ej. Apendicectomía"
                                   value={entry.name}
                                   onChange={(e) => updateSurgicalEntry(entry.id, "name", e.target.value)}
+                                  style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
                                 />
                               </div>
-                              <div>
+                              <div style={{ flex: "1 1 150px" }}>
                                 <label className="form-label" style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "4px" }}>Fecha de cirugía</label>
                                 <input
                                   type="date"
                                   className="input"
                                   value={entry.date}
                                   onChange={(e) => updateSurgicalEntry(entry.id, "date", e.target.value)}
+                                  style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
                                 />
                               </div>
-                              <div style={{ alignSelf: "end" }}>
+                              <div style={{ flexShrink: 0 }}>
                                 <button
                                   type="button"
                                   className="btn btn-outline"
@@ -1521,7 +2058,7 @@ const FormularioHistorial = () => {
                                   style={{
                                     borderColor: "rgba(239, 68, 68, 0.2)",
                                     color: "var(--danger)",
-                                    height: "38px",
+                                    height: "36px",
                                     padding: "0 12px",
                                     display: "flex",
                                     alignItems: "center",
@@ -1534,24 +2071,6 @@ const FormularioHistorial = () => {
                               </div>
                             </div>
                           ))}
-
-                          <button
-                            type="button"
-                            className="btn btn-outline"
-                            onClick={addSurgicalEntry}
-                            style={{
-                              marginTop: "0.5rem",
-                              alignSelf: "flex-start",
-                              fontSize: "0.8rem",
-                              padding: "6px 12px",
-                              height: "32px",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "4px"
-                            }}
-                          >
-                            ➕ Agregar Cirugía
-                          </button>
                         </div>
                       )}
                     </div>
@@ -1595,19 +2114,40 @@ const FormularioHistorial = () => {
                         <option value="ligero">Ligero</option>
                         <option value="moderado">Moderado</option>
                         <option value="fuerte">Fuerte</option>
+                        <option value="nada">Nada</option>
                       </select>
                     </div>
                     <div className="col" style={{ gridColumn: "span 2" }}>
                       <label className="form-label">Adicciones y sustancias</label>
-                      <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.6rem" }}>
+                      <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.6rem", flexWrap: "wrap", alignItems: "center" }}>
                         <label className="checkbox-label-modern">
-                          <input type="checkbox" checked={antecedentesNoPatologicos.adicciones.tabaquismo} onChange={() => toggleAdiccion("tabaquismo")} />
+                          <input type="checkbox" checked={antecedentesNoPatologicos.adicciones?.tabaquismo || false} onChange={() => toggleAdiccion("tabaquismo")} />
                           <span>Tabaquismo</span>
                         </label>
                         <label className="checkbox-label-modern">
-                          <input type="checkbox" checked={antecedentesNoPatologicos.adicciones.alcohol} onChange={() => toggleAdiccion("alcohol")} />
+                          <input type="checkbox" checked={antecedentesNoPatologicos.adicciones?.alcohol || false} onChange={() => toggleAdiccion("alcohol")} />
                           <span>Consumo de Alcohol</span>
                         </label>
+                        <label className="checkbox-label-modern">
+                          <input type="checkbox" checked={antecedentesNoPatologicos.adicciones?.otro || false} onChange={() => toggleAdiccion("otro")} />
+                          <span>Otro</span>
+                        </label>
+                        {(antecedentesNoPatologicos.adicciones?.otro) && (
+                          <input
+                            type="text"
+                            className="input fade-in-up"
+                            placeholder="Especifique..."
+                            value={antecedentesNoPatologicos.adicciones?.otroDetalle || ""}
+                            onChange={(e) => setAntecedentesNoPatologicos(prev => ({
+                              ...prev,
+                              adicciones: {
+                                ...prev.adicciones,
+                                otroDetalle: e.target.value
+                              }
+                            }))}
+                            style={{ width: "200px", padding: "0.35rem 0.55rem", fontSize: "0.85rem", height: "30px" }}
+                          />
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1649,7 +2189,7 @@ const FormularioHistorial = () => {
               <div className="tab-content">
                 <div className="clinical-form-section">
                   <h3 className="clinical-section-title">🔍 Observación Física Inicial</h3>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
                     {[
                       { key: "edema", label: "Presencia de Edema" },
                       { key: "enrojecimiento", label: "Zonas de Enrojecimiento / Eritema" },
@@ -1658,14 +2198,33 @@ const FormularioHistorial = () => {
                       { key: "marcha", label: "Alteraciones en la Marcha" },
                       { key: "otro", label: "Otro hallazgo visual" }
                     ].map(({ key, label }) => (
-                      <div key={key} style={{ display: "grid", gridTemplateColumns: "1fr 2fr", alignItems: "center", gap: "1rem" }}>
-                        <label className="checkbox-label-modern">
-                          <input type="checkbox" checked={obser[key].activo} onChange={() => toggleObser(key)} />
+                      <div
+                        key={key}
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "0.25rem",
+                          padding: "0.5rem 0.75rem",
+                          borderRadius: "8px",
+                          background: obser[key].activo ? "rgba(139, 92, 246, 0.04)" : "rgba(255, 255, 255, 0.01)",
+                          border: "1px solid " + (obser[key].activo ? "rgba(139, 92, 246, 0.15)" : "rgba(255, 255, 255, 0.03)"),
+                          transition: "all 0.2s"
+                        }}
+                      >
+                        <label className="checkbox-label-modern" style={{ margin: 0, fontSize: "0.85rem" }}>
+                          <input type="checkbox" checked={obser[key].activo} onChange={() => toggleObser(key)} style={{ width: "15px", height: "15px" }} />
                           <span>{label}</span>
                         </label>
 
                         {obser[key].activo && (
-                          <input type="text" className="input" placeholder="Lugar corporal, intensidad o detalles..." value={obser[key].detalle} onChange={(e) => changeObser(key, e.target.value)} />
+                          <input
+                            type="text"
+                            className="input fade-in-up"
+                            placeholder="Detalles..."
+                            value={obser[key].detalle}
+                            onChange={(e) => changeObser(key, e.target.value)}
+                            style={{ width: "100%", marginTop: "2px", fontSize: "0.8rem", padding: "0.35rem 0.55rem", height: "28px" }}
+                          />
                         )}
                       </div>
                     ))}
@@ -1712,21 +2271,21 @@ const FormularioHistorial = () => {
 
                 <div className="clinical-form-section">
                   <h3 className="clinical-section-title">🧪 Desglose de Metodología SOAP</h3>
-                  <div className="soap-grid">
+                  <div className="soap-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
                     <div className="col">
-                      <label className="form-label" style={{ fontWeight: "700", color: "#4f46e5" }}>Subjetivo (S)</label>
+                      <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)" }}>Subjetivo (S)</label>
                       <textarea name="S" className="textarea" placeholder="Subjetivo: Síntomas referidos, sensaciones y comentarios expresados por el paciente..." value={formData.S || ""} onChange={handleInputChange} style={{ height: "120px" }} />
                     </div>
                     <div className="col">
-                      <label className="form-label" style={{ fontWeight: "700", color: "#06b6d4" }}>Objetivo (O)</label>
+                      <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)" }}>Objetivo (O)</label>
                       <textarea name="O" className="textarea" placeholder="Objetivo: Hallazgos clínicos medibles, arcos de movilidad, reflejos, postura observada..." value={formData.O || ""} onChange={handleInputChange} style={{ height: "120px" }} />
                     </div>
                     <div className="col">
-                      <label className="form-label" style={{ fontWeight: "700", color: "#eab308" }}>Análisis (A)</label>
+                      <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)" }}>Análisis (A)</label>
                       <textarea name="A" className="textarea" placeholder="Análisis: Juicio clínico del fisioterapeuta, evolución, hipótesis diagnóstica de la sesión..." value={formData.A || ""} onChange={handleInputChange} style={{ height: "120px" }} />
                     </div>
                     <div className="col">
-                      <label className="form-label" style={{ fontWeight: "700", color: "#10b981" }}>Plan (P)</label>
+                      <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)" }}>Plan (P)</label>
                       <textarea name="P" className="textarea" placeholder="Plan: Tratamiento a seguir, número de sesiones, ejercicios en casa, derivaciones..." value={formData.P || ""} onChange={handleInputChange} style={{ height: "120px" }} />
                     </div>
                   </div>
@@ -1754,7 +2313,7 @@ const FormularioHistorial = () => {
                   </button>
                 )}
               </div>
-              
+
               <div style={{ display: "flex", gap: "1rem" }}>
                 {activeTab !== "consentimiento" ? (
                   <button

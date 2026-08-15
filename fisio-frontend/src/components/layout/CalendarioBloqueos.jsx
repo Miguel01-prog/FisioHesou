@@ -133,10 +133,15 @@ const CalendarioBloqueo = ({ role }) => {
     }
   };
 
+  const user = JSON.parse(localStorage.getItem("user"));
+  const blockSundays = user?.client?.blockSundays;
+
   // ---- Clases visuales del calendario ----
   const tileClassName = ({ date }) => {
     const fechaStr = date.toISOString().split("T")[0];
     const hoyStr = new Date().toISOString().split("T")[0];
+
+    if (blockSundays && date.getDay() === 0) return "sunday-blocked";
 
     // Días pasados → gris
     if (fechaStr < hoyStr) return "past-day";
@@ -150,18 +155,18 @@ const CalendarioBloqueo = ({ role }) => {
   const tileDisabled = ({ date }) => {
     const fechaStr = date.toISOString().split("T")[0];
     const hoyStr = new Date().toISOString().split("T")[0];
+    if (blockSundays && date.getDay() === 0) return true;
     return fechaStr < hoyStr || isDayFullyBlocked(fechaStr);
   };
 
   return (
     <div className="container" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
       <div style={{ width: '100%', maxWidth: '1100px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '2rem', padding: '1rem 0' }}>
-        
+
         {/* Left Card: Calendar */}
         <div className="auth-card" style={{ marginTop: 0, padding: '2rem' }}>
           <div className="card-header-split" style={{ marginBottom: "1rem" }}>
             <h2 className="title_card" style={{ margin: 0 }}>Control de Horarios</h2>
-            <span className="subtitle-card-badge">Bloqueo de Calendario</span>
           </div>
           <hr style={{ marginBottom: "1.5rem" }} />
 
@@ -176,7 +181,7 @@ const CalendarioBloqueo = ({ role }) => {
               tileClassName={tileClassName}
             />
           )}
-          
+
           <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.85rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '3px', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid var(--danger, #ef4444)' }}></span>
@@ -191,7 +196,7 @@ const CalendarioBloqueo = ({ role }) => {
 
         {/* Right Card: Hours Selector & Blocked Days Summary */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          
+
           {selectedDay && (
             <div className="auth-card" style={{ marginTop: 0, padding: '2rem' }}>
               <div className="card-header-split" style={{ marginBottom: "1rem" }}>
@@ -200,7 +205,7 @@ const CalendarioBloqueo = ({ role }) => {
                 </h3>
               </div>
               <hr style={{ marginBottom: "1.2rem" }} />
-              
+
               <div className="hours-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '1.5rem' }}>
                 {WORK_HOURS.map((hour) => {
                   const hoyStr = new Date().toISOString().split("T")[0];
@@ -226,27 +231,25 @@ const CalendarioBloqueo = ({ role }) => {
                     <button
                       key={hour}
                       type="button"
-                      className={`hour-btn ${
-                        bloqueadasPorAdmin ? "blocked-admin-hour" : ""
-                      } ${
-                        bloqueadasPorPaciente ? "blocked-paciente-hour" : ""
-                      }`}
+                      className={`hour-btn ${bloqueadasPorAdmin ? "blocked-admin-hour" : ""
+                        } ${bloqueadasPorPaciente ? "blocked-paciente-hour" : ""
+                        }`}
                       style={{
                         padding: '0.6rem 0.5rem',
                         fontSize: '0.85rem',
                         borderRadius: '6px',
                         border: '1px solid var(--border-light, #e2e8f0)',
-                        background: bloqueadasPorAdmin 
-                          ? 'var(--primary, #5e50a1)' 
-                          : bloqueadasPorPaciente 
-                            ? 'rgba(239, 68, 68, 0.1)' 
+                        background: bloqueadasPorAdmin
+                          ? 'var(--primary, #5e50a1)'
+                          : bloqueadasPorPaciente
+                            ? 'rgba(239, 68, 68, 0.1)'
                             : isPastLimit
                               ? 'rgba(226, 232, 240, 0.4)'
                               : 'transparent',
-                        color: bloqueadasPorAdmin 
-                          ? '#ffffff' 
-                          : bloqueadasPorPaciente 
-                            ? 'var(--danger, #ef4444)' 
+                        color: bloqueadasPorAdmin
+                          ? '#ffffff'
+                          : bloqueadasPorPaciente
+                            ? 'var(--danger, #ef4444)'
                             : isPastLimit
                               ? 'var(--text-muted, #94a3b8)'
                               : 'var(--text-main)',
@@ -277,19 +280,19 @@ const CalendarioBloqueo = ({ role }) => {
               </div>
 
               <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <button 
-                  type="button" 
-                  className="save-btn" 
-                  style={{ background: "#64748b", margin: 0, flex: 1 }} 
+                <button
+                  type="button"
+                  className="save-btn"
+                  style={{ background: "#64748b", margin: 0, flex: 1 }}
                   onClick={() => { setSelectedDay(null); setSelectedHours([]); }}
                 >
                   Cancelar
                 </button>
-                <button 
+                <button
                   type="button"
-                  className="save-btn" 
-                  onClick={saveHours} 
-                  disabled={loading} 
+                  className="save-btn"
+                  onClick={saveHours}
+                  disabled={loading}
                   style={{ margin: 0, flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
                   {loading ? <LoadingSpinner size="small" color="#fff" /> : "Guardar Cambios"}
@@ -328,52 +331,52 @@ const CalendarioBloqueo = ({ role }) => {
                         const hours = blockedHoursAdmin[dateStr] || [];
                         const isFull = hours.length === WORK_HOURS.length;
                         return (
-                    <div 
-                      key={dateStr} 
-                      style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'space-between', 
-                        padding: '0.85rem 1rem', 
-                        borderRadius: '8px', 
-                        background: 'rgba(94, 80, 161, 0.03)', 
-                        border: '1px solid var(--border-light, #e2e8f0)' 
-                      }}
-                    >
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', flex: 1, minWidth: 0 }}>
-                        <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{formatDateDDMMYYYY(dateStr)}</span>
-                        <span style={{ fontSize: '0.8rem', color: isFull ? 'var(--danger, #ef4444)' : 'var(--text-muted)' }}>
-                          {isFull ? "🔒 Día Completo Bloqueado" : `⏰ Horas: ${hours.join(", ")}`}
-                        </span>
-                        {blockedNotesAdmin[dateStr] && (
-                          <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontStyle: 'italic', wordBreak: 'break-word' }}>
-                            📝 Nota: {blockedNotesAdmin[dateStr]}
-                          </span>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => deleteDayBlocks(dateStr)}
-                        style={{
-                          background: 'rgba(239, 68, 68, 0.1)',
-                          color: 'var(--danger, #ef4444)',
-                          border: 'none',
-                          borderRadius: '6px',
-                          width: '32px',
-                          height: '32px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          fontSize: '0.85rem',
-                          transition: 'all 0.2s'
-                        }}
-                        title="Eliminar bloqueos de este día"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  );
+                          <div
+                            key={dateStr}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '0.85rem 1rem',
+                              borderRadius: '8px',
+                              background: 'rgba(94, 80, 161, 0.03)',
+                              border: '1px solid var(--border-light, #e2e8f0)'
+                            }}
+                          >
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', flex: 1, minWidth: 0 }}>
+                              <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{formatDateDDMMYYYY(dateStr)}</span>
+                              <span style={{ fontSize: '0.8rem', color: isFull ? 'var(--danger, #ef4444)' : 'var(--text-muted)' }}>
+                                {isFull ? "🔒 Día Completo Bloqueado" : `⏰ Horas: ${hours.join(", ")}`}
+                              </span>
+                              {blockedNotesAdmin[dateStr] && (
+                                <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontStyle: 'italic', wordBreak: 'break-word' }}>
+                                  📝 Nota: {blockedNotesAdmin[dateStr]}
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => deleteDayBlocks(dateStr)}
+                              style={{
+                                background: 'rgba(239, 68, 68, 0.1)',
+                                color: 'var(--danger, #ef4444)',
+                                border: 'none',
+                                borderRadius: '6px',
+                                width: '32px',
+                                height: '32px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                fontSize: '0.85rem',
+                                transition: 'all 0.2s'
+                              }}
+                              title="Eliminar bloqueos de este día"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        );
                       })
                     )}
                   </div>

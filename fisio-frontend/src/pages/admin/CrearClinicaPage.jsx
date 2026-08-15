@@ -17,6 +17,7 @@ export default function CrearClinicaPage() {
   const [subdominio, setSubdominio] = useState("");
   const [logo, setLogo] = useState("");
   const [activo, setActivo] = useState(true);
+  const [blockSundays, setBlockSundays] = useState(false);
 
   // Custom Labels
   const [patientLabelSingular, setPatientLabelSingular] = useState("Paciente");
@@ -68,6 +69,7 @@ export default function CrearClinicaPage() {
             setServices(match.services && match.services.length > 0 ? match.services : [{ name: "", key: "", description: "", icon: "📅" }]);
             setModules(match.modules || ["agenda", "pacientes", "bloquear"]);
             setActivo(match.active !== undefined ? match.active : true);
+            setBlockSundays(match.blockSundays || false);
           } else {
             showError("No encontrado", "No se encontró el negocio solicitado");
             navigate("/admin/clinicas");
@@ -146,7 +148,8 @@ export default function CrearClinicaPage() {
         services: validServices,
         modules,
         active: activo,
-        logo
+        logo,
+        blockSundays
       };
 
       if (id) {
@@ -470,32 +473,60 @@ export default function CrearClinicaPage() {
                               const isChildChecked = modules.includes(child.key);
 
                               return (
-                                <label
-                                  key={child.key}
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "0.7rem",
-                                    cursor: "pointer",
-                                    padding: "0.8rem",
-                                    background: "rgba(255,255,255,0.02)",
-                                    border: isChildChecked ? "1px solid rgba(94, 80, 161, 0.4)" : "1px solid rgba(255,255,255,0.05)",
-                                    borderRadius: "8px",
-                                    fontSize: "0.85rem",
-                                    color: isChildChecked ? "var(--text-main)" : "var(--text-muted)",
-                                    transition: "all 0.2s",
-                                    margin: 0
-                                  }}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={isChildChecked}
-                                    onChange={e => handleModuleCheckboxChange(child.key, e.target.checked)}
-                                    disabled={guardando}
-                                    style={{ width: "16px", height: "16px", cursor: "pointer" }}
-                                  />
-                                  {child.key === "pacientes" ? `Directorio de ${patientLabelPlural}` : child.label}
-                                </label>
+                                <div key={child.key} style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                                  <label
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "0.7rem",
+                                      cursor: "pointer",
+                                      padding: "0.8rem",
+                                      background: "rgba(255,255,255,0.02)",
+                                      border: isChildChecked ? "1px solid rgba(94, 80, 161, 0.4)" : "1px solid rgba(255,255,255,0.05)",
+                                      borderRadius: "8px",
+                                      fontSize: "0.85rem",
+                                      color: isChildChecked ? "var(--text-main)" : "var(--text-muted)",
+                                      transition: "all 0.2s",
+                                      margin: 0
+                                    }}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isChildChecked}
+                                      onChange={e => handleModuleCheckboxChange(child.key, e.target.checked)}
+                                      disabled={guardando}
+                                      style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                                    />
+                                    {child.key === "pacientes" ? `Directorio de ${patientLabelPlural}` : child.label}
+                                  </label>
+
+                                  {child.key === "bloquear" && isChildChecked && (
+                                    <div style={{
+                                      paddingLeft: "0.5rem",
+                                      marginTop: "0.25rem",
+                                      marginBottom: "0.5rem"
+                                    }}>
+                                      <label style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "0.5rem",
+                                        cursor: "pointer",
+                                        fontSize: "0.82rem",
+                                        color: "var(--text-main)",
+                                        margin: 0
+                                      }}>
+                                        <input
+                                          type="checkbox"
+                                          checked={blockSundays}
+                                          onChange={e => setBlockSundays(e.target.checked)}
+                                          disabled={guardando}
+                                          style={{ width: "15px", height: "15px", cursor: "pointer" }}
+                                        />
+                                        Bloquear domingos definitivamente
+                                      </label>
+                                    </div>
+                                  )}
+                                </div>
                               );
                             })}
                           </div>

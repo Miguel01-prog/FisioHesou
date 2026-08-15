@@ -5,6 +5,7 @@ const clientSchema = new mongoose.Schema({
   subdomain: { type: String, required: true, unique: true }, // e.g. "clinica-alfa"
   logo: { type: String, default: "" },
   active: { type: Boolean, default: true },
+  blockSundays: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
   modules: { type: [String], default: ["agenda", "pacientes", "bloquear"] },
   // Custom Terminology

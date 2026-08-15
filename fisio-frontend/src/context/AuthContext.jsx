@@ -15,8 +15,8 @@ export const AuthProvider = ({ children }) => {
         const storedToken = localStorage.getItem('token');
         if (storedToken) setToken(storedToken);
         const res = await api.get('/auth/me');
-        setUser({ name: res.data.name, role: res.data.role, client: res.data.client });
-        localStorage.setItem('user', JSON.stringify({ role: res.data.role, nombre: res.data.name, client: res.data.client }));
+        setUser({ name: res.data.name, role: res.data.role, client: res.data.client, signature: res.data.signature });
+        localStorage.setItem('user', JSON.stringify({ role: res.data.role, nombre: res.data.name, client: res.data.client, signature: res.data.signature }));
       } catch (err) {
         setUser(null);
         setToken(null);
@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (userData, userToken = null) => {
     // 1. Establecer el usuario de forma síncrona para pasar las guardas de ruta de inmediato
     setUser(userData);
-    localStorage.setItem('user', JSON.stringify({ rol: userData.role, nombre: userData.name })); 
+    localStorage.setItem('user', JSON.stringify({ rol: userData.role, nombre: userData.name, signature: userData.signature })); 
 
     if (userToken) {
       setToken(userToken);
@@ -44,8 +44,8 @@ export const AuthProvider = ({ children }) => {
     // 2. Cargar los detalles del cliente en segundo plano sin bloquear la redirección
     try {
       const res = await api.get('/auth/me');
-      setUser({ name: res.data.name, role: res.data.role, client: res.data.client });
-      localStorage.setItem('user', JSON.stringify({ role: res.data.role, nombre: res.data.name, client: res.data.client }));
+      setUser({ name: res.data.name, role: res.data.role, client: res.data.client, signature: res.data.signature });
+      localStorage.setItem('user', JSON.stringify({ role: res.data.role, nombre: res.data.name, client: res.data.client, signature: res.data.signature }));
     } catch (err) {
       console.error("Error al cargar perfil de clínica en segundo plano:", err);
     }
@@ -61,10 +61,24 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setUser(null);
     localStorage.removeItem('user');
-    localStorage.removeItem('token');
   };
 
-  const value = { user, token, login, logout, loading };
+  // 🔄 Actualizar datos de usuario reactivamente
+  const updateUser = (updatedFields) => {
+    setUser(prev => {
+      if (!prev) return null;
+      const newUser = { ...prev, ...updatedFields };
+      localStorage.setItem('user', JSON.stringify({
+        role: newUser.role,
+        nombre: newUser.name,
+        client: newUser.client,
+        signature: newUser.signature
+      }));
+      return newUser;
+    });
+  };
+
+  const value = { user, token, login, logout, updateUser, loading };
 
   return (
     <AuthContext.Provider value={value}>

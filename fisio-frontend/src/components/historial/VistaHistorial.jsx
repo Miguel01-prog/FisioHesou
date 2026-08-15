@@ -5,6 +5,17 @@ import InformacionClinica from "../layout/InformacionClinica";
 import api from "../../api";
 import LoadingSpinner from "../layout/LoadingSpinner";
 
+const getEvaTextDescription = (val) => {
+  const v = Number(val);
+  if (v === 0) return "Nada";
+  if (v === 1 || v === 2 || v === 3) return "Poco";
+  if (v === 4 || v === 5) return "Moderado";
+  if (v === 6 || v === 7) return "Fuerte";
+  if (v === 8 || v === 9) return "Muy fuerte";
+  if (v === 10) return "Insoportable";
+  return "";
+};
+
 const VistaHistorial = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -49,7 +60,7 @@ const VistaHistorial = () => {
 
   const getValorAntFam = (id) => {
     if (!id) return "";
-    
+
     // Normalize id to string ID and parse year
     let idStr = "";
     let year = "";
@@ -77,7 +88,7 @@ const VistaHistorial = () => {
 
   const getValorAntMed = (id) => {
     if (!id) return "";
-    
+
     // Normalize id to string ID and parse year
     let idStr = "";
     let year = "";
@@ -272,18 +283,20 @@ const VistaHistorial = () => {
               <div className="tab-content">
                 <div className="clinical-form-section">
                   <h3 className="clinical-section-title">🏥 Anamnesis General</h3>
-                  <div className="clinical-grid-1">
-                    <div className="col">
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1.5rem" }}>
+                    <div className="col" style={{ margin: 0 }}>
                       <label className="form-label">Motivo de consulta</label>
-                      <textarea className="textarea" value={formData.motivoConsulta || ""} disabled />
+                      <textarea className="textarea" value={formData.motivoConsulta || ""} disabled style={{ height: "100px" }} />
                     </div>
-                    <div className="col">
+                    <div className="col" style={{ margin: 0 }}>
                       <label className="form-label">Diagnóstico médico</label>
-                      <textarea className="textarea" value={formData.diagnosticoMedico || ""} disabled />
+                      <textarea className="textarea" value={formData.diagnosticoMedico || ""} disabled style={{ height: "100px" }} />
                     </div>
-                    <div className="col">
+                  </div>
+                  <div className="clinical-grid-1">
+                    <div className="col" style={{ margin: 0 }}>
                       <label className="form-label">Indicaciones médicas</label>
-                      <textarea className="textarea" value={formData.indicacionesMedicas || ""} disabled />
+                      <textarea className="textarea" value={formData.indicacionesMedicas || ""} disabled style={{ height: "80px" }} />
                     </div>
                   </div>
                 </div>
@@ -298,7 +311,7 @@ const VistaHistorial = () => {
                         className="input"
                         value={
                           formData.eva !== undefined && formData.eva !== ""
-                            ? `${formData.eva} - ${formData.eva === 0 || formData.eva === "0" ? "Sin Dolor" : formData.eva === 10 || formData.eva === "10" ? "Dolor Insoportable" : `Nivel ${formData.eva}`}`
+                            ? `${formData.eva} - ${getEvaTextDescription(formData.eva)}`
                             : "Sin especificar"
                         }
                         disabled
@@ -328,24 +341,109 @@ const VistaHistorial = () => {
                         type="text"
                         className="input"
                         value={
-                          {
-                            hormigueo: "Hormigueo",
-                            adormecimiento: "Adormecimiento",
-                            calambre: "Calambre",
-                            rigidez: "Rigidez",
-                            otra: "Otra"
-                          }[formData.sensacion] || formData.sensacion || "Sin especificar"
+                          formData.sensacion
+                            ? formData.sensacion
+                              .split(", ")
+                              .map(item => {
+                                const key = item.toLowerCase();
+                                return {
+                                  hormigueo: "Hormigueo",
+                                  adormecimiento: "Adormecimiento",
+                                  calambre: "Calambre",
+                                  rigidez: "Rigidez",
+                                  otra: "Otra"
+                                }[key] || item;
+                              })
+                              .join(", ")
+                            : "Sin especificar"
                         }
                         disabled
                       />
                     </div>
-                    <div className="col" style={{ gridColumn: "span 2" }}>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginTop: "1.5rem" }}>
+                    <div className="col" style={{ margin: 0 }}>
                       <label className="form-label">Dolor últimas 24hrs</label>
                       <textarea className="textarea" value={formData.dolor24hrs || ""} disabled style={{ height: "80px" }} />
                     </div>
-                    <div className="col">
+                    <div className="col" style={{ margin: 0 }}>
                       <label className="form-label">Factores que lo modifican</label>
                       <textarea className="textarea" value={formData.facModifica || ""} disabled style={{ height: "80px" }} />
+                    </div>
+                  </div>
+
+                  {/* Listado de Zonas de Dolor Registradas */}
+                  {formData.dolorZonas && formData.dolorZonas.length > 0 && (
+                    <div style={{ marginTop: "2rem", paddingTop: "1.5rem", borderTop: "1px dashed rgba(139, 92, 246, 0.15)" }}>
+                      <h4 style={{ fontWeight: "700", fontSize: "0.95rem", color: "var(--primary)", marginBottom: "1rem" }}>
+                        📍 Zonas de Dolor Detalladas
+                      </h4>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                        {formData.dolorZonas.map((dz, idx) => {
+                          const getEvaColor = (val) => {
+                            if (val >= 7) return "rgba(239, 68, 68, 0.15)";
+                            if (val >= 4) return "rgba(245, 158, 11, 0.15)";
+                            return "rgba(16, 185, 129, 0.15)";
+                          };
+                          const getEvaTextColor = (val) => {
+                            if (val >= 7) return "var(--danger)";
+                            if (val >= 4) return "var(--warning)";
+                            return "var(--success)";
+                          };
+
+                          return (
+                            <div
+                              key={idx}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                background: "rgba(255, 255, 255, 0.01)",
+                                border: "1px solid var(--border-light)",
+                                borderRadius: "8px",
+                                padding: "0.6rem 1rem",
+                                gap: "1rem"
+                              }}
+                            >
+                              <span style={{ fontWeight: "700", fontSize: "0.9rem", color: "var(--text-main)", display: "flex", alignItems: "center", gap: "4px" }}>
+                                📍 {dz.zona}
+                              </span>
+                              <span
+                                style={{
+                                  background: getEvaColor(dz.eva),
+                                  color: getEvaTextColor(dz.eva),
+                                  fontWeight: "800",
+                                  fontSize: "0.75rem",
+                                  padding: "3px 8px",
+                                  borderRadius: "12px",
+                                  minWidth: "75px",
+                                  textAlign: "center"
+                                }}
+                              >
+                                EVA: {dz.eva} ({getEvaTextDescription(dz.eva)})
+                              </span>
+                              {dz.comentario && (
+                                <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontStyle: "italic", borderLeft: "2px solid rgba(139, 92, 246, 0.2)", paddingLeft: "10px" }}>
+                                  {dz.comentario}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="clinical-form-section">
+                  <h3 className="clinical-section-title">🏃 Actividades y Participaciones con Deficiencia</h3>
+                  <div className="clinical-grid-1">
+                    <div className="col">
+                      <textarea
+                        className="textarea"
+                        value={formData.actividadesDeficiencia || "Ninguna especificada"}
+                        disabled
+                        style={{ height: "80px" }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -384,18 +482,22 @@ const VistaHistorial = () => {
                     </div>
                   </div>
 
-                  <div className="clinical-grid-3">
-                    <div className="col" style={{ gridColumn: "span 2" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                    <div className="col" style={{ margin: 0 }}>
                       <label className="form-label">Medicación actual</label>
-                      <textarea className="textarea" value={formData.medicacionActual || formData.medActual || "Ninguna"} disabled style={{ height: "60px" }} />
+                      <textarea className="textarea" value={formData.medicacionActual || formData.medActual || "Ninguna"} disabled style={{ height: "100px" }} />
                     </div>
-                    <div className="col">
-                      <label className="form-label">Antecedentes quirúrgicos</label>
-                      <textarea className="textarea" value={Array.isArray(formData.antecedentesQuirurgicos) ? formData.antecedentesQuirurgicos.join(", ") : formData.antecedentesQuirurgicos || "Ninguno"} disabled style={{ height: "60px" }} />
-                    </div>
-                    <div className="col">
-                      <label className="form-label">Año quirúrgico</label>
-                      <input type="date" className="input" value={formData.anioQuirurgico || ""} disabled />
+                    <div className="col" style={{ margin: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
+                      <div>
+                        <label className="form-label">Antecedentes quirúrgicos</label>
+                        <textarea className="textarea" value={Array.isArray(formData.antecedentesQuirurgicos) ? formData.antecedentesQuirurgicos.join(", ") : formData.antecedentesQuirurgicos || "Ninguno"} disabled style={{ height: "60px" }} />
+                      </div>
+                      {formData.anioQuirurgico && (
+                        <div>
+                          <label className="form-label">Año quirúrgico</label>
+                          <input type="text" className="input" value={formData.anioQuirurgico} disabled style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem" }} />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -457,7 +559,8 @@ const VistaHistorial = () => {
                           {
                             ligero: "Ligero",
                             moderado: "Moderado",
-                            fuerte: "Fuerte"
+                            fuerte: "Fuerte",
+                            nada: "Nada"
                           }[antecedentesNoPatologicos.estres] || antecedentesNoPatologicos.estres || "Sin especificar"
                         }
                         disabled
@@ -465,7 +568,7 @@ const VistaHistorial = () => {
                     </div>
                     <div className="col" style={{ gridColumn: "span 2" }}>
                       <label className="form-label">Adicciones y sustancias</label>
-                      <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.6rem" }}>
+                      <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.6rem", flexWrap: "wrap", alignItems: "center" }}>
                         <label className="checkbox-label-modern" style={{ cursor: "default" }}>
                           <input type="checkbox" checked={antecedentesNoPatologicos.adicciones?.tabaquismo || false} disabled />
                           <span>Tabaquismo</span>
@@ -474,6 +577,15 @@ const VistaHistorial = () => {
                           <input type="checkbox" checked={antecedentesNoPatologicos.adicciones?.alcohol || false} disabled />
                           <span>Consumo de Alcohol</span>
                         </label>
+                        <label className="checkbox-label-modern" style={{ cursor: "default" }}>
+                          <input type="checkbox" checked={antecedentesNoPatologicos.adicciones?.otro || false} disabled />
+                          <span>Otro</span>
+                        </label>
+                        {antecedentesNoPatologicos.adicciones?.otro && antecedentesNoPatologicos.adicciones?.otroDetalle && (
+                          <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontStyle: "italic", borderLeft: "2px solid rgba(139, 92, 246, 0.2)", paddingLeft: "10px" }}>
+                            {antecedentesNoPatologicos.adicciones.otroDetalle}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -515,7 +627,7 @@ const VistaHistorial = () => {
               <div className="tab-content">
                 <div className="clinical-form-section">
                   <h3 className="clinical-section-title">🔍 Observación Física Inicial</h3>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
                     {[
                       { key: "edema", label: "Presencia de Edema" },
                       { key: "enrojecimiento", label: "Zonas de Enrojecimiento / Eritema" },
@@ -524,14 +636,32 @@ const VistaHistorial = () => {
                       { key: "marcha", label: "Alteraciones en la Marcha" },
                       { key: "otro", label: "Otro hallazgo visual" }
                     ].map(({ key, label }) => (
-                      <div key={key} style={{ display: "grid", gridTemplateColumns: "1fr 2fr", alignItems: "center", gap: "1rem" }}>
-                        <label className="checkbox-label-modern" style={{ cursor: "default" }}>
-                          <input type="checkbox" checked={obser[key]?.activo || false} disabled />
+                      <div
+                        key={key}
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "0.25rem",
+                          padding: "0.5rem 0.75rem",
+                          borderRadius: "8px",
+                          background: obser[key]?.activo ? "rgba(139, 92, 246, 0.04)" : "rgba(255, 255, 255, 0.01)",
+                          border: "1px solid " + (obser[key]?.activo ? "rgba(139, 92, 246, 0.15)" : "rgba(255, 255, 255, 0.03)"),
+                          transition: "all 0.2s"
+                        }}
+                      >
+                        <label className="checkbox-label-modern" style={{ cursor: "default", margin: 0, fontSize: "0.85rem" }}>
+                          <input type="checkbox" checked={obser[key]?.activo || false} disabled style={{ width: "15px", height: "15px" }} />
                           <span>{label}</span>
                         </label>
 
                         {obser[key]?.activo && (
-                          <input type="text" className="input" value={obser[key]?.detalle || ""} disabled />
+                          <input
+                            type="text"
+                            className="input"
+                            value={obser[key]?.detalle || ""}
+                            disabled
+                            style={{ width: "100%", marginTop: "2px", fontSize: "0.8rem", padding: "0.35rem 0.55rem", height: "28px" }}
+                          />
                         )}
                       </div>
                     ))}
@@ -578,21 +708,21 @@ const VistaHistorial = () => {
 
                 <div className="clinical-form-section">
                   <h3 className="clinical-section-title">🧪 Desglose de Metodología SOAP</h3>
-                  <div className="soap-grid">
+                  <div className="soap-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
                     <div className="col">
-                      <label className="form-label" style={{ fontWeight: "700", color: "#4f46e5" }}>Subjetivo (S)</label>
+                      <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)" }}>Subjetivo (S)</label>
                       <textarea className="textarea" value={formData.soapFK?.S || ""} disabled style={{ height: "120px" }} />
                     </div>
                     <div className="col">
-                      <label className="form-label" style={{ fontWeight: "700", color: "#06b6d4" }}>Objetivo (O)</label>
+                      <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)" }}>Objetivo (O)</label>
                       <textarea className="textarea" value={formData.soapFK?.O || ""} disabled style={{ height: "120px" }} />
                     </div>
                     <div className="col">
-                      <label className="form-label" style={{ fontWeight: "700", color: "#eab308" }}>Análisis (A)</label>
+                      <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)" }}>Análisis (A)</label>
                       <textarea className="textarea" value={formData.soapFK?.A || ""} disabled style={{ height: "120px" }} />
                     </div>
                     <div className="col">
-                      <label className="form-label" style={{ fontWeight: "700", color: "#10b981" }}>Plan (P)</label>
+                      <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)" }}>Plan (P)</label>
                       <textarea className="textarea" value={formData.soapFK?.P || ""} disabled style={{ height: "120px" }} />
                     </div>
                   </div>
@@ -686,7 +816,7 @@ const VistaHistorial = () => {
                           <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>Sin firma registrada</span>
                         )}
                       </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px" }}>
                         <div>
                           <label className="form-label" style={{ fontSize: "0.8rem" }}>Nombre</label>
                           <input type="text" className="input" value={formData.nombrePacienteFirma || ""} disabled />
@@ -707,7 +837,7 @@ const VistaHistorial = () => {
                           <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>Sin firma registrada</span>
                         )}
                       </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px" }}>
                         <div>
                           <label className="form-label" style={{ fontSize: "0.8rem" }}>Nombre</label>
                           <input type="text" className="input" value={formData.nombreProfesionalFirma || ""} disabled />

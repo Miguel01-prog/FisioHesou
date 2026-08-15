@@ -127,6 +127,16 @@
   border: 1px solid rgba(13, 148, 136, 0.25) !important;
 }
 
+/* Day blocked on Sundays permanently */
+.react-calendar__tile.sunday-blocked {
+  background: rgba(239, 68, 68, 0.05) !important;
+  color: var(--text-muted) !important;
+  opacity: 0.3 !important;
+  cursor: not-allowed !important;
+  text-decoration: line-through !important;
+  pointer-events: none !important;
+}
+
 /* Agenda Columns Container */
 .agenda-wrapper {
   display: flex;
