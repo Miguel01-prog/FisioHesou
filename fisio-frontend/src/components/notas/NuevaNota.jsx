@@ -91,19 +91,48 @@ export default function CrearNota() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.idNota || !form.mesAñoNota || !form.contenidoNota) {
-      return showError("Campos incompletos", "Es necesario llenar los datos obligatorios.");
+    // Auto-completar ID de Nota si no existiera aún
+    let idNotaToUse = form.idNota;
+    if (!idNotaToUse && paciente) {
+      idNotaToUse = await generarIdNotaFront(paciente, form.mesAñoNota || "08-2026");
     }
 
+    // Auto-generar contenido final si viene vacío
+    let contenidoFinal = form.contenidoNota ? form.contenidoNota.trim() : "";
+    if (!contenidoFinal) {
+      const soapParts = [];
+      if (form.S) soapParts.push(`S: ${form.S}`);
+      if (form.O) soapParts.push(`O: ${form.O}`);
+      if (form.A) soapParts.push(`A: ${form.A}`);
+      if (form.P) soapParts.push(`P: ${form.P}`);
+
+      contenidoFinal = soapParts.length > 0
+        ? soapParts.join(" | ")
+        : "Nota de seguimiento clínico sin observaciones";
+    }
+
+    // Detectar si faltan campos de la estructura SOAP (S, O, A, P)
+    const faltaSOAP = !form.S || !form.O || !form.A || !form.P;
+
     try {
-      // El backend espera idHistoricoFk en vez de idNota, lo adaptamos:
       const payload = {
         ...form,
-        idHistoricoFk: form.idNota
+        contenidoNota: contenidoFinal,
+        idNota: idNotaToUse,
+        idHistoricoFk: idNotaToUse
       };
 
       const { data } = await api.post("/notas", payload);
-      showSuccess("Nota creada", "La nota del paciente se guardó correctamente.");
+
+      // Notificación si se guardó pero le faltaba información SOAP
+      if (faltaSOAP) {
+        showSuccess(
+          "Nota Guardada Exitosamente",
+          "La nota se guardó en la base de datos. ⚠️ Notificación: Se detectaron campos SOAP (Subjetivo, Objetivo, Análisis, Plan) pendientes. Te sugerimos completarlos para el expediente del paciente."
+        );
+      } else {
+        showSuccess("Nota Guardada", "La nota del paciente se guardó correctamente con la información SOAP completa.");
+      }
 
       // La nota recién creada se convierte en la última nota
       setUltimaNota(data.nota || payload);
@@ -122,8 +151,8 @@ export default function CrearNota() {
         P: "",
       }));
     } catch (err) {
-      console.error(err);
-      showError("Error", "Error al crear la nota.");
+      console.error("Error al guardar la nota:", err);
+      showError("Error al Guardar", "No se pudo conectar con el servidor para guardar la nota.");
     }
   };
 

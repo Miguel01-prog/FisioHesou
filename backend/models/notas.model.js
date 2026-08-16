@@ -5,11 +5,11 @@ const notaSchema = new mongoose.Schema({
     idHistoricoFk: { type: String, required: true },
     fechaNota: { type: Date, default: Date.now },
     mesAñoNota: { type: String, required: true },
-    contenidoNota: { type: String, required: true },
-    S: { type: String, required: true },
-    O: { type: String, required: true },
-    A: { type: String, required: true },
-    P: { type: String, required: true },
+    contenidoNota: { type: String, default: "" },
+    S: { type: String, default: "" },
+    O: { type: String, default: "" },
+    A: { type: String, default: "" },
+    P: { type: String, default: "" },
     clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', required: true }
 }, { timestamps: true });
 
