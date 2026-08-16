@@ -19,9 +19,8 @@ import {
   FiTrash2,
   FiCheckCircle,
   FiInfo,
-  FiAlertTriangle,
   FiAlertCircle,
-  FiPlay
+  FiHeart
 } from 'react-icons/fi';
 
 export default function DashboardNutri() {
@@ -72,12 +71,6 @@ export default function DashboardNutri() {
         const painValue = painScores[index % painScores.length];
         const painLevel = painValue >= 7 ? 'high' : painValue >= 4 ? 'medium' : 'low';
 
-        // Mock status
-        const statuses = ['En Espera', 'En Progreso', 'Programado', 'Completado'];
-        let status = 'Programado';
-        if (index === 0) status = 'En Espera';
-        else if (index === 1) status = 'En Progreso';
-
         const patientDetails = pacientesData.find(p => p.identificadorPaciente === c.identificadorPaciente);
         const rawPatientData = patientDetails || {
           identificadorPaciente: c.identificadorPaciente || '1',
@@ -90,59 +83,31 @@ export default function DashboardNutri() {
 
         return {
           id: c.id || c._id || index + 1,
-          name: `${c.nombres} ${c.apellidos || ''}`,
+          name: `${c.nombres} ${c.apellidos || ''}`.trim(),
           treatment: c.motivo || 'Plan metabólico & Dieta',
           hour: c.horaCita || '10:00 AM',
           pain: `${painValue}/10`,
           painLevel: painLevel,
-          status: c.estado || status,
+          status: c.estado || 'Programado',
           identificadorPaciente: c.identificadorPaciente || c.pacienteId || '1',
           rawPatientData: rawPatientData
         };
       });
 
-      // Default fallbacks if no appointments exist yet
-      if (formattedPatients.length === 0) {
-        setPatients([
-          { id: 1, name: 'Mariana Flores', treatment: 'Control de Peso - Déficit calórico', hour: '10:00 AM', pain: '4/10', painLevel: 'medium', status: 'En Espera', identificadorPaciente: '4', rawPatientData: { identificadorPaciente: '4', nombres: 'Mariana', apellidos: 'Flores', edad: 28, telefono: '5551234567' } },
-          { id: 2, name: 'Eduardo Cruz', treatment: 'Aumento masa muscular - Hipertrofia', hour: '12:15 PM', pain: '2/10', painLevel: 'low', status: 'En Progreso', identificadorPaciente: '5', rawPatientData: { identificadorPaciente: '5', nombres: 'Eduardo', apellidos: 'Cruz', edad: 42, telefono: '5557654321' } },
-          { id: 3, name: 'Gael Martínez', treatment: 'Plan cetogénico - Rendimiento deportivo', hour: '04:30 PM', pain: '8/10', painLevel: 'high', status: 'Programado', identificadorPaciente: '6', rawPatientData: { identificadorPaciente: '6', nombres: 'Gael', apellidos: 'Martínez', edad: 35, telefono: '5559876543' } }
-        ]);
+      const highPainCount = formattedPatients.filter(p => p.painLevel === 'high').length;
 
-        setStats({
-          pacientesTotales: pacientesData.length || 6,
-          citasTotales: citasData.length || 10,
-          citasHoyCount: 3,
-          planesAsignados: 5,
-          alertasMetabolicas: 1
-        });
-      } else {
-        const highPainCount = formattedPatients.filter(p => p.painLevel === 'high').length;
-        const completedToday = formattedPatients.filter(p => p.status === 'Completado').length;
-
-        setPatients(formattedPatients);
-        setStats({
-          pacientesTotales: pacientesData.length,
-          citasTotales: citasData.length,
-          citasHoyCount: formattedPatients.length,
-          planesAsignados: formattedPatients.length + 2,
-          alertasMetabolicas: highPainCount
-        });
-      }
-    } catch (err) {
-      console.error("Error al cargar panel de control:", err);
-      // Clean fallback
-      setPatients([
-        { id: 1, name: 'Mariana Flores', treatment: 'Control de Peso - Déficit calórico', hour: '10:00 AM', pain: '4/10', painLevel: 'medium', status: 'En Espera', identificadorPaciente: '4', rawPatientData: { identificadorPaciente: '4', nombres: 'Mariana', apellidos: 'Flores', edad: 28, telefono: '5551234567' } },
-        { id: 2, name: 'Eduardo Cruz', treatment: 'Aumento masa muscular - Hipertrofia', hour: '12:15 PM', pain: '2/10', painLevel: 'low', status: 'En Progreso', identificadorPaciente: '5', rawPatientData: { identificadorPaciente: '5', nombres: 'Eduardo', apellidos: 'Cruz', edad: 42, telefono: '5557654321' } }
-      ]);
+      setPatients(formattedPatients);
       setStats({
-        pacientesTotales: 5,
-        citasTotales: 9,
-        citasHoyCount: 2,
-        planesAsignados: 4,
-        alertasMetabolicas: 0
+        pacientesTotales: pacientesData.length,
+        citasTotales: citasData.length,
+        citasHoyCount: formattedPatients.length,
+        planesAsignados: pacientesData.length,
+        alertasMetabolicas: highPainCount
       });
+
+    } catch (err) {
+      console.error("Error al cargar panel de nutrición:", err);
+      showError("Error", "No se pudieron obtener los datos de nutrición");
     } finally {
       setLoading(false);
     }
@@ -159,37 +124,34 @@ export default function DashboardNutri() {
     );
 
     if (isConfirm) {
-      setPatients(prev => prev.filter(p => p.id !== id));
-      showError('Consulta Cancelada', `Se canceló la cita de ${name}.`);
-
-      const isMock = typeof id === 'number' || (typeof id === 'string' && id.length < 20);
-      if (!isMock) {
-        try {
-          await api.delete(`/citas/${id}`);
-        } catch (err) {
-          console.warn("Background API delete skipped or failed:", err.message);
-        }
+      try {
+        await api.delete(`/citas/${id}`);
+        setPatients(prev => prev.filter(p => p.id !== id));
+        showSuccess('Consulta Cancelada', `Se canceló la cita de ${name}.`);
+      } catch (err) {
+        setPatients(prev => prev.filter(p => p.id !== id));
+        showError('Consulta Cancelada', `Se removió el registro.`);
       }
     }
   };
 
   const completeSession = async (id, name) => {
-    const isMock = typeof id === 'number' || (typeof id === 'string' && id.length < 20);
-    if (!isMock) {
-      try {
-        await api.put(`/citas/${id}/estado`, { estado: 'Completado' });
-      } catch (err) {
-        console.warn("API update status failed:", err.message);
-      }
+    try {
+      await api.put(`/citas/${id}/estado`, { estado: 'Completado' });
+      setPatients(prev => prev.map(p => {
+        if (p.id === id) {
+          return { ...p, status: 'Completado', pain: '1/10', painLevel: 'low' };
+        }
+        return p;
+      }));
+      showSuccess('Consulta Completada', `¡Plan nutricional de ${name} actualizado con éxito!`);
+    } catch (err) {
+      setPatients(prev => prev.map(p => {
+        if (p.id === id) return { ...p, status: 'Completado' };
+        return p;
+      }));
+      showSuccess('Consulta Completada', `Estatus actualizado a Completado.`);
     }
-
-    setPatients(prev => prev.map(p => {
-      if (p.id === id) {
-        return { ...p, status: 'Completado', pain: '1/10', painLevel: 'low' };
-      }
-      return p;
-    }));
-    showSuccess('Consulta Completada', `¡Plan nutricional de ${name} actualizado con éxito!`);
   };
 
   // Render HTML Table cell on Desktop
@@ -205,7 +167,7 @@ export default function DashboardNutri() {
             style={{ cursor: "pointer" }}
             onClick={() => handleAction(patient, `/nutriologa/paciente/${patient.identificadorPaciente}`)}
           >
-            <div className="identity-avatar">{patient.name.charAt(0)}</div>
+            <div className="identity-avatar">{(patient.name || 'N').charAt(0).toUpperCase()}</div>
             <span className="identity-name" style={{ borderBottom: "1px dashed rgba(99, 102, 241, 0.4)", display: "inline-block" }}>
               {patient.name}
             </span>
@@ -267,7 +229,7 @@ export default function DashboardNutri() {
             style={{ cursor: "pointer" }}
             onClick={() => handleAction(patient, `/nutriologa/paciente/${patient.identificadorPaciente}`)}
           >
-            <div className="identity-avatar">{patient.name.charAt(0)}</div>
+            <div className="identity-avatar">{(patient.name || 'N').charAt(0).toUpperCase()}</div>
             <span className="identity-name" style={{ borderBottom: "1px dashed rgba(99, 102, 241, 0.4)" }}>
               {patient.name}
             </span>
@@ -314,7 +276,7 @@ export default function DashboardNutri() {
             style={{ gridColumn: 'span 2', height: '36px', fontSize: '0.825rem', color: 'var(--danger)', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)', width: '100%', justifyContent: 'center' }}
             onClick={() => deletePatient(patient.id, patient.name)}
           >
-            {patient.status === 'Completado' ? 'Eliminar Registro' : 'Cancelar Cita'}
+            Cancelar Cita
           </button>
         </div>
       </div>
@@ -323,21 +285,26 @@ export default function DashboardNutri() {
 
   return (
     <div className="dashboard-main-view auth-wrapper-content fade-in-up">
-      {/* 🚀 Clinical Welcome Banner */}
-      <div className="dashboard-welcome-banner" style={{ background: 'linear-gradient(135deg, hsla(174, 62%, 47%, 0.95), hsla(249, 47%, 47%, 0.85))' }}>
-        <div className="welcome-banner-info">
-          <h1>Hesou Nutrición</h1>
-          <p>Bienvenido al panel de bienestar. Diseña dietas, controla el progreso de masa muscular y grasa de tus pacientes de forma súper adaptativa.</p>
+      
+      {/* 🚀 Welcome Header */}
+      <header style={{ marginBottom: "1.75rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+        <div>
+          <h1 style={{ color: "#0d9488", fontSize: "1.75rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "10px", margin: 0 }}>
+            🥗 Panel de Nutrición & Bienestar
+          </h1>
+          <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", margin: "4px 0 0 0" }}>
+            Supervisión metabólica, planes alimenticios y citas del día en tiempo real.
+          </p>
         </div>
-        <div className="welcome-banner-actions">
-          <button
-            className="btn btn-glass btn-size-md hover-grow"
-            onClick={() => navigate('/nutriologa/agenda')}
-          >
-            <FiPlus /> Nueva Consulta
-          </button>
-        </div>
-      </div>
+
+        <button
+          className="btn btn-primary"
+          style={{ display: "inline-flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 18px", fontSize: "0.875rem", background: "linear-gradient(135deg, #0d9488, #06b6d4)" }}
+          onClick={() => navigate('/nutriologa/agenda')}
+        >
+          <FiPlus /> Nueva Consulta Nutricional
+        </button>
+      </header>
 
       {loading ? (
         <div className="spinner-overlay" style={{ position: 'relative', minHeight: '200px', background: 'transparent' }}>
@@ -346,47 +313,47 @@ export default function DashboardNutri() {
       ) : (
         <>
           {/* 📊 1. Metric Stats Cards Grid */}
-          <div className="dashboard-grid">
+          <div className="dashboard-grid" style={{ marginBottom: "1.75rem" }}>
 
-            {/* Card 1: Patients Today */}
+            {/* Card 1: Patients Total */}
             <div className="auth-card dashboard-metric-card hover-grow">
-              <div className="dashboard-metric-icon" style={{ background: 'rgba(13, 148, 136, 0.08)', color: 'var(--accent)' }}>
+              <div className="dashboard-metric-icon" style={{ background: 'rgba(13, 148, 136, 0.08)', color: '#0d9488' }}>
                 <FiUsers />
+              </div>
+              <div className="dashboard-metric-info">
+                <span className="form-label dashboard-metric-label">Pacientes Registrados</span>
+                <strong className="dashboard-metric-value">
+                  {stats.pacientesTotales}
+                </strong>
+                <span className="text-muted dashboard-metric-meta">Expedientes metabólicos</span>
+              </div>
+            </div>
+
+            {/* Card 2: Today Appointments */}
+            <div className="auth-card dashboard-metric-card hover-grow">
+              <div className="dashboard-metric-icon" style={{ background: 'rgba(16, 185, 129, 0.08)', color: 'var(--success)' }}>
+                <FiCalendar />
               </div>
               <div className="dashboard-metric-info">
                 <span className="form-label dashboard-metric-label">Consultas Hoy</span>
                 <strong className="dashboard-metric-value">
                   {stats.citasHoyCount}
                 </strong>
-                <span className="text-muted dashboard-metric-meta">Pacientes metabólicos</span>
+                <span className="text-muted dashboard-metric-meta">Citas programadas</span>
               </div>
             </div>
 
-            {/* Card 2: Plans Assigned */}
+            {/* Card 3: Plans Assigned */}
             <div className="auth-card dashboard-metric-card hover-grow">
               <div className="dashboard-metric-icon" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
                 <FiCheckCircle />
               </div>
               <div className="dashboard-metric-info">
-                <span className="form-label dashboard-metric-label">Planes Asignados</span>
+                <span className="form-label dashboard-metric-label">Planes Activos</span>
                 <strong className="dashboard-metric-value">
                   {stats.planesAsignados}
                 </strong>
-                <span className="text-muted dashboard-metric-meta">Dietas metabólicas activas</span>
-              </div>
-            </div>
-
-            {/* Card 3: Avg Kcal */}
-            <div className="auth-card dashboard-metric-card hover-grow">
-              <div className="dashboard-metric-icon" style={{ background: 'rgba(245, 158, 11, 0.08)', color: 'var(--warning)' }}>
-                <FiActivity />
-              </div>
-              <div className="dashboard-metric-info">
-                <span className="form-label dashboard-metric-label">Kcal Promedio</span>
-                <strong className="dashboard-metric-value">
-                  2,150
-                </strong>
-                <span className="text-muted dashboard-metric-meta">Diario por paciente</span>
+                <span className="text-muted dashboard-metric-meta">Dietas asignadas</span>
               </div>
             </div>
 
@@ -396,26 +363,28 @@ export default function DashboardNutri() {
                 <FiAlertCircle />
               </div>
               <div className="dashboard-metric-info">
-                <span className="form-label dashboard-metric-label">Alertas Dietas</span>
+                <span className="form-label dashboard-metric-label">Alertas Metabolicas</span>
                 <strong className="dashboard-metric-value">
                   {stats.alertasMetabolicas}
                 </strong>
-                <span className="text-muted dashboard-metric-meta">Baja adherencia & glucosa</span>
+                <span className="text-muted dashboard-metric-meta">Baja adherencia</span>
               </div>
             </div>
 
           </div>
 
-          {/* 🧱 2. Dual Column Layout (Table & Showcase Sandbox) */}
+          {/* 🧱 2. Dual Column Layout (Table & Clinical Shortcuts Column) */}
           <div className="main-dashboard-content">
 
-            {/* Left Column: Scheduled Patients Table (Transforms on iPad!) */}
+            {/* Left Column: Scheduled Patients Table */}
             <div className="auth-card table-wrapper-column">
-              <div className="glass-card-header">
-                <h2 className="glass-card-title">
-                  <FiActivity /> Pacientes Citados de Hoy
+              <div className="glass-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                <h2 className="glass-card-title" style={{ fontSize: "1.05rem", fontWeight: "600", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
+                  <FiActivity style={{ color: "#0d9488" }} /> Consultas Nutricionales de Hoy
                 </h2>
-                <span className="clinical-table-subtitle">{patients.length} consultas nutricionales</span>
+                <span className="clinical-table-subtitle" style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                  {patients.length} pacientes citados
+                </span>
               </div>
 
               {patients.length > 0 ? (
@@ -426,7 +395,7 @@ export default function DashboardNutri() {
                     <thead>
                       <tr>
                         <th>Paciente</th>
-                        <th>Tratamiento</th>
+                        <th>Tratamiento / Objetivo</th>
                         <th>Hora de Cita</th>
                         <th>Adherencia</th>
                         <th>Estado</th>
@@ -445,66 +414,58 @@ export default function DashboardNutri() {
 
                 </div>
               ) : (
-                <div className="table-empty-state">
-                  <p>No tienes citas de nutrición programadas para hoy.</p>
+                <div className="table-empty-state" style={{ padding: "3rem 1rem", textAlign: "center" }}>
+                  <FiCalendar size={36} style={{ color: "var(--text-muted)", marginBottom: "0.75rem" }} />
+                  <p style={{ color: "var(--text-main)", fontWeight: "600", margin: "0 0 4px 0" }}>No hay consultas nutricionales citadas para hoy</p>
+                  <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", margin: 0 }}>Usa el botón de arriba para agendar una nueva consulta.</p>
                 </div>
               )}
             </div>
 
-            {/* Right Column: Component Sandbox Panel */}
+            {/* Right Column: Panel de Gestión Nutricional Limpio */}
             <div className="auth-card component-catalog-column">
-              <div className="glass-card-header">
-                <h2 className="glass-card-title">
-                  <FiPlay /> Pruebas e Interacciones
+              
+              {/* Acceso Rápido Nutrición */}
+              <div className="glass-card-header" style={{ marginBottom: "1rem" }}>
+                <h2 className="glass-card-title" style={{ fontSize: "1.05rem", fontWeight: "600", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
+                  <FiHeart style={{ color: "#0d9488" }} /> Herramientas Clínicas
                 </h2>
               </div>
 
-              {/* Toast Notification Trigger Catalog */}
-              <div className="catalog-section">
-                <h3 className="catalog-subtitle">Notificaciones de Nutrición</h3>
-                <p className="catalog-desc">Dispara alertas con animaciones fluidas utilizando el motor de diseño unificado:</p>
-                <div className="catalog-btn-grid vertical-buttons">
-                  <button
-                    className="btn btn-primary w-100"
-                    style={{ justifyContent: 'center', height: '36px', fontSize: '0.85rem' }}
-                    onClick={() => showSuccess('Plan Guardado', 'El plan nutricional hipercalórico ha sido guardado con éxito.')}
-                  >
-                    Lanzar Éxito
-                  </button>
-                  <button
-                    className="btn btn-secondary w-100"
-                    style={{ justifyContent: 'center', height: '36px', fontSize: '0.85rem', color: 'var(--primary)', background: 'var(--primary-light)', border: '1px solid var(--border-light)' }}
-                    onClick={() => showInfo('Medidas Registradas', 'Se guardó el porcentaje de grasa corporal (14.2%).')}
-                  >
-                    Lanzar Información
-                  </button>
-                  <button
-                    className="btn w-100"
-                    style={{ justifyContent: 'center', height: '36px', fontSize: '0.85rem', color: 'var(--warning)', background: 'var(--warning-bg)', border: '1px solid rgba(245, 158, 11, 0.2)' }}
-                    onClick={() => showInfo('Ayuno Pendiente', 'Falta registrar el examen de laboratorio metabólico.')}
-                  >
-                    Lanzar Advertencia
-                  </button>
-                  <button
-                    className="btn w-100"
-                    style={{ justifyContent: 'center', height: '36px', fontSize: '0.85rem', color: 'var(--danger)', background: 'var(--danger-bg)', border: '1px solid rgba(239, 68, 68, 0.2)' }}
-                    onClick={() => showError('Alerta Glucosa', 'Glucosa en ayuno reportó niveles fuera de rango.')}
-                  >
-                    Lanzar Peligro
-                  </button>
-                </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1.5rem" }}>
+                <button
+                  className="btn btn-primary w-100"
+                  style={{ justifyContent: "flex-start", padding: "0 14px", height: "42px", fontSize: "0.875rem", gap: "10px", background: "#0d9488" }}
+                  onClick={() => navigate('/nutriologa/pacientes')}
+                >
+                  <FiUsers /> Ver Lista de Pacientes
+                </button>
+
+                <button
+                  className="btn btn-secondary w-100"
+                  style={{ justifyContent: "flex-start", padding: "0 14px", height: "42px", fontSize: "0.875rem", gap: "10px" }}
+                  onClick={() => navigate('/nutriologa/agenda')}
+                >
+                  <FiCalendar /> Abrir Agenda de Consultas
+                </button>
               </div>
 
-              <hr className="catalog-divider" />
+              <hr className="catalog-divider" style={{ margin: "1.25rem 0" }} />
 
-              {/* Heatmap anatomy pulser */}
-              <div className="catalog-section-clinical-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <h3 className="catalog-subtitle">Mapa de Medición de Grasa</h3>
-                <div className="pain-anatomy-graphic" style={{ background: 'rgba(13, 148, 136, 0.02)', border: '1px dashed rgba(13, 148, 136, 0.15)' }}>
-                  <div className="graphic-sphere pain-high-pulse" style={{ top: '45%', left: '50%', backgroundColor: 'var(--accent)' }} title="Pliegue Abdominal: 18mm" onClick={() => showInfo("Pliegue Abdominal", "Medición de grasa subcutánea abdominal: 18mm.")}></div>
-                  <div className="graphic-sphere pain-medium-pulse" style={{ top: '30%', left: '49%', backgroundColor: 'var(--primary)' }} title="Pliegue Tricipital: 10mm" onClick={() => showInfo("Pliegue Bazo/Tríceps", "Medición de grasa subcutánea tríceps: 10mm.")}></div>
-                  <div className="graphic-sphere pain-low-pulse" style={{ top: '75%', left: '51%', backgroundColor: 'var(--warning)' }} title="Pliegue Muslo: 12mm" onClick={() => showInfo("Pliegue de Muslo", "Medición de grasa subcutánea muslo anterior: 12mm.")}></div>
-                  <span className="anatomy-caption" style={{ color: 'var(--accent)' }}>Pliegues Antropométricos Frecuentes</span>
+              {/* Pliegues Antropométricos */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <h3 className="catalog-subtitle" style={{ fontSize: "0.95rem", fontWeight: "600", margin: 0 }}>
+                  Mapa de Pliegues Antropométricos
+                </h3>
+                <p style={{ fontSize: "0.775rem", color: "var(--text-muted)", margin: 0 }}>
+                  Puntos anatómicos de referencia para plicometría y composición corporal.
+                </p>
+
+                <div className="pain-anatomy-graphic" style={{ borderRadius: "12px", border: "1px dashed rgba(13, 148, 136, 0.2)", background: 'rgba(13, 148, 136, 0.02)', height: "200px" }}>
+                  <div className="graphic-sphere pain-high-pulse" style={{ top: '45%', left: '50%', backgroundColor: '#0d9488' }} title="Pliegue Abdominal" onClick={() => showInfo("Pliegue Abdominal", "Medición de grasa subcutánea abdominal.")}></div>
+                  <div className="graphic-sphere pain-medium-pulse" style={{ top: '30%', left: '49%', backgroundColor: 'var(--primary)' }} title="Pliegue Tricipital" onClick={() => showInfo("Pliegue Tríceps", "Medición de grasa subcutánea en brazo.")}></div>
+                  <div className="graphic-sphere pain-low-pulse" style={{ top: '75%', left: '51%', backgroundColor: 'var(--warning)' }} title="Pliegue Muslo" onClick={() => showInfo("Pliegue Muslo", "Medición de grasa subcutánea en muslo anterior.")}></div>
+                  <span className="anatomy-caption" style={{ color: '#0d9488' }}>Puntos de Medición Corporal</span>
                 </div>
               </div>
 

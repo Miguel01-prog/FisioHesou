@@ -4,8 +4,18 @@ import Cita from "../models/cita.model.js";
 // Crear nota
 export const crearNota = async (req, res) => {
     try {
+        const { contenidoNota, S, O, A, P } = req.body;
+        const contenidoFinal = (contenidoNota && contenidoNota.trim()) 
+            ? contenidoNota.trim() 
+            : "Nota de evolución y seguimiento clínico";
+
         const nuevaNota = new Nota({
             ...req.body,
+            contenidoNota: contenidoFinal,
+            S: S || "",
+            O: O || "",
+            A: A || "",
+            P: P || "",
             clientId: req.user.clientId
         });
         await nuevaNota.save();
