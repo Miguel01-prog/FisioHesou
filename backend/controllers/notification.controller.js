@@ -1,5 +1,7 @@
 import Notification from "../models/notification.model.js";
 import Cita from "../models/cita.model.js";
+import Paciente from "../models/pacientes.model.js";
+import Nota from "../models/notas.model.js";
 
 // Helper function to check and generate notifications for upcoming appointments today
 const checkAndGenerateUpcomingNotifications = async (area, clientId) => {
@@ -43,14 +45,66 @@ const checkAndGenerateUpcomingNotifications = async (area, clientId) => {
   }
 };
 
+// Helper function to check and generate notifications for patients without a SOAP note
+const checkAndGeneratePendingSoapNotifications = async (area, clientId) => {
+  try {
+    const areasABuscar = area === "fisioterapeuta" ? ["fisioterapia", "fisioterapeuta"] : ["nutriologa", "nutricion", "nutriología"];
+
+    // Buscar todos los pacientes registrados del área
+    const pacientes = await Paciente.find({
+      area: { $in: areasABuscar },
+      clientId
+    });
+
+    for (const pac of pacientes) {
+      // Verificar si el paciente tiene alguna nota registrada
+      const notaExiste = await Nota.findOne({
+        identificadorPaciente: pac.identificadorPaciente,
+        clientId
+      });
+
+      if (!notaExiste) {
+        // Si no tiene nota, verificar si ya se le notificó
+        const notifExiste = await Notification.findOne({
+          identificadorPaciente: pac.identificadorPaciente,
+          type: "pending_soap",
+          clientId
+        });
+
+        if (!notifExiste) {
+          const nombreCompleto = `${pac.nombres} ${pac.apellidoPaterno || ""}`.trim();
+          await Notification.create({
+            title: "Nota SOAP Pendiente",
+            description: `El paciente ${nombreCompleto} aún no cuenta con su primera Nota SOAP.`,
+            area: area,
+            type: "pending_soap",
+            identificadorPaciente: pac.identificadorPaciente,
+            clientId
+          });
+        }
+      } else {
+        // Si ya cuenta con nota, limpiar notificaciones pendientes si existieran
+        await Notification.deleteMany({
+          identificadorPaciente: pac.identificadorPaciente,
+          type: "pending_soap",
+          clientId
+        });
+      }
+    }
+  } catch (err) {
+    console.error("Error al generar notificaciones de notas SOAP pendientes:", err);
+  }
+};
+
 // Fetch notifications for a given user role/area
 export const obtenerNotificaciones = async (req, res) => {
   const { area } = req.params; // "fisioterapeuta" o "nutriologa"
   const clientId = req.user.clientId;
 
   try {
-    // Generate upcoming appointment alerts on demand
+    // Generate upcoming appointment & pending SOAP alerts on demand
     await checkAndGenerateUpcomingNotifications(area, clientId);
+    await checkAndGeneratePendingSoapNotifications(area, clientId);
 
     // Fetch active notifications sorted by newest first
     const notifications = await Notification.find({ area, clientId }).sort({ createdAt: -1 });

@@ -22,6 +22,31 @@ export const obtenerTodosPacientes = async (req, res) => {
   }
 };
 
+export const obtenerPacientesSinNota = async (req, res) => {
+  try {
+    const filter = req.user.role === 'superadmin' ? {} : { clientId: req.user.clientId };
+    
+    if (req.user.role === 'fisioterapeuta') {
+      filter.area = { $in: ['fisioterapia', 'fisioterapeuta'] };
+    } else if (req.user.role === 'nutriologa') {
+      filter.area = { $in: ['nutriologa', 'nutricion', 'nutriología'] };
+    }
+
+    const pacientes = await Paciente.find(filter).sort({ fechaRegistro: -1 });
+
+    const notasFilter = req.user.role === 'superadmin' ? {} : { clientId: req.user.clientId };
+    const notasExistentes = await Nota.find(notasFilter).distinct("identificadorPaciente");
+    const notasSet = new Set(notasExistentes.map(id => String(id)));
+
+    const pacientesSinNota = pacientes.filter(p => !notasSet.has(String(p.identificadorPaciente)));
+
+    res.json({ ok: true, count: pacientesSinNota.length, pacientes: pacientesSinNota });
+  } catch (err) {
+    console.error("Error al obtener pacientes sin nota:", err);
+    res.status(500).json({ ok: false, message: "Error al obtener pacientes sin nota", error: err.message });
+  }
+};
+
 export const crearPaciente = async (req, res) => {
   console.log("- Creando nuevo paciente manualmente...");
   try {

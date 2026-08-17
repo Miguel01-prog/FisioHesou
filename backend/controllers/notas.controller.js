@@ -20,32 +20,28 @@ export const crearNota = async (req, res) => {
         });
         await nuevaNota.save();
 
-        // Automatización: Cambiar estado de la cita más cercana a "Asistió"
+        // Automatización: Cambiar estado de citas activas del paciente a "Asistió"
         if (nuevaNota.identificadorPaciente) {
-            const ahora = new Date();
-            const citasProgramadas = await Cita.find({
-                identificadorPaciente: nuevaNota.identificadorPaciente,
-                estado: "Programado",
-                clientId: req.user.clientId
-            });
+            const resultCitas = await Cita.updateMany(
+                {
+                    identificadorPaciente: nuevaNota.identificadorPaciente,
+                    estado: { $nin: ["Cancelado", "Asistió"] },
+                    clientId: req.user.clientId
+                },
+                { $set: { estado: "Asistió" } }
+            );
+            console.log(`Cita automática: Se actualizaron ${resultCitas.modifiedCount} citas del paciente a "Asistió".`);
 
-            if (citasProgramadas.length > 0) {
-                // Encontrar la cita más cercana a "ahora"
-                let citaMasCercana = citasProgramadas[0];
-                let diferenciaMinima = Math.abs(ahora - new Date(citaMasCercana.fechaCita));
-
-                for (let i = 1; i < citasProgramadas.length; i++) {
-                    const diff = Math.abs(ahora - new Date(citasProgramadas[i].fechaCita));
-                    if (diff < diferenciaMinima) {
-                        diferenciaMinima = diff;
-                        citaMasCercana = citasProgramadas[i];
-                    }
-                }
-
-                // Actualizar estado de la cita más cercana a "Asistió"
-                citaMasCercana.estado = "Asistió";
-                await citaMasCercana.save();
-                console.log(`Cita automática: Se marcó la cita del ${citaMasCercana.fechaCitaStr} a las ${citaMasCercana.horaCita} como "Asistió".`);
+            // Limpiar notificación de "Nota SOAP Pendiente" si existía
+            try {
+                const Notification = (await import("../models/notification.model.js")).default;
+                await Notification.deleteMany({
+                    identificadorPaciente: nuevaNota.identificadorPaciente,
+                    type: "pending_soap",
+                    clientId: req.user.clientId
+                });
+            } catch (e) {
+                console.error("Error al limpiar notificación pending_soap:", e);
             }
         }
 

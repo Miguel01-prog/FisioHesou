@@ -13,6 +13,9 @@ export const crearCliente = async (req, res) => {
     const { 
       name, 
       subdomain, 
+      sidebarName,
+      sidebarSubtitle,
+      theme,
       patientLabelSingular, 
       patientLabelPlural, 
       specialistLabelSingular, 
@@ -35,6 +38,15 @@ export const crearCliente = async (req, res) => {
     const nuevoCliente = new Client({
       name,
       subdomain: subdomain.toLowerCase(),
+      sidebarName: sidebarName || name,
+      sidebarSubtitle: sidebarSubtitle || "",
+      theme: theme || {
+        primaryColor: "#5e50a1",
+        accentColor: "#10b981",
+        titleColor: "#ffffff",
+        subtitleColor: "#94a3b8",
+        sidebarBg: "#0f172a"
+      },
       patientLabelSingular: patientLabelSingular || "Paciente",
       patientLabelPlural: patientLabelPlural || "Pacientes",
       specialistLabelSingular: specialistLabelSingular || "Especialista",
@@ -83,6 +95,9 @@ export const actualizarCliente = async (req, res) => {
   const { 
     name, 
     subdomain, 
+    sidebarName,
+    sidebarSubtitle,
+    theme,
     patientLabelSingular, 
     patientLabelPlural, 
     specialistLabelSingular, 
@@ -95,26 +110,33 @@ export const actualizarCliente = async (req, res) => {
   } = req.body;
 
   try {
-    const existing = await Client.findOne({ subdomain: subdomain.toLowerCase(), _id: { $ne: id } });
-    if (existing) {
-      return res.status(409).json({ ok: false, message: "El subdominio ya está registrado por otra clínica" });
+    if (subdomain) {
+      const existing = await Client.findOne({ subdomain: subdomain.toLowerCase(), _id: { $ne: id } });
+      if (existing) {
+        return res.status(409).json({ ok: false, message: "El subdominio ya está registrado por otra clínica" });
+      }
     }
+
+    const updateFields = {
+      ...(name && { name }),
+      ...(subdomain && { subdomain: subdomain.toLowerCase() }),
+      ...(sidebarName !== undefined && { sidebarName }),
+      ...(sidebarSubtitle !== undefined && { sidebarSubtitle }),
+      ...(theme && { theme }),
+      ...(patientLabelSingular && { patientLabelSingular }),
+      ...(patientLabelPlural && { patientLabelPlural }),
+      ...(specialistLabelSingular && { specialistLabelSingular }),
+      ...(specialistLabelPlural && { specialistLabelPlural }),
+      ...(services && { services }),
+      ...(modules && { modules }),
+      ...(logo !== undefined && { logo }),
+      ...(active !== undefined && { active }),
+      ...(blockSundays !== undefined && { blockSundays })
+    };
 
     const updatedClient = await Client.findByIdAndUpdate(
       id,
-      {
-        name,
-        subdomain: subdomain.toLowerCase(),
-        patientLabelSingular,
-        patientLabelPlural,
-        specialistLabelSingular,
-        specialistLabelPlural,
-        services,
-        modules,
-        logo,
-        active,
-        blockSundays
-      },
+      updateFields,
       { new: true }
     );
 
@@ -123,6 +145,41 @@ export const actualizarCliente = async (req, res) => {
     }
 
     res.status(200).json({ ok: true, client: updatedClient });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+};
+
+// Actualizar personalización de marca y colores de la clínica del usuario autenticado (Superadmin / Admin)
+export const actualizarBrandingCliente = async (req, res) => {
+  try {
+    const { sidebarName, sidebarSubtitle, theme, name, logo } = req.body;
+    let clientId = req.user.clientId;
+
+    // Si es superadmin y no tiene clientId asignado directamente, actualizar el primer cliente o req.body.clientId
+    if (!clientId && req.user.role === "superadmin") {
+      const firstClient = await Client.findOne();
+      if (firstClient) clientId = firstClient._id;
+    }
+
+    if (!clientId) {
+      return res.status(400).json({ ok: false, message: "No hay una clínica configurada para este usuario" });
+    }
+
+    const updateFields = {};
+    if (name !== undefined) updateFields.name = name;
+    if (sidebarName !== undefined) updateFields.sidebarName = sidebarName;
+    if (sidebarSubtitle !== undefined) updateFields.sidebarSubtitle = sidebarSubtitle;
+    if (logo !== undefined) updateFields.logo = logo;
+    if (theme) updateFields.theme = theme;
+
+    const clientActualizado = await Client.findByIdAndUpdate(
+      clientId,
+      updateFields,
+      { new: true }
+    );
+
+    res.status(200).json({ ok: true, client: clientActualizado });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }

@@ -63,7 +63,16 @@ export default function DashboardFisio() {
       const citasRes = await api.get('/citas?area=fisioterapeuta');
       const citasData = citasRes.data || [];
 
-      // 3. Fetch Notas SOAP
+      // 3. Fetch Pacientes sin Nota SOAP
+      let sinNotaList = [];
+      try {
+        const sinNotaRes = await api.get('/pacientes/sin-nota');
+        sinNotaList = sinNotaRes.data?.pacientes || [];
+      } catch (err) {
+        console.warn("No se pudieron obtener los pacientes sin nota:", err.message);
+      }
+
+      // 4. Fetch Notas SOAP totales
       let notesData = [];
       try {
         const notesRes = await api.get('/notas');
@@ -107,24 +116,11 @@ export default function DashboardFisio() {
         };
       });
 
-      // Filter pending SOAP notes for completed/attended patients today
-      const pending = formattedPatients.filter(p => {
-        const hadAppointment = p.status === 'Completado' || p.status === 'Asistió';
-        if (!hadAppointment) return false;
-
-        const hasNoteToday = notesData.some(n => {
-          const noteDate = new Date(n.fechaNota || n.createdAt).toISOString().split('T')[0];
-          return n.identificadorPaciente === p.identificadorPaciente && noteDate === hoyStr;
-        });
-
-        return !hasNoteToday;
-      });
-
-      setPendingNotes(pending);
+      setPendingNotes(sinNotaList);
       setPatients(formattedPatients);
 
       const highPainCount = formattedPatients.filter(p => p.painLevel === 'high').length;
-      const completedToday = formattedPatients.filter(p => p.status === 'Completado').length;
+      const completedToday = formattedPatients.filter(p => p.status === 'Completado' || p.status === 'Asistió').length;
 
       setStats({
         pacientesTotales: pacientesData.length,
@@ -423,54 +419,87 @@ export default function DashboardFisio() {
           {pendingNotes.length > 0 && (
             <div className="auth-card" style={{
               background: "rgba(239, 68, 68, 0.05)",
-              border: "1px solid rgba(239, 68, 68, 0.15)",
+              border: "1px solid rgba(239, 68, 68, 0.18)",
               padding: "1.25rem",
-              borderRadius: "12px",
+              borderRadius: "14px",
               marginBottom: "1.5rem",
               boxShadow: "var(--shadow-sm)"
             }}>
-              <h3 style={{
-                fontSize: "0.95rem",
-                fontWeight: "700",
-                color: "var(--danger)",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                margin: "0 0 0.75rem 0"
-              }}>
-                <FiAlertCircle /> Recordatorio: Notas SOAP Pendientes de Citas de Hoy
-              </h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem", flexWrap: "wrap", gap: "0.5rem" }}>
+                <h3 style={{
+                  fontSize: "1rem",
+                  fontWeight: "700",
+                  color: "var(--danger)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  margin: 0
+                }}>
+                  <FiAlertCircle size={18} /> Pacientes Pendientes de Primera Nota SOAP ({pendingNotes.length})
+                </h3>
+                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontStyle: "italic" }}>
+                  Pacientes registrados que aún no tienen nota de evolución
+                </span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "0.75rem" }}>
                 {pendingNotes.map(pn => (
-                  <div key={pn.id} style={{
+                  <div key={pn._id || pn.identificadorPaciente} style={{
                     display: "flex",
+                    flexDirection: "column",
                     justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "0.5rem 0.75rem",
-                    background: "rgba(255,255,255,0.02)",
-                    borderRadius: "8px",
-                    border: "1px solid rgba(255,255,255,0.05)",
-                    flexWrap: "wrap",
+                    padding: "0.85rem 1rem",
+                    background: "rgba(255,255,255,0.03)",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(239, 68, 68, 0.15)",
                     gap: "0.5rem"
                   }}>
-                    <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
-                      La cita de <strong style={{ color: "var(--text-main)" }}>{pn.name}</strong> ({pn.hour}) no tiene registrada su nota SOAP de hoy.
-                    </span>
-                    <button
-                      className="btn btn-primary"
-                      style={{
-                        padding: "4px 10px",
-                        height: "28px",
-                        fontSize: "0.75rem",
-                        width: "auto",
-                        background: "rgba(16, 185, 129, 0.15)",
-                        color: "var(--success)",
-                        borderColor: "rgba(16, 185, 129, 0.25)"
-                      }}
-                      onClick={() => handleAction(pn, `/fisioterapeuta/notas`)}
-                    >
-                      Registrar Nota
-                    </button>
+                    <div>
+                      <div style={{ fontWeight: "700", color: "var(--text-main)", fontSize: "0.95rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span>{pn.nombres} {pn.apellidoPaterno} {pn.apellidoMaterno || ''}</span>
+                        <span style={{ fontSize: "0.75rem", background: "rgba(239, 68, 68, 0.1)", color: "var(--danger)", padding: "2px 8px", borderRadius: "12px", fontWeight: "600" }}>
+                          Sin Nota
+                        </span>
+                      </div>
+                      <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "4px" }}>
+                        📞 {pn.telefono || 'Sin teléfono'} | {pn.edad ? `${pn.edad} años` : 'Sin edad'}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: "0.5rem", marginTop: "4px" }}>
+                      <button
+                        className="btn btn-primary"
+                        style={{
+                          flex: 1,
+                          padding: "6px 10px",
+                          height: "32px",
+                          fontSize: "0.78rem",
+                          background: "rgba(16, 185, 129, 0.15)",
+                          color: "var(--success)",
+                          borderColor: "rgba(16, 185, 129, 0.3)"
+                        }}
+                        onClick={() => handleAction({
+                          identificadorPaciente: pn.identificadorPaciente,
+                          name: `${pn.nombres} ${pn.apellidoPaterno}`,
+                          rawPatientData: pn
+                        }, `/fisioterapeuta/notas`)}
+                      >
+                        <FiPlus size={14} /> Crear Nota SOAP
+                      </button>
+                      <button
+                        className="btn btn-secondary"
+                        style={{
+                          padding: "6px 10px",
+                          height: "32px",
+                          fontSize: "0.78rem"
+                        }}
+                        onClick={() => handleAction({
+                          identificadorPaciente: pn.identificadorPaciente,
+                          name: `${pn.nombres} ${pn.apellidoPaterno}`,
+                          rawPatientData: pn
+                        }, `/fisioterapeuta/paciente/${pn.identificadorPaciente}`)}
+                      >
+                        <FiInfo size={14} /> Historial
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
