@@ -86,8 +86,9 @@ export default function ClinicasPage() {
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "800px" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "left" }}>
-                  <th style={{ padding: "12px", color: "var(--primary)", fontSize: "0.85rem", fontWeight: "600" }}>NEGOCIO / CLÍNICA</th>
+                  <th style={{ padding: "12px", color: "var(--primary)", fontSize: "0.85rem", fontWeight: "600" }}>NEGOCIO</th>
                   <th style={{ padding: "12px", color: "var(--primary)", fontSize: "0.85rem", fontWeight: "600" }}>SUBDOMINIO</th>
+                  <th style={{ padding: "12px", color: "var(--primary)", fontSize: "0.85rem", fontWeight: "600" }}>PALETA DE COLORES</th>
                   <th style={{ padding: "12px", color: "var(--primary)", fontSize: "0.85rem", fontWeight: "600" }}>ETIQUETAS</th>
                   <th style={{ padding: "12px", color: "var(--primary)", fontSize: "0.85rem", fontWeight: "600" }}>ESTATUS</th>
                   <th style={{ padding: "12px", color: "var(--primary)", fontSize: "0.85rem", fontWeight: "600", textAlign: "center" }}>ACCIONES</th>
@@ -110,17 +111,29 @@ export default function ClinicasPage() {
                         {c.logo ? (
                           <img src={c.logo} alt="Logo" style={{ width: "30px", height: "30px", borderRadius: "50%", objectFit: "contain" }} />
                         ) : (
-                          <div className="brand-logo-sphere" style={{ width: "30px", height: "30px", fontSize: "0.8rem", margin: 0 }}>
-                            <span>{c.name.substring(0, 1).toUpperCase()}</span>
+                          <div className="brand-logo-sphere" style={{ width: "30px", height: "30px", fontSize: "0.8rem", margin: 0, background: c.theme?.primaryColor || undefined }}>
+                            <span>{(c.sidebarName || c.name).substring(0, 1).toUpperCase()}</span>
                           </div>
                         )}
-                        <span style={{ fontWeight: "600", color: "var(--text-main)", fontSize: "0.9rem" }}>{c.name}</span>
+                        <div style={{ display: "flex", flexDirection: "column" }}>
+                          <span style={{ fontWeight: "600", color: "var(--text-main)", fontSize: "0.9rem" }}>{c.sidebarName || c.name}</span>
+                          {c.sidebarSubtitle && <span style={{ fontSize: "0.725rem", color: "var(--text-muted)" }}>{c.sidebarSubtitle}</span>}
+                        </div>
                       </div>
                     </td>
 
                     {/* Subdominio */}
                     <td style={{ padding: "14px 12px" }}>
                       <code style={{ color: "var(--primary)", fontSize: "0.85rem" }}>{c.subdomain}</code>
+                    </td>
+
+                    {/* Paleta de Colores */}
+                    <td style={{ padding: "14px 12px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }} title="Colores: Primario, Acento y Fondo de Sidebar">
+                        <span style={{ width: "16px", height: "16px", borderRadius: "50%", background: c.theme?.primaryColor || "#5e50a1", border: "1px solid rgba(255,255,255,0.2)" }}></span>
+                        <span style={{ width: "16px", height: "16px", borderRadius: "50%", background: c.theme?.accentColor || "#10b981", border: "1px solid rgba(255,255,255,0.2)" }}></span>
+                        <span style={{ width: "16px", height: "16px", borderRadius: "50%", background: c.theme?.sidebarBg || "#0f172a", border: "1px solid rgba(255,255,255,0.2)" }}></span>
+                      </div>
                     </td>
 
                     {/* Etiquetas */}

@@ -27,6 +27,7 @@ export default function DashboardNutri() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [patients, setPatients] = useState([]);
+  const [pendingNotes, setPendingNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     pacientesTotales: 0,
@@ -58,6 +59,15 @@ export default function DashboardNutri() {
       // Fetch Citas list
       const citasRes = await api.get('/citas?area=nutriologa');
       const citasData = citasRes.data || [];
+
+      // Fetch Pacientes sin Nota SOAP
+      let sinNotaList = [];
+      try {
+        const sinNotaRes = await api.get('/pacientes/sin-nota');
+        sinNotaList = sinNotaRes.data?.pacientes || [];
+      } catch (err) {
+        console.warn("No se pudieron obtener los pacientes sin nota:", err.message);
+      }
 
       const hoyStr = new Date().toISOString().split('T')[0];
       const todaySessions = citasData.filter(c => c.fechaCitaStr === hoyStr || c.fechaCita === hoyStr);
@@ -96,6 +106,7 @@ export default function DashboardNutri() {
 
       const highPainCount = formattedPatients.filter(p => p.painLevel === 'high').length;
 
+      setPendingNotes(sinNotaList);
       setPatients(formattedPatients);
       setStats({
         pacientesTotales: pacientesData.length,
@@ -372,6 +383,97 @@ export default function DashboardNutri() {
             </div>
 
           </div>
+
+          {/* 🔔 Recordatorios de Notas SOAP Pendientes */}
+          {pendingNotes.length > 0 && (
+            <div className="auth-card" style={{
+              background: "rgba(239, 68, 68, 0.05)",
+              border: "1px solid rgba(239, 68, 68, 0.18)",
+              padding: "1.25rem",
+              borderRadius: "14px",
+              marginBottom: "1.5rem",
+              boxShadow: "var(--shadow-sm)"
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem", flexWrap: "wrap", gap: "0.5rem" }}>
+                <h3 style={{
+                  fontSize: "1rem",
+                  fontWeight: "700",
+                  color: "var(--danger)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  margin: 0
+                }}>
+                  <FiAlertCircle size={18} /> Pacientes Pendientes de Primera Nota SOAP ({pendingNotes.length})
+                </h3>
+                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontStyle: "italic" }}>
+                  Pacientes registrados que aún no tienen nota de evolución nutricional
+                </span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "0.75rem" }}>
+                {pendingNotes.map(pn => (
+                  <div key={pn._id || pn.identificadorPaciente} style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    padding: "0.85rem 1rem",
+                    background: "rgba(255,255,255,0.03)",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(239, 68, 68, 0.15)",
+                    gap: "0.5rem"
+                  }}>
+                    <div>
+                      <div style={{ fontWeight: "700", color: "var(--text-main)", fontSize: "0.95rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span>{pn.nombres} {pn.apellidoPaterno} {pn.apellidoMaterno || ''}</span>
+                        <span style={{ fontSize: "0.75rem", background: "rgba(239, 68, 68, 0.1)", color: "var(--danger)", padding: "2px 8px", borderRadius: "12px", fontWeight: "600" }}>
+                          Sin Nota
+                        </span>
+                      </div>
+                      <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "4px" }}>
+                        📞 {pn.telefono || 'Sin teléfono'} | {pn.edad ? `${pn.edad} años` : 'Sin edad'}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: "0.5rem", marginTop: "4px" }}>
+                      <button
+                        className="btn btn-primary"
+                        style={{
+                          flex: 1,
+                          padding: "6px 10px",
+                          height: "32px",
+                          fontSize: "0.78rem",
+                          background: "rgba(16, 185, 129, 0.15)",
+                          color: "var(--success)",
+                          borderColor: "rgba(16, 185, 129, 0.3)"
+                        }}
+                        onClick={() => handleAction({
+                          identificadorPaciente: pn.identificadorPaciente,
+                          name: `${pn.nombres} ${pn.apellidoPaterno}`,
+                          rawPatientData: pn
+                        }, `/nutriologa/notas`)}
+                      >
+                        <FiPlus size={14} /> Crear Nota SOAP
+                      </button>
+                      <button
+                        className="btn btn-secondary"
+                        style={{
+                          padding: "6px 10px",
+                          height: "32px",
+                          fontSize: "0.78rem"
+                        }}
+                        onClick={() => handleAction({
+                          identificadorPaciente: pn.identificadorPaciente,
+                          name: `${pn.nombres} ${pn.apellidoPaterno}`,
+                          rawPatientData: pn
+                        }, `/nutriologa/paciente/${pn.identificadorPaciente}`)}
+                      >
+                        <FiInfo size={14} /> Historial
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* 🧱 2. Dual Column Layout (Table & Clinical Shortcuts Column) */}
           <div className="main-dashboard-content">

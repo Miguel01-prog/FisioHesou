@@ -185,6 +185,22 @@ export default function Sidebar({
     return location.pathname.startsWith(path);
   };
 
+  // Aplicar colores del tema del cliente de forma dinámica
+  useEffect(() => {
+    const theme = user?.client?.theme;
+    if (theme) {
+      if (theme.primaryColor) document.documentElement.style.setProperty('--primary', theme.primaryColor);
+      if (theme.accentColor) document.documentElement.style.setProperty('--accent', theme.accentColor);
+      if (theme.sidebarBg) document.documentElement.style.setProperty('--sidebar-bg-custom', theme.sidebarBg);
+    }
+  }, [user?.client?.theme]);
+
+  const brandTitle = user?.client?.sidebarName || user?.client?.name || "Hesou";
+  const brandSubtitle = user?.client?.sidebarSubtitle || "";
+  const sidebarBg = user?.client?.theme?.sidebarBg;
+  const titleColor = user?.client?.theme?.titleColor;
+  const subtitleColor = user?.client?.theme?.subtitleColor;
+
   return (
     <>
       {/* 📱 Frosted Glass Overlay for Mobile/iPad drawer */}
@@ -196,7 +212,12 @@ export default function Sidebar({
       )}
 
       {/* 🧭 Main Sidebar */}
-      <aside className={`sidebar-container ${isCollapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
+      <aside 
+        className={`sidebar-container ${isCollapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}
+        style={{
+          background: sidebarBg || undefined
+        }}
+      >
 
         {/* Header - Clinic Branding */}
         <div className="sidebar-header">
@@ -205,17 +226,24 @@ export default function Sidebar({
               <img
                 src={user.client.logo}
                 alt="Logo"
-                style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit: "contain" }}
+                style={{ width: "34px", height: "34px", borderRadius: "50%", objectFit: "contain", flexShrink: 0 }}
               />
             ) : (
-              <div className="brand-logo-sphere">
-                <span>{user?.client?.name ? user.client.name.substring(0, 1).toUpperCase() : "H"}</span>
+              <div className="brand-logo-sphere" style={{ background: user?.client?.theme?.primaryColor || undefined, flexShrink: 0 }}>
+                <span>{brandTitle.substring(0, 1).toUpperCase()}</span>
               </div>
             )}
             {!isCollapsed && (
-              <span className="brand-name" style={{ fontSize: "1.1rem", fontWeight: "700" }}>
-                {user?.client?.name || "Hesou"}
-              </span>
+              <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                <span className="brand-name" style={{ fontSize: "1.05rem", fontWeight: "700", color: titleColor || "inherit", lineHeight: "1.25" }}>
+                  {brandTitle}
+                </span>
+                {brandSubtitle && (
+                  <span style={{ fontSize: "0.725rem", color: subtitleColor || "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {brandSubtitle}
+                  </span>
+                )}
+              </div>
             )}
           </div>
 

@@ -312,7 +312,7 @@ const VistaHistorial = () => {
                         value={
                           formData.eva !== undefined && formData.eva !== ""
                             ? `${formData.eva} - ${getEvaTextDescription(formData.eva)}`
-                            : "Sin especificar"
+                            : "Ninguno registrado"
                         }
                         disabled
                       />
@@ -330,7 +330,7 @@ const VistaHistorial = () => {
                             pellizco: "Pellizco",
                             muscular: "Muscular",
                             otra: "Otra"
-                          }[formData.tipo] || formData.tipo || "Sin especificar"
+                          }[formData.tipo] || formData.tipo || "Ninguno registrado"
                         }
                         disabled
                       />
@@ -355,7 +355,7 @@ const VistaHistorial = () => {
                                 }[key] || item;
                               })
                               .join(", ")
-                            : "Sin especificar"
+                            : "Ninguno registrado"
                         }
                         disabled
                       />
@@ -440,7 +440,7 @@ const VistaHistorial = () => {
                     <div className="col">
                       <textarea
                         className="textarea"
-                        value={formData.actividadesDeficiencia || "Ninguna especificada"}
+                        value={formData.actividadesDeficiencia || "Ninguno registrado"}
                         disabled
                         style={{ height: "80px" }}
                       />
@@ -485,12 +485,12 @@ const VistaHistorial = () => {
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
                     <div className="col" style={{ margin: 0 }}>
                       <label className="form-label">Medicación actual</label>
-                      <textarea className="textarea" value={formData.medicacionActual || formData.medActual || "Ninguna"} disabled style={{ height: "100px" }} />
+                      <textarea className="textarea" value={formData.medicacionActual || formData.medActual || "Ninguno registrado"} disabled style={{ height: "100px" }} />
                     </div>
                     <div className="col" style={{ margin: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
                       <div>
                         <label className="form-label">Antecedentes quirúrgicos</label>
-                        <textarea className="textarea" value={Array.isArray(formData.antecedentesQuirurgicos) ? formData.antecedentesQuirurgicos.join(", ") : formData.antecedentesQuirurgicos || "Ninguno"} disabled style={{ height: "60px" }} />
+                        <textarea className="textarea" value={Array.isArray(formData.antecedentesQuirurgicos) ? (formData.antecedentesQuirurgicos.filter(Boolean).join(", ") || "Ninguno registrado") : formData.antecedentesQuirurgicos || "Ninguno registrado"} disabled style={{ height: "60px" }} />
                       </div>
                       {formData.anioQuirurgico && (
                         <div>
@@ -568,25 +568,29 @@ const VistaHistorial = () => {
                     </div>
                     <div className="col" style={{ gridColumn: "span 2" }}>
                       <label className="form-label">Adicciones y sustancias</label>
-                      <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.6rem", flexWrap: "wrap", alignItems: "center" }}>
-                        <label className="checkbox-label-modern" style={{ cursor: "default" }}>
-                          <input type="checkbox" checked={antecedentesNoPatologicos.adicciones?.tabaquismo || false} disabled />
-                          <span>Tabaquismo</span>
-                        </label>
-                        <label className="checkbox-label-modern" style={{ cursor: "default" }}>
-                          <input type="checkbox" checked={antecedentesNoPatologicos.adicciones?.alcohol || false} disabled />
-                          <span>Consumo de Alcohol</span>
-                        </label>
-                        <label className="checkbox-label-modern" style={{ cursor: "default" }}>
-                          <input type="checkbox" checked={antecedentesNoPatologicos.adicciones?.otro || false} disabled />
-                          <span>Otro</span>
-                        </label>
-                        {antecedentesNoPatologicos.adicciones?.otro && antecedentesNoPatologicos.adicciones?.otroDetalle && (
-                          <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontStyle: "italic", borderLeft: "2px solid rgba(139, 92, 246, 0.2)", paddingLeft: "10px" }}>
-                            {antecedentesNoPatologicos.adicciones.otroDetalle}
-                          </span>
-                        )}
-                      </div>
+                      {(!antecedentesNoPatologicos.adicciones?.tabaquismo && !antecedentesNoPatologicos.adicciones?.alcohol && !antecedentesNoPatologicos.adicciones?.otro) ? (
+                        <span style={{ fontStyle: "italic", color: "var(--text-muted)", fontSize: "0.85rem", marginTop: "0.4rem", display: "block" }}>Ninguno registrado</span>
+                      ) : (
+                        <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.6rem", flexWrap: "wrap", alignItems: "center" }}>
+                          <label className="checkbox-label-modern" style={{ cursor: "default" }}>
+                            <input type="checkbox" checked={antecedentesNoPatologicos.adicciones?.tabaquismo || false} disabled />
+                            <span>Tabaquismo</span>
+                          </label>
+                          <label className="checkbox-label-modern" style={{ cursor: "default" }}>
+                            <input type="checkbox" checked={antecedentesNoPatologicos.adicciones?.alcohol || false} disabled />
+                            <span>Consumo de Alcohol</span>
+                          </label>
+                          <label className="checkbox-label-modern" style={{ cursor: "default" }}>
+                            <input type="checkbox" checked={antecedentesNoPatologicos.adicciones?.otro || false} disabled />
+                            <span>Otro</span>
+                          </label>
+                          {antecedentesNoPatologicos.adicciones?.otro && antecedentesNoPatologicos.adicciones?.otroDetalle && (
+                            <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontStyle: "italic", borderLeft: "2px solid rgba(139, 92, 246, 0.2)", paddingLeft: "10px" }}>
+                              {antecedentesNoPatologicos.adicciones.otroDetalle}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -598,24 +602,28 @@ const VistaHistorial = () => {
 
                     {openLesiones && (
                       <div className="modern-accordion-body" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                        {[
-                          { key: "caidas", label: "Caídas graves" },
-                          { key: "accidentes", label: "Accidentes automovilísticos" },
-                          { key: "esguince", label: "Esguinces anteriores" },
-                          { key: "fractura", label: "Fracturas previas" },
-                          { key: "otro", label: "Otras lesiones" }
-                        ].map(({ key, label }) => (
-                          <div key={key} style={{ display: "grid", gridTemplateColumns: "1fr 2fr", alignItems: "center", gap: "1rem" }}>
-                            <label className="checkbox-label-modern" style={{ cursor: "default" }}>
-                              <input type="checkbox" checked={lesiones[key]?.activo || false} disabled />
-                              <span>{label}</span>
-                            </label>
+                        {!Object.values(lesiones).some(l => l?.activo) ? (
+                          <span style={{ fontStyle: "italic", color: "var(--text-muted)", fontSize: "0.85rem", padding: "0.5rem" }}>Ninguno registrado</span>
+                        ) : (
+                          [
+                            { key: "caidas", label: "Caídas graves" },
+                            { key: "accidentes", label: "Accidentes automovilísticos" },
+                            { key: "esguince", label: "Esguinces anteriores" },
+                            { key: "fractura", label: "Fracturas previas" },
+                            { key: "otro", label: "Otras lesiones" }
+                          ].map(({ key, label }) => (
+                            <div key={key} style={{ display: "grid", gridTemplateColumns: "1fr 2fr", alignItems: "center", gap: "1rem" }}>
+                              <label className="checkbox-label-modern" style={{ cursor: "default" }}>
+                                <input type="checkbox" checked={lesiones[key]?.activo || false} disabled />
+                                <span>{label}</span>
+                              </label>
 
-                            {lesiones[key]?.activo && (
-                              <input type="text" className="input" value={lesiones[key]?.detalle || ""} disabled />
-                            )}
-                          </div>
-                        ))}
+                              {lesiones[key]?.activo && (
+                                <input type="text" className="input" value={lesiones[key]?.detalle || ""} disabled />
+                              )}
+                            </div>
+                          ))
+                        )}
                       </div>
                     )}
                   </div>
@@ -627,45 +635,49 @@ const VistaHistorial = () => {
               <div className="tab-content">
                 <div className="clinical-form-section">
                   <h3 className="clinical-section-title">🔍 Observación Física Inicial</h3>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-                    {[
-                      { key: "edema", label: "Presencia de Edema" },
-                      { key: "enrojecimiento", label: "Zonas de Enrojecimiento / Eritema" },
-                      { key: "esguince", label: "Secuelas de Esguince" },
-                      { key: "hematoma", label: "Presencia de Hematomas" },
-                      { key: "marcha", label: "Alteraciones en la Marcha" },
-                      { key: "otro", label: "Otro hallazgo visual" }
-                    ].map(({ key, label }) => (
-                      <div
-                        key={key}
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "0.25rem",
-                          padding: "0.5rem 0.75rem",
-                          borderRadius: "8px",
-                          background: obser[key]?.activo ? "rgba(139, 92, 246, 0.04)" : "rgba(255, 255, 255, 0.01)",
-                          border: "1px solid " + (obser[key]?.activo ? "rgba(139, 92, 246, 0.15)" : "rgba(255, 255, 255, 0.03)"),
-                          transition: "all 0.2s"
-                        }}
-                      >
-                        <label className="checkbox-label-modern" style={{ cursor: "default", margin: 0, fontSize: "0.85rem" }}>
-                          <input type="checkbox" checked={obser[key]?.activo || false} disabled style={{ width: "15px", height: "15px" }} />
-                          <span>{label}</span>
-                        </label>
+                  {!Object.values(obser).some(o => o?.activo) ? (
+                    <span style={{ fontStyle: "italic", color: "var(--text-muted)", fontSize: "0.85rem", display: "block", padding: "0.5rem 0" }}>Ninguno registrado</span>
+                  ) : (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                      {[
+                        { key: "edema", label: "Presencia de Edema" },
+                        { key: "enrojecimiento", label: "Zonas de Enrojecimiento / Eritema" },
+                        { key: "esguince", label: "Secuelas de Esguince" },
+                        { key: "hematoma", label: "Presencia de Hematomas" },
+                        { key: "marcha", label: "Alteraciones en la Marcha" },
+                        { key: "otro", label: "Otro hallazgo visual" }
+                      ].map(({ key, label }) => (
+                        <div
+                          key={key}
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "0.25rem",
+                            padding: "0.5rem 0.75rem",
+                            borderRadius: "8px",
+                            background: obser[key]?.activo ? "rgba(139, 92, 246, 0.04)" : "rgba(255, 255, 255, 0.01)",
+                            border: "1px solid " + (obser[key]?.activo ? "rgba(139, 92, 246, 0.15)" : "rgba(255, 255, 255, 0.03)"),
+                            transition: "all 0.2s"
+                          }}
+                        >
+                          <label className="checkbox-label-modern" style={{ cursor: "default", margin: 0, fontSize: "0.85rem" }}>
+                            <input type="checkbox" checked={obser[key]?.activo || false} disabled style={{ width: "15px", height: "15px" }} />
+                            <span>{label}</span>
+                          </label>
 
-                        {obser[key]?.activo && (
-                          <input
-                            type="text"
-                            className="input"
-                            value={obser[key]?.detalle || ""}
-                            disabled
-                            style={{ width: "100%", marginTop: "2px", fontSize: "0.8rem", padding: "0.35rem 0.55rem", height: "28px" }}
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                          {obser[key]?.activo && (
+                            <input
+                              type="text"
+                              className="input"
+                              value={obser[key]?.detalle || ""}
+                              disabled
+                              style={{ width: "100%", marginTop: "2px", fontSize: "0.8rem", padding: "0.35rem 0.55rem", height: "28px" }}
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="clinical-form-section">
@@ -686,47 +698,61 @@ const VistaHistorial = () => {
 
             {activeTab === "soap" && (
               <div className="tab-content">
-                <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">📝 Notas SOAP y Registro Diario</h3>
-                  <div className="clinical-grid-3" style={{ marginBottom: "1rem" }}>
-                    <div className="col">
-                      <label className="form-label">ID Nota asignado</label>
-                      <input type="text" className="input" value={formData.soapFK?.idHistoricoFk || formData.idHistorial || ""} disabled style={{ fontWeight: "600" }} />
-                    </div>
-                    <div className="col">
-                      <label className="form-label">Mes-Año de atención</label>
-                      <input type="text" className="input" value={formData.soapFK?.mesAñoNota || ""} disabled style={{ fontWeight: "600" }} />
-                    </div>
+                {(!formData.soapFK || (!formData.soapFK.contenidoNota && !formData.soapFK.S && !formData.soapFK.O && !formData.soapFK.A && !formData.soapFK.P)) ? (
+                  <div className="clinical-form-section" style={{ padding: "3.5rem 2rem", textAlign: "center", background: "rgba(255, 255, 255, 0.02)", borderRadius: "16px", border: "1px dashed rgba(139, 92, 246, 0.2)" }}>
+                    <div style={{ fontSize: "2.75rem", marginBottom: "0.75rem" }}>📋</div>
+                    <h3 style={{ color: "var(--primary)", fontSize: "1.25rem", fontWeight: "700", margin: "0 0 0.4rem 0" }}>
+                      Sin primera nota SOAP
+                    </h3>
+                    <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", margin: 0 }}>
+                      Este paciente aún no cuenta con su primera Nota SOAP registrada en el historial clínico.
+                    </p>
                   </div>
-                  <div className="clinical-grid-1">
-                    <div className="col">
-                      <label className="form-label">Contenido general de la sesión</label>
-                      <textarea className="textarea" value={formData.soapFK?.contenidoNota || ""} disabled style={{ height: "100px" }} />
+                ) : (
+                  <>
+                    <div className="clinical-form-section">
+                      <h3 className="clinical-section-title">📝 Notas SOAP y Registro Diario</h3>
+                      <div className="clinical-grid-3" style={{ marginBottom: "1rem" }}>
+                        <div className="col">
+                          <label className="form-label">ID Nota asignado</label>
+                          <input type="text" className="input" value={formData.soapFK?.idHistoricoFk || formData.idHistorial || "Sin registrar"} disabled style={{ fontWeight: "600" }} />
+                        </div>
+                        <div className="col">
+                          <label className="form-label">Mes-Año de atención</label>
+                          <input type="text" className="input" value={formData.soapFK?.mesAñoNota || "Sin registrar"} disabled style={{ fontWeight: "600" }} />
+                        </div>
+                      </div>
+                      <div className="clinical-grid-1">
+                        <div className="col">
+                          <label className="form-label">Contenido general de la sesión</label>
+                          <textarea className="textarea" value={formData.soapFK?.contenidoNota || "Sin primera nota SOAP"} disabled style={{ height: "100px" }} />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
 
-                <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">🧪 Desglose de Metodología SOAP</h3>
-                  <div className="soap-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
-                    <div className="col">
-                      <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)" }}>Subjetivo (S)</label>
-                      <textarea className="textarea" value={formData.soapFK?.S || ""} disabled style={{ height: "120px" }} />
+                    <div className="clinical-form-section">
+                      <h3 className="clinical-section-title">🧪 Desglose de Metodología SOAP</h3>
+                      <div className="soap-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                        <div className="col">
+                          <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)" }}>Subjetivo (S)</label>
+                          <textarea className="textarea" value={formData.soapFK?.S || "Sin registrar"} disabled style={{ height: "120px" }} />
+                        </div>
+                        <div className="col">
+                          <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)" }}>Objetivo (O)</label>
+                          <textarea className="textarea" value={formData.soapFK?.O || "Sin registrar"} disabled style={{ height: "120px" }} />
+                        </div>
+                        <div className="col">
+                          <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)" }}>Análisis (A)</label>
+                          <textarea className="textarea" value={formData.soapFK?.A || "Sin registrar"} disabled style={{ height: "120px" }} />
+                        </div>
+                        <div className="col">
+                          <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)" }}>Plan (P)</label>
+                          <textarea className="textarea" value={formData.soapFK?.P || "Sin registrar"} disabled style={{ height: "120px" }} />
+                        </div>
+                      </div>
                     </div>
-                    <div className="col">
-                      <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)" }}>Objetivo (O)</label>
-                      <textarea className="textarea" value={formData.soapFK?.O || ""} disabled style={{ height: "120px" }} />
-                    </div>
-                    <div className="col">
-                      <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)" }}>Análisis (A)</label>
-                      <textarea className="textarea" value={formData.soapFK?.A || ""} disabled style={{ height: "120px" }} />
-                    </div>
-                    <div className="col">
-                      <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)" }}>Plan (P)</label>
-                      <textarea className="textarea" value={formData.soapFK?.P || ""} disabled style={{ height: "120px" }} />
-                    </div>
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
             )}
 

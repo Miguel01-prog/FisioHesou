@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "../../api.js";
 import LoadingSpinner from "../../components/layout/LoadingSpinner.jsx";
 import { showError, showSuccess } from "../../utils/alerts.js";
-import { FiInfo, FiTag, FiCpu, FiPlus, FiGrid, FiTrash2, FiArrowLeft } from "react-icons/fi";
+import { FiInfo, FiTag, FiCpu, FiPlus, FiGrid, FiTrash2, FiArrowLeft, FiSliders, FiDroplet } from "react-icons/fi";
 
 export default function CrearClinicaPage() {
   const { id } = useParams();
@@ -18,6 +18,15 @@ export default function CrearClinicaPage() {
   const [logo, setLogo] = useState("");
   const [activo, setActivo] = useState(true);
   const [blockSundays, setBlockSundays] = useState(false);
+
+  // Branding & Theme Fields
+  const [sidebarName, setSidebarName] = useState("");
+  const [sidebarSubtitle, setSidebarSubtitle] = useState("");
+  const [primaryColor, setPrimaryColor] = useState("#5e50a1");
+  const [accentColor, setAccentColor] = useState("#10b981");
+  const [titleColor, setTitleColor] = useState("#ffffff");
+  const [subtitleColor, setSubtitleColor] = useState("#94a3b8");
+  const [sidebarBg, setSidebarBg] = useState("#0f172a");
 
   // Custom Labels
   const [patientLabelSingular, setPatientLabelSingular] = useState("Paciente");
@@ -62,6 +71,15 @@ export default function CrearClinicaPage() {
             setNombre(match.name);
             setSubdominio(match.subdomain);
             setLogo(match.logo || "");
+            setSidebarName(match.sidebarName || match.name || "");
+            setSidebarSubtitle(match.sidebarSubtitle || "");
+            if (match.theme) {
+              setPrimaryColor(match.theme.primaryColor || "#5e50a1");
+              setAccentColor(match.theme.accentColor || "#10b981");
+              setTitleColor(match.theme.titleColor || "#ffffff");
+              setSubtitleColor(match.theme.subtitleColor || "#94a3b8");
+              setSidebarBg(match.theme.sidebarBg || "#0f172a");
+            }
             setPatientLabelSingular(match.patientLabelSingular || "Paciente");
             setPatientLabelPlural(match.patientLabelPlural || "Pacientes");
             setSpecialistLabelSingular(match.specialistLabelSingular || "Especialista");
@@ -141,6 +159,15 @@ export default function CrearClinicaPage() {
       const payload = {
         name: nombre.trim(),
         subdomain: cleanSubdomain,
+        sidebarName: sidebarName.trim() || nombre.trim(),
+        sidebarSubtitle: sidebarSubtitle.trim(),
+        theme: {
+          primaryColor,
+          accentColor,
+          titleColor,
+          subtitleColor,
+          sidebarBg
+        },
         patientLabelSingular: patientLabelSingular.trim() || "Paciente",
         patientLabelPlural: patientLabelPlural.trim() || "Pacientes",
         specialistLabelSingular: specialistLabelSingular.trim() || "Especialista",
@@ -213,6 +240,27 @@ export default function CrearClinicaPage() {
             }}
           >
             <FiInfo /> General
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("branding")}
+            style={{
+              padding: "0.75rem 1.25rem",
+              background: activeTab === "branding" ? "rgba(94, 80, 161, 0.15)" : "transparent",
+              color: activeTab === "branding" ? "var(--primary)" : "var(--text-muted)",
+              border: "none",
+              borderBottom: activeTab === "branding" ? "2px solid var(--primary)" : "2px solid transparent",
+              cursor: "pointer",
+              fontWeight: "600",
+              fontSize: "0.9rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              borderRadius: "6px 6px 0 0",
+              transition: "all 0.2s ease"
+            }}
+          >
+            <FiDroplet /> Marca & Colores
           </button>
           <button
             type="button"
@@ -345,6 +393,211 @@ export default function CrearClinicaPage() {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Tab: Branding & Paleta de Colores por Negocio */}
+          {activeTab === "branding" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", margin: "0 0 0.5rem 0" }}>
+                Configura el nombre personalizado en el menú lateral y la paleta de colores exclusiva para este negocio.
+              </p>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.25rem" }}>
+                <div>
+                  <label className="form-label" style={{ display: "block", marginBottom: "0.4rem" }}>
+                    Nombre del Título en Sidebar
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={sidebarName}
+                    onChange={e => setSidebarName(e.target.value)}
+                    placeholder={nombre || "Ej. Hesou Fisioterapia"}
+                    disabled={guardando}
+                  />
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "block", marginTop: "3px" }}>
+                    Nombre principal que se mostrará en el menú lateral de los especialistas de este negocio.
+                  </span>
+                </div>
+
+                <div>
+                  <label className="form-label" style={{ display: "block", marginBottom: "0.4rem" }}>
+                    Subtítulo o Eslogan en Sidebar
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={sidebarSubtitle}
+                    onChange={e => setSidebarSubtitle(e.target.value)}
+                    placeholder="Ej. Especialidades Médicas & Salud"
+                    disabled={guardando}
+                  />
+                </div>
+              </div>
+
+              <hr style={{ margin: "0.5rem 0", border: "0", borderTop: "1px solid rgba(255,255,255,0.08)" }} />
+
+              {/* Selectores Visuales de Colores */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
+                <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)", margin: 0, display: "flex", alignItems: "center", gap: "6px" }}>
+                  <FiDroplet /> Paleta de Colores Exclusiva del Negocio
+                </label>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.85rem" }}>
+                  
+                  {/* Primario */}
+                  <div style={{ background: "rgba(255,255,255,0.03)", padding: "0.75rem", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <label style={{ fontSize: "0.775rem", color: "var(--text-muted)", display: "block", marginBottom: "6px", fontWeight: "600" }}>
+                      Color Primario
+                    </label>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <input
+                        type="color"
+                        value={primaryColor}
+                        onChange={(e) => setPrimaryColor(e.target.value)}
+                        style={{ width: "36px", height: "36px", border: "none", borderRadius: "6px", cursor: "pointer", background: "none" }}
+                      />
+                      <input
+                        type="text"
+                        className="input"
+                        value={primaryColor}
+                        onChange={(e) => setPrimaryColor(e.target.value)}
+                        style={{ height: "32px", fontSize: "0.8rem" }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Acento */}
+                  <div style={{ background: "rgba(255,255,255,0.03)", padding: "0.75rem", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <label style={{ fontSize: "0.775rem", color: "var(--text-muted)", display: "block", marginBottom: "6px", fontWeight: "600" }}>
+                      Color de Acento
+                    </label>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <input
+                        type="color"
+                        value={accentColor}
+                        onChange={(e) => setAccentColor(e.target.value)}
+                        style={{ width: "36px", height: "36px", border: "none", borderRadius: "6px", cursor: "pointer", background: "none" }}
+                      />
+                      <input
+                        type="text"
+                        className="input"
+                        value={accentColor}
+                        onChange={(e) => setAccentColor(e.target.value)}
+                        style={{ height: "32px", fontSize: "0.8rem" }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Títulos */}
+                  <div style={{ background: "rgba(255,255,255,0.03)", padding: "0.75rem", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <label style={{ fontSize: "0.775rem", color: "var(--text-muted)", display: "block", marginBottom: "6px", fontWeight: "600" }}>
+                      Color Títulos
+                    </label>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <input
+                        type="color"
+                        value={titleColor}
+                        onChange={(e) => setTitleColor(e.target.value)}
+                        style={{ width: "36px", height: "36px", border: "none", borderRadius: "6px", cursor: "pointer", background: "none" }}
+                      />
+                      <input
+                        type="text"
+                        className="input"
+                        value={titleColor}
+                        onChange={(e) => setTitleColor(e.target.value)}
+                        style={{ height: "32px", fontSize: "0.8rem" }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Subtítulos */}
+                  <div style={{ background: "rgba(255,255,255,0.03)", padding: "0.75rem", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <label style={{ fontSize: "0.775rem", color: "var(--text-muted)", display: "block", marginBottom: "6px", fontWeight: "600" }}>
+                      Color Subtítulos
+                    </label>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <input
+                        type="color"
+                        value={subtitleColor}
+                        onChange={(e) => setSubtitleColor(e.target.value)}
+                        style={{ width: "36px", height: "36px", border: "none", borderRadius: "6px", cursor: "pointer", background: "none" }}
+                      />
+                      <input
+                        type="text"
+                        className="input"
+                        value={subtitleColor}
+                        onChange={(e) => setSubtitleColor(e.target.value)}
+                        style={{ height: "32px", fontSize: "0.8rem" }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Fondo Sidebar */}
+                  <div style={{ background: "rgba(255,255,255,0.03)", padding: "0.75rem", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)", gridColumn: "span 2" }}>
+                    <label style={{ fontSize: "0.775rem", color: "var(--text-muted)", display: "block", marginBottom: "6px", fontWeight: "600" }}>
+                      Fondo del Sidebar
+                    </label>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <input
+                        type="color"
+                        value={sidebarBg}
+                        onChange={(e) => setSidebarBg(e.target.value)}
+                        style={{ width: "36px", height: "36px", border: "none", borderRadius: "6px", cursor: "pointer", background: "none" }}
+                      />
+                      <input
+                        type="text"
+                        className="input"
+                        value={sidebarBg}
+                        onChange={(e) => setSidebarBg(e.target.value)}
+                        style={{ height: "32px", fontSize: "0.8rem" }}
+                      />
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Vista Previa de Cabecera del Sidebar */}
+              <div style={{ marginTop: "0.5rem" }}>
+                <span style={{ fontSize: "0.8rem", fontWeight: "600", color: "var(--text-muted)", display: "block", marginBottom: "6px" }}>
+                  Vista Previa del Sidebar para este Negocio:
+                </span>
+                <div style={{
+                  background: sidebarBg,
+                  padding: "1rem",
+                  borderRadius: "12px",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px"
+                }}>
+                  <div style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    background: primaryColor,
+                    color: "#ffffff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: "700",
+                    fontSize: "1rem"
+                  }}>
+                    {(sidebarName || nombre || "N").charAt(0).toUpperCase()}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                    <span style={{ fontSize: "1rem", fontWeight: "700", color: titleColor }}>
+                      {sidebarName || nombre || "Nombre del Negocio"}
+                    </span>
+                    <span style={{ fontSize: "0.725rem", color: subtitleColor }}>
+                      {sidebarSubtitle || "Subtítulo / Eslogan del negocio"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
             </div>
           )}
 

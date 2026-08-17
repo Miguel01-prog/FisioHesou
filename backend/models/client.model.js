@@ -8,6 +8,16 @@ const clientSchema = new mongoose.Schema({
   blockSundays: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
   modules: { type: [String], default: ["agenda", "pacientes", "bloquear"] },
+  // Branding & Sidebar Config
+  sidebarName: { type: String, default: "" },
+  sidebarSubtitle: { type: String, default: "" },
+  theme: {
+    primaryColor: { type: String, default: "#5e50a1" },
+    accentColor: { type: String, default: "#10b981" },
+    titleColor: { type: String, default: "#ffffff" },
+    subtitleColor: { type: String, default: "#94a3b8" },
+    sidebarBg: { type: String, default: "#0f172a" }
+  },
   // Custom Terminology
   patientLabelSingular: { type: String, default: "Paciente" },
   patientLabelPlural: { type: String, default: "Pacientes" },

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import User from '../models/user.model.js';
+import Client from '../models/client.model.js';
 import bcrypt from 'bcryptjs'; 
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
@@ -18,31 +19,39 @@ router.get('/test', (req, res) => {
 
 router.post('/register', verifyToken, checkRole('superadmin'), async (req, res) => {
   console.log(' POST /api/register recibido', req.body);  // <--- agrega esto para depurar
-
   try {
-    const { name, email, password, role, clientId } = req.body;
+    const { email, password, role, name, clientId } = req.body;
 
-    if (!name || !email || !password || !role) {
-      return res.status(400).json({ message: 'Todos los campos son obligatorios' });
+    if (!email || !password || !role || !name) {
+      return res.status(400).json({ message: 'Faltan campos obligatorios (email, password, role, name)' });
     }
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(409).json({ message: 'El correo ya está registrado' });
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ message: 'El usuario ya existe' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ 
-      name, 
-      email, 
-      password: hashedPassword, 
-      role,
-      clientId: clientId || null
-    });
-    await user.save();
 
-    res.status(201).json({ message: 'Usuario creado correctamente' });
+    // Si no se envió clientId explícito, asociar la primera clínica existente
+    let assignedClientId = clientId;
+    if (!assignedClientId) {
+      const defaultClient = await Client.findOne();
+      if (defaultClient) assignedClientId = defaultClient._id;
+    }
+
+    const newUser = new User({
+      name,
+      email,
+      password: hashedPassword,
+      role,
+      clientId: assignedClientId || undefined
+    });
+
+    await newUser.save();
+    res.status(201).json({ message: 'Usuario registrado correctamente', userId: newUser._id });
   } catch (err) {
+    console.error('Error al registrar usuario:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -57,14 +66,24 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Email y contraseña son requeridos' });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).populate("clientId");
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: 'Contraseña incorrecta' });
 
+    let clientObj = user.clientId;
+    if (!clientObj) {
+      const defaultClient = await Client.findOne();
+      if (defaultClient) {
+        user.clientId = defaultClient._id;
+        await user.save();
+        clientObj = defaultClient;
+      }
+    }
+
     const token = jwt.sign(
-      { id: user._id, role: user.role, name: user.name, clientId: user.clientId || null },
+      { id: user._id, role: user.role, name: user.name, clientId: clientObj ? clientObj._id : null },
       SECRET,
       { expiresIn: '12h' }
     );
@@ -76,7 +95,7 @@ router.post('/login', async (req, res) => {
       maxAge: 12 * 60 * 60 * 1000 // 12 hours
     });
 
-    res.json({ role: user.role, name: user.name, token });
+    res.json({ role: user.role, name: user.name, client: clientObj, token });
     console.log("Usuario logueado exitosamente:", user.email);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -98,7 +117,18 @@ router.get('/me', verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password").populate("clientId");
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
-    res.json({ role: user.role, name: user.name, email: user.email, id: user._id, client: user.clientId, signature: user.signature });
+
+    let clientData = user.clientId;
+    if (!clientData) {
+      const defaultClient = await Client.findOne();
+      if (defaultClient) {
+        user.clientId = defaultClient._id;
+        await user.save();
+        clientData = defaultClient;
+      }
+    }
+
+    res.json({ role: user.role, name: user.name, email: user.email, id: user._id, client: clientData, signature: user.signature });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
