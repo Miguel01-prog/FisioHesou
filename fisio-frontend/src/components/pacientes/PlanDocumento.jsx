@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext.jsx";
 import api from "../../api";
 import LoadingSpinner from "../layout/LoadingSpinner";
 import { showError } from "../../utils/alerts";
 import { useReactToPrint } from "react-to-print";
-import { FaPrint, FaArrowLeft, FaWhatsapp, FaEnvelope } from "react-icons/fa";
-import { formatDateDDMMYYYY } from "../../utils/utils";
+import { FaPrint, FaArrowLeft, FaWhatsapp, FaEnvelope, FaEdit } from "react-icons/fa";
+import { formatDateDDMMYYYY, deobfuscateId } from "../../utils/utils";
 
 const PlanDocumento = () => {
-  const { id } = useParams();
+  const { id: rawId } = useParams();
+  const id = deobfuscateId(rawId);
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [plan, setPlan] = useState(null);
   const [paciente, setPaciente] = useState(null);
   const [cargando, setCargando] = useState(true);
@@ -31,6 +34,16 @@ const PlanDocumento = () => {
     const subject = `Tu Plan de Ejercicios - FisioHesou`;
     const body = `Hola ${paciente ? paciente.nombres : ""},\n\nTe envío tu plan de ejercicios y rehabilitación. Por favor, revisa el archivo PDF adjunto.\n\nSaludos,\nFisioHesou`;
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+  };
+
+  const handleVolver = () => {
+    const rolePath = user?.role || user?.rol || 'fisioterapeuta';
+    const targetId = plan?.identificadorPaciente || paciente?.identificadorPaciente || paciente?._id;
+    if (targetId) {
+      navigate(`/${rolePath}/paciente/${targetId}`);
+    } else {
+      navigate(`/${rolePath}/pacientes`);
+    }
   };
 
   useEffect(() => {
@@ -66,7 +79,7 @@ const PlanDocumento = () => {
   if (cargando) {
     return (
       <div className="auth-wrapper-content" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <LoadingSpinner size="large" color="#42133B" />
+        <LoadingSpinner size="large" />
       </div>
     );
   }
@@ -76,33 +89,46 @@ const PlanDocumento = () => {
   }
 
   return (
-    <div className="auth-wrapper-content" style={{ padding: '40px 20px 120px 20px', flexDirection: 'column', alignItems: 'center' }}>
+    <div className="auth-wrapper-content" style={{ padding: '20px 20px 120px 20px', flexDirection: 'column', alignItems: 'center' }}>
+
+      {/* BOTÓN SUPERIOR EDITAR PLAN (NO SE IMPRIME) */}
+      <div className="no-print" style={{ width: '100%', maxWidth: '800px', marginBottom: '1.25rem', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+        <button 
+          type="button" 
+          className="btn btn-secondary" 
+          onClick={() => navigate(`/${user?.role || 'fisioterapeuta'}/editar-plan/${plan._id}`)}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+        >
+          <FaEdit /> Editar Plan
+        </button>
+      </div>
 
       {/* BARRA FLOTANTE DE ACCIONES (NO SE IMPRIME) */}
       <div
         className="no-print"
         style={{
           position: 'fixed',
-          bottom: '40px',
+          bottom: '30px',
           left: '50%',
           transform: 'translateX(-50%)',
           display: 'flex',
           alignItems: 'center',
-          gap: '15px',
-          padding: '15px 25px',
-          background: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(15px)',
+          gap: '12px',
+          padding: '12px 24px',
+          background: 'rgba(15, 23, 42, 0.85)',
+          backdropFilter: 'blur(16px)',
           borderRadius: '50px',
-          boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
-          border: '1px solid rgba(255,255,255,0.6)',
+          boxShadow: 'var(--shadow-xl, 0 20px 25px -5px rgba(0,0,0,0.5))',
+          border: '1px solid var(--border-light, rgba(255,255,255,0.15))',
           zIndex: 1000
         }}
       >
+
         <button
           onClick={handleShareWhatsApp}
           style={{
             border: 'none',
-            padding: '12px 20px',
+            padding: '10px 18px',
             borderRadius: '30px',
             cursor: 'pointer',
             display: 'flex',
@@ -111,15 +137,15 @@ const PlanDocumento = () => {
             backgroundColor: '#25D366',
             color: 'white',
             fontWeight: '600',
-            fontSize: '14px',
-            boxShadow: '0 4px 10px rgba(37, 211, 102, 0.3)',
+            fontSize: '13px',
+            boxShadow: '0 4px 12px rgba(37, 211, 102, 0.3)',
             transition: 'all 0.2s ease'
           }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
           title="Compartir por WhatsApp"
         >
-          <FaWhatsapp size={20} />
+          <FaWhatsapp size={18} />
           <span>WhatsApp</span>
         </button>
 
@@ -127,7 +153,7 @@ const PlanDocumento = () => {
           onClick={handleShareEmail}
           style={{
             border: 'none',
-            padding: '12px 20px',
+            padding: '10px 18px',
             borderRadius: '30px',
             cursor: 'pointer',
             display: 'flex',
@@ -136,41 +162,41 @@ const PlanDocumento = () => {
             backgroundColor: '#EA4335',
             color: 'white',
             fontWeight: '600',
-            fontSize: '14px',
-            boxShadow: '0 4px 10px rgba(234, 67, 53, 0.3)',
+            fontSize: '13px',
+            boxShadow: '0 4px 12px rgba(234, 67, 53, 0.3)',
             transition: 'all 0.2s ease'
           }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
           title="Compartir por Correo"
         >
-          <FaEnvelope size={20} />
+          <FaEnvelope size={16} />
           <span>Correo</span>
         </button>
 
-        <div style={{ width: '1px', height: '30px', background: '#ddd', margin: '0 5px' }}></div>
+        <div style={{ width: '1px', height: '24px', background: 'rgba(255,255,255,0.2)', margin: '0 2px' }}></div>
 
         <button
           onClick={handlePrint}
           style={{
             border: 'none',
-            padding: '12px 24px',
+            padding: '10px 20px',
             borderRadius: '30px',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
-            backgroundColor: '#42133B',
+            gap: '8px',
+            background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
             color: 'white',
             fontWeight: '600',
-            fontSize: '14px',
-            boxShadow: '0 4px 12px rgba(66, 19, 59, 0.3)',
+            fontSize: '13px',
+            boxShadow: '0 4px 14px rgba(139, 92, 246, 0.4)',
             transition: 'all 0.2s ease'
           }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
         >
-          <FaPrint size={18} />
+          <FaPrint size={16} />
           <span>Imprimir / PDF</span>
         </button>
       </div>

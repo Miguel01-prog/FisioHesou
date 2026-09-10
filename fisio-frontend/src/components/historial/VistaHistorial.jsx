@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import InformacionClinica from "../layout/InformacionClinica";
 import api from "../../api";
 import LoadingSpinner from "../layout/LoadingSpinner";
+import { deobfuscateId } from "../../utils/utils";
 
 const getEvaTextDescription = (val) => {
   const v = Number(val);
@@ -17,10 +18,11 @@ const getEvaTextDescription = (val) => {
 };
 
 const VistaHistorial = () => {
-  const { id } = useParams();
+  const { id: rawId } = useParams();
+  const id = deobfuscateId(rawId);
   const navigate = useNavigate();
   const [paciente, setPaciente] = useState(null);
-  const [activeTab, setActiveTab] = useState("datosPersonales");
+  const [activeTab, setActiveTab] = useState("anamnesis");
   const [loading, setLoading] = useState(true);
 
   // Estados similares al formulario pero solo para leer
@@ -215,225 +217,102 @@ const VistaHistorial = () => {
           <hr style={{ marginBottom: "1.5rem" }} />
 
           <div className="tabs" style={{ marginBottom: "2rem" }}>
-            <button type="button" className={`tab ${activeTab === "datosPersonales" ? "active" : ""}`} onClick={() => setActiveTab("datosPersonales")}>Resumen</button>
-            <button type="button" className={`tab ${activeTab === "AnaAnte" ? "active" : ""}`} onClick={() => setActiveTab("AnaAnte")}>Anamnesis y Antecedentes</button>
-            <button type="button" className={`tab ${activeTab === "evaluacion" ? "active" : ""}`} onClick={() => setActiveTab("evaluacion")}>Evaluación Física</button>
-            <button type="button" className={`tab ${activeTab === "soap" ? "active" : ""}`} onClick={() => setActiveTab("soap")}>Notas SOAP</button>
-            <button type="button" className={`tab ${activeTab === "consentimiento" ? "active" : ""}`} onClick={() => setActiveTab("consentimiento")}>Consentimiento Informado</button>
+            <button type="button" className={`tab ${activeTab === "anamnesis" ? "active" : ""}`} onClick={() => setActiveTab("anamnesis")}>📋 Anamnesis</button>
+            <button type="button" className={`tab ${activeTab === "antecedentes" ? "active" : ""}`} onClick={() => setActiveTab("antecedentes")}>🩺 Antecedentes</button>
+            <button type="button" className={`tab ${activeTab === "evaluacion" ? "active" : ""}`} onClick={() => setActiveTab("evaluacion")}>🔍 Evaluación Física</button>
+            <button type="button" className={`tab ${activeTab === "soap" ? "active" : ""}`} onClick={() => setActiveTab("soap")}>📝 Notas SOAP</button>
+            <button type="button" className={`tab ${activeTab === "consentimiento" ? "active" : ""}`} onClick={() => setActiveTab("consentimiento")}>✍️ Consentimiento Informado</button>
           </div>
 
           <form className="form">
-            {activeTab === "datosPersonales" && paciente && (
+            {activeTab === "anamnesis" && (
               <div className="tab-content">
+                {paciente && (
+                  <div className="clinical-form-section">
+                    <h3 className="clinical-section-title">📋 Anamnesis y Datos Generales</h3>
+                    <div className="clinical-grid-3">
+                      <div className="col" style={{ gridColumn: "span 2" }}>
+                        <label className="form-label">Nombre completo</label>
+                        <input type="text" className="input" value={`${paciente.nombres || ""} ${paciente.apellidos || ""}`.replace(/\s+/g, ' ').trim()} disabled />
+                      </div>
+                      <div className="col">
+                        <label className="form-label">Edad (Años)</label>
+                        <input type="text" className="input" value={paciente.edad} disabled />
+                      </div>
+                      <div className="col">
+                        <label className="form-label">Fecha de nacimiento</label>
+                        <input type="text" className="input" value={formData.fechaNacimiento || "Sin especificar"} disabled />
+                      </div>
+                      <div className="col">
+                        <label className="form-label">Sexo</label>
+                        <input type="text" className="input" value={formData.sexo || "Sin especificar"} disabled />
+                      </div>
+                      <div className="col">
+                        <label className="form-label">Talla (cm)</label>
+                        <input type="text" className="input" value={formData.talla || "Sin especificar"} disabled />
+                      </div>
+                      <div className="col">
+                        <label className="form-label">Peso (kg)</label>
+                        <input type="text" className="input" value={formData.peso || "Sin especificar"} disabled />
+                      </div>
+                      <div className="col">
+                        <label className="form-label">Teléfono</label>
+                        <input type="text" className="input" value={paciente.telefono || ""} disabled />
+                      </div>
+                      <div className="col" style={{ gridColumn: "span 2" }}>
+                        <label className="form-label">Dirección particular</label>
+                        <input type="text" className="input" value={formData.direccion || "Sin especificar"} disabled />
+                      </div>
+                      <div className="col">
+                        <label className="form-label">Ocupación</label>
+                        <input type="text" className="input" value={formData.ocupacion || "Sin especificar"} disabled />
+                      </div>
+                      <div className="col" style={{ gridColumn: "span 3" }}>
+                        <label className="form-label">Correo electrónico</label>
+                        <input type="email" className="input" value={formData.correoElectronico || "Sin especificar"} disabled />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">👤 Información Básica</h3>
-                  <div className="clinical-grid-3">
-                    <div className="col" style={{ gridColumn: "span 2" }}>
-                      <label className="form-label">Nombre completo</label>
-                      <input type="text" className="input" value={`${paciente.nombres || ""} ${paciente.apellidos || ""}`.replace(/\s+/g, ' ').trim()} disabled />
+                  <h3 className="clinical-section-title">❓ Motivo de Consulta y Diagnóstico</h3>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1.5rem" }}>
+                    <div className="col" style={{ margin: 0 }}>
+                      <label className="form-label">Motivo de consulta</label>
+                      <textarea className="textarea" value={formData.motivoConsulta || "Ninguno registrado"} disabled style={{ height: "100px" }} />
                     </div>
-                    <div className="col">
-                      <label className="form-label">Edad (Años)</label>
-                      <input type="text" className="input" value={paciente.edad} disabled />
+                    <div className="col" style={{ margin: 0 }}>
+                      <label className="form-label">Diagnóstico médico</label>
+                      <textarea className="textarea" value={formData.diagnosticoMedico || "Ninguno registrado"} disabled style={{ height: "100px" }} />
                     </div>
-                    <div className="col">
-                      <label className="form-label">Fecha de nacimiento</label>
-                      <input type="date" className="input" value={formData.fechaNacimiento || ""} disabled />
-                    </div>
-                    <div className="col">
-                      <label className="form-label">Sexo</label>
-                      <input type="text" className="input" value={formData.sexo || "Sin especificar"} disabled />
+                  </div>
+                  <div className="clinical-grid-1">
+                    <div className="col" style={{ margin: 0 }}>
+                      <label className="form-label">Indicaciones médicas</label>
+                      <textarea className="textarea" value={formData.indicacionesMedicas || "Ninguno registrado"} disabled style={{ height: "80px" }} />
                     </div>
                   </div>
                 </div>
 
                 <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">📞 Datos de Contacto y Medidas</h3>
-                  <div className="clinical-grid-3">
+                  <h3 className="clinical-section-title">🎯 Plan de Tratamiento Proyectado</h3>
+                  <div className="clinical-grid-2">
                     <div className="col">
-                      <label className="form-label">Talla (cm)</label>
-                      <input type="number" className="input" value={formData.talla || ""} disabled />
-                    </div>
-                    <div className="col">
-                      <label className="form-label">Peso (kg)</label>
-                      <input type="number" className="input" value={formData.peso || ""} disabled />
+                      <label className="form-label">Duración estimada del plan</label>
+                      <input type="text" className="input" value={formData.duracionPlan || "Sin especificar"} disabled />
                     </div>
                     <div className="col">
-                      <label className="form-label">Teléfono</label>
-                      <input type="text" className="input" value={paciente.telefono} disabled />
-                    </div>
-                    <div className="col" style={{ gridColumn: "span 2" }}>
-                      <label className="form-label">Dirección particular</label>
-                      <input type="text" className="input" value={formData.direccion || ""} disabled />
-                    </div>
-                    <div className="col">
-                      <label className="form-label">Ocupación</label>
-                      <input type="text" className="input" value={formData.ocupacion || ""} disabled />
-                    </div>
-                    <div className="col" style={{ gridColumn: "span 3" }}>
-                      <label className="form-label">Correo electrónico</label>
-                      <input type="email" className="input" value={formData.correoElectronico || ""} disabled />
+                      <label className="form-label">Frecuencia de sesiones</label>
+                      <input type="text" className="input" value={formData.frecuenciaSesiones || "Sin especificar"} disabled />
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {activeTab === "AnaAnte" && (
+            {activeTab === "antecedentes" && (
               <div className="tab-content">
-                <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">🏥 Anamnesis General</h3>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1.5rem" }}>
-                    <div className="col" style={{ margin: 0 }}>
-                      <label className="form-label">Motivo de consulta</label>
-                      <textarea className="textarea" value={formData.motivoConsulta || ""} disabled style={{ height: "100px" }} />
-                    </div>
-                    <div className="col" style={{ margin: 0 }}>
-                      <label className="form-label">Diagnóstico médico</label>
-                      <textarea className="textarea" value={formData.diagnosticoMedico || ""} disabled style={{ height: "100px" }} />
-                    </div>
-                  </div>
-                  <div className="clinical-grid-1">
-                    <div className="col" style={{ margin: 0 }}>
-                      <label className="form-label">Indicaciones médicas</label>
-                      <textarea className="textarea" value={formData.indicacionesMedicas || ""} disabled style={{ height: "80px" }} />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">⚡ Valoración del Dolor y Síntomas</h3>
-                  <div className="clinical-grid-3">
-                    <div className="col">
-                      <label className="form-label">Escala EVA</label>
-                      <input
-                        type="text"
-                        className="input"
-                        value={
-                          formData.eva !== undefined && formData.eva !== ""
-                            ? `${formData.eva} - ${getEvaTextDescription(formData.eva)}`
-                            : "Ninguno registrado"
-                        }
-                        disabled
-                      />
-                    </div>
-                    <div className="col">
-                      <label className="form-label">Tipo de dolor</label>
-                      <input
-                        type="text"
-                        className="input"
-                        value={
-                          {
-                            ardon: "Ardor",
-                            quemante: "Quemante",
-                            punzante: "Punzante",
-                            pellizco: "Pellizco",
-                            muscular: "Muscular",
-                            otra: "Otra"
-                          }[formData.tipo] || formData.tipo || "Ninguno registrado"
-                        }
-                        disabled
-                      />
-                    </div>
-                    <div className="col">
-                      <label className="form-label">Sensación</label>
-                      <input
-                        type="text"
-                        className="input"
-                        value={
-                          formData.sensacion
-                            ? formData.sensacion
-                              .split(", ")
-                              .map(item => {
-                                const key = item.toLowerCase();
-                                return {
-                                  hormigueo: "Hormigueo",
-                                  adormecimiento: "Adormecimiento",
-                                  calambre: "Calambre",
-                                  rigidez: "Rigidez",
-                                  otra: "Otra"
-                                }[key] || item;
-                              })
-                              .join(", ")
-                            : "Ninguno registrado"
-                        }
-                        disabled
-                      />
-                    </div>
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginTop: "1.5rem" }}>
-                    <div className="col" style={{ margin: 0 }}>
-                      <label className="form-label">Dolor últimas 24hrs</label>
-                      <textarea className="textarea" value={formData.dolor24hrs || ""} disabled style={{ height: "80px" }} />
-                    </div>
-                    <div className="col" style={{ margin: 0 }}>
-                      <label className="form-label">Factores que lo modifican</label>
-                      <textarea className="textarea" value={formData.facModifica || ""} disabled style={{ height: "80px" }} />
-                    </div>
-                  </div>
-
-                  {/* Listado de Zonas de Dolor Registradas */}
-                  {formData.dolorZonas && formData.dolorZonas.length > 0 && (
-                    <div style={{ marginTop: "2rem", paddingTop: "1.5rem", borderTop: "1px dashed rgba(139, 92, 246, 0.15)" }}>
-                      <h4 style={{ fontWeight: "700", fontSize: "0.95rem", color: "var(--primary)", marginBottom: "1rem" }}>
-                        📍 Zonas de Dolor Detalladas
-                      </h4>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-                        {formData.dolorZonas.map((dz, idx) => {
-                          const getEvaColor = (val) => {
-                            if (val >= 7) return "rgba(239, 68, 68, 0.15)";
-                            if (val >= 4) return "rgba(245, 158, 11, 0.15)";
-                            return "rgba(16, 185, 129, 0.15)";
-                          };
-                          const getEvaTextColor = (val) => {
-                            if (val >= 7) return "var(--danger)";
-                            if (val >= 4) return "var(--warning)";
-                            return "var(--success)";
-                          };
-
-                          return (
-                            <div
-                              key={idx}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                background: "rgba(255, 255, 255, 0.01)",
-                                border: "1px solid var(--border-light)",
-                                borderRadius: "8px",
-                                padding: "0.6rem 1rem",
-                                gap: "1rem"
-                              }}
-                            >
-                              <span style={{ fontWeight: "700", fontSize: "0.9rem", color: "var(--text-main)", display: "flex", alignItems: "center", gap: "4px" }}>
-                                📍 {dz.zona}
-                              </span>
-                              <span
-                                style={{
-                                  background: getEvaColor(dz.eva),
-                                  color: getEvaTextColor(dz.eva),
-                                  fontWeight: "800",
-                                  fontSize: "0.75rem",
-                                  padding: "3px 8px",
-                                  borderRadius: "12px",
-                                  minWidth: "75px",
-                                  textAlign: "center"
-                                }}
-                              >
-                                EVA: {dz.eva} ({getEvaTextDescription(dz.eva)})
-                              </span>
-                              {dz.comentario && (
-                                <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontStyle: "italic", borderLeft: "2px solid rgba(139, 92, 246, 0.2)", paddingLeft: "10px" }}>
-                                  {dz.comentario}
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
                 <div className="clinical-form-section">
                   <h3 className="clinical-section-title">🏃 Actividades y Participaciones con Deficiencia</h3>
                   <div className="clinical-grid-1">
@@ -489,12 +368,12 @@ const VistaHistorial = () => {
                     </div>
                     <div className="col" style={{ margin: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
                       <div>
-                        <label className="form-label">Antecedentes quirúrgicos</label>
+                        <label className="form-label">🔪 Antecedentes quirúrgicos</label>
                         <textarea className="textarea" value={Array.isArray(formData.antecedentesQuirurgicos) ? (formData.antecedentesQuirurgicos.filter(Boolean).join(", ") || "Ninguno registrado") : formData.antecedentesQuirurgicos || "Ninguno registrado"} disabled style={{ height: "60px" }} />
                       </div>
                       {formData.anioQuirurgico && (
                         <div>
-                          <label className="form-label">Año quirúrgico</label>
+                          <label className="form-label">Fecha / Año quirúrgico</label>
                           <input type="text" className="input" value={formData.anioQuirurgico} disabled style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem" }} />
                         </div>
                       )}
@@ -685,13 +564,146 @@ const VistaHistorial = () => {
                   <div className="clinical-grid-2">
                     <div className="col">
                       <label className="form-label">Zonas de dolor a la palpación</label>
-                      <textarea className="textarea" value={formData.dolorPalpacion || ""} disabled style={{ height: "100px" }} />
+                      <textarea className="textarea" value={formData.dolorPalpacion || "Ninguno registrado"} disabled style={{ height: "100px" }} />
                     </div>
                     <div className="col">
                       <label className="form-label">Zonas de espasmo muscular</label>
-                      <textarea className="textarea" value={formData.espasmoPalpacion || ""} disabled style={{ height: "100px" }} />
+                      <textarea className="textarea" value={formData.espasmoPalpacion || "Ninguno registrado"} disabled style={{ height: "100px" }} />
                     </div>
                   </div>
+                </div>
+
+                <div className="clinical-form-section">
+                  <h3 className="clinical-section-title">⚡ Evaluación del Dolor</h3>
+                  <div className="clinical-grid-3">
+                    <div className="col">
+                      <label className="form-label">Escala EVA</label>
+                      <input
+                        type="text"
+                        className="input"
+                        value={
+                          formData.eva !== undefined && formData.eva !== ""
+                            ? `${formData.eva} - ${getEvaTextDescription(formData.eva)}`
+                            : "Ninguno registrado"
+                        }
+                        disabled
+                      />
+                    </div>
+                    <div className="col">
+                      <label className="form-label">Tipo de dolor</label>
+                      <input
+                        type="text"
+                        className="input"
+                        value={
+                          {
+                            ardon: "Ardor",
+                            quemante: "Quemante",
+                            punzante: "Punzante",
+                            pellizco: "Pellizco",
+                            muscular: "Muscular",
+                            otra: "Otra"
+                          }[formData.tipo] || formData.tipo || "Ninguno registrado"
+                        }
+                        disabled
+                      />
+                    </div>
+                    <div className="col">
+                      <label className="form-label">Sensación</label>
+                      <input
+                        type="text"
+                        className="input"
+                        value={
+                          formData.sensacion
+                            ? formData.sensacion
+                              .split(", ")
+                              .map(item => {
+                                const key = item.toLowerCase();
+                                return {
+                                  hormigueo: "Hormigueo",
+                                  adormecimiento: "Adormecimiento",
+                                  calambre: "Calambre",
+                                  rigidez: "Rigidez",
+                                  otra: "Otra"
+                                }[key] || item;
+                              })
+                              .join(", ")
+                            : "Ninguno registrado"
+                        }
+                        disabled
+                      />
+                    </div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginTop: "1.5rem" }}>
+                    <div className="col" style={{ margin: 0 }}>
+                      <label className="form-label">Dolor últimas 24hrs</label>
+                      <textarea className="textarea" value={formData.dolor24hrs || "Ninguno registrado"} disabled style={{ height: "80px" }} />
+                    </div>
+                    <div className="col" style={{ margin: 0 }}>
+                      <label className="form-label">Factores que lo modifican</label>
+                      <textarea className="textarea" value={formData.facModifica || "Ninguno registrado"} disabled style={{ height: "80px" }} />
+                    </div>
+                  </div>
+
+                  {/* Listado de Zonas de Dolor Registradas */}
+                  {formData.dolorZonas && formData.dolorZonas.length > 0 && (
+                    <div style={{ marginTop: "2rem", paddingTop: "1.5rem", borderTop: "1px dashed rgba(139, 92, 246, 0.15)" }}>
+                      <h4 style={{ fontWeight: "700", fontSize: "0.95rem", color: "var(--primary)", marginBottom: "1rem" }}>
+                        📍 Zonas de Dolor Detalladas
+                      </h4>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                        {formData.dolorZonas.map((dz, idx) => {
+                          const getEvaColor = (val) => {
+                            if (val >= 7) return "rgba(239, 68, 68, 0.15)";
+                            if (val >= 4) return "rgba(245, 158, 11, 0.15)";
+                            return "rgba(16, 185, 129, 0.15)";
+                          };
+                          const getEvaTextColor = (val) => {
+                            if (val >= 7) return "var(--danger)";
+                            if (val >= 4) return "var(--warning)";
+                            return "var(--success)";
+                          };
+
+                          return (
+                            <div
+                              key={idx}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                background: "rgba(255, 255, 255, 0.01)",
+                                border: "1px solid var(--border-light)",
+                                borderRadius: "8px",
+                                padding: "0.6rem 1rem",
+                                gap: "1rem"
+                              }}
+                            >
+                              <span style={{ fontWeight: "700", fontSize: "0.9rem", color: "var(--text-main)", display: "flex", alignItems: "center", gap: "4px" }}>
+                                📍 {dz.zona}
+                              </span>
+                              <span
+                                style={{
+                                  background: getEvaColor(dz.eva),
+                                  color: getEvaTextColor(dz.eva),
+                                  fontWeight: "800",
+                                  fontSize: "0.75rem",
+                                  padding: "3px 8px",
+                                  borderRadius: "12px",
+                                  minWidth: "75px",
+                                  textAlign: "center"
+                                }}
+                              >
+                                EVA: {dz.eva} ({getEvaTextDescription(dz.eva)})
+                              </span>
+                              {dz.comentario && (
+                                <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontStyle: "italic", borderLeft: "2px solid rgba(139, 92, 246, 0.2)", paddingLeft: "10px" }}>
+                                  {dz.comentario}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

@@ -1,55 +1,135 @@
 .spinner-container {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 14px;
+  padding: 1rem;
 }
 
-.spinner {
-  border: 3px solid rgba(0, 0, 0, 0.1);
-  border-radius: 50%;
-  border-top: 3px solid var(--primary-color);
-  animation: spin 1s linear infinite;
-}
-
-.spinner-container.small .spinner {
-  width: 16px;
-  height: 16px;
-  border-width: 2px;
-}
-
-.spinner-container.medium .spinner {
-  width: 24px;
-  height: 24px;
-}
-
-.spinner-container.large .spinner {
-  width: 40px;
-  height: 40px;
-  border-width: 4px;
-}
-
-.spinner-text {
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Spinner overlay for full screen or card blocking */
-.spinner-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.7);
+/* 🔵 CLASSIC TRAILING DOT RING SPINNER (EXACT MATCH TO REFERENCE GIF) */
+.spinner-dot-ring {
+  position: relative;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10;
-  border-radius: inherit;
+}
+
+.dot-holder {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 10px;
+  height: 100%;
+  margin-left: -5px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.dot-holder .ring-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--primary, #8b5cf6);
+  animation: dotFadeTrail 0.85s infinite linear;
+}
+
+/* 8 RADIAL ROTATIONS */
+.dot-1 { transform: rotate(0deg); }
+.dot-2 { transform: rotate(45deg); }
+.dot-3 { transform: rotate(90deg); }
+.dot-4 { transform: rotate(135deg); }
+.dot-5 { transform: rotate(180deg); }
+.dot-6 { transform: rotate(225deg); }
+.dot-7 { transform: rotate(270deg); }
+.dot-8 { transform: rotate(315deg); }
+
+/* DELAYS ON INNER DOT */
+.dot-1 .ring-dot { animation-delay: 0s; }
+.dot-2 .ring-dot { animation-delay: -0.74375s; }
+.dot-3 .ring-dot { animation-delay: -0.6375s; }
+.dot-4 .ring-dot { animation-delay: -0.53125s; }
+.dot-5 .ring-dot { animation-delay: -0.425s; }
+.dot-6 .ring-dot { animation-delay: -0.31875s; }
+.dot-7 .ring-dot { animation-delay: -0.2125s; }
+.dot-8 .ring-dot { animation-delay: -0.10625s; }
+
+/* 📏 SIZES */
+.spinner-container.small .spinner-dot-ring { width: 28px; height: 28px; }
+.spinner-container.small .dot-holder { width: 6px; margin-left: -3px; }
+.spinner-container.small .ring-dot { width: 5.5px; height: 5.5px; }
+
+.spinner-container.large .spinner-dot-ring { width: 72px; height: 72px; }
+.spinner-container.large .dot-holder { width: 14px; margin-left: -7px; }
+.spinner-container.large .ring-dot { width: 13px; height: 13px; }
+
+/* ✍️ TEXT */
+.spinner-text {
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--primary, #8b5cf6);
+}
+
+/* 🎥 ANIMATION - TRAILING FADE & SHRINKING SCALE (MATCHING REFERENCE GIF) */
+@keyframes dotFadeTrail {
+  0% {
+    opacity: 1;
+    transform: scale(1.35);
+    background: var(--primary, #8b5cf6);
+    box-shadow: 0 0 10px var(--primary-glow, rgba(139, 92, 246, 0.6));
+  }
+  12.5% {
+    opacity: 0.85;
+    transform: scale(1.15);
+  }
+  25% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  37.5% {
+    opacity: 0.55;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.75);
+    background: var(--accent, #0d9488);
+  }
+  62.5% {
+    opacity: 0.28;
+    transform: scale(0.65);
+  }
+  75% {
+    opacity: 0.18;
+    transform: scale(0.55);
+  }
+  87.5% {
+    opacity: 0.1;
+    transform: scale(0.45);
+  }
+  100% {
+    opacity: 0.1;
+    transform: scale(0.45);
+  }
+}
+
+/* 🖼️ GLASS OVERLAY */
+.spinner-overlay,
+.spinner-fullscreen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
 }

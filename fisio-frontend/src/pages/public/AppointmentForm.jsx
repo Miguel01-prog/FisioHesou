@@ -158,7 +158,13 @@ export default function AppointmentForm() {
   };
 
   const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === "telefono") {
+      const cleanValue = value.replace(/\D/g, "").slice(0, 10);
+      setFormData({ ...formData, telefono: cleanValue });
+      return;
+    }
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleSaveCita = async () => {
@@ -166,6 +172,8 @@ export default function AppointmentForm() {
       return showError("Campos incompletos", "Selecciona fecha y hora antes de guardar.");
     if (!formData.nombres || !formData.apellidoPaterno || !formData.edad || !formData.telefono || !formData.email)
       return showError("Campos vacíos", "Completa todos los campos obligatorios del formulario (incluyendo correo electrónico).");
+    if (formData.telefono.replace(/\D/g, "").length !== 10)
+      return showError("Teléfono inválido", "El número de teléfono debe constar exactamente de 10 dígitos.");
     if (!clinic)
       return showError("Clínica no cargada", "No se puede agendar cita sin el contexto de la clínica");
 
@@ -321,6 +329,7 @@ export default function AppointmentForm() {
                   placeholder="Ej. 5512345678"
                   value={formData.telefono}
                   onChange={handleInputChange}
+                  maxLength={10}
                   required
                 />
               </div>

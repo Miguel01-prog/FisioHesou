@@ -19,8 +19,15 @@ export default function PrivateRoute({ children, allowedRoles = [] }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
-    return <Navigate to="/" replace />;
+  const userRole = user?.role || user?.rol;
+
+  if (allowedRoles.length > 0 && (!userRole || !allowedRoles.includes(userRole))) {
+    const defaultRedirect = 
+      userRole === 'fisioterapeuta' ? '/fisioterapeuta' :
+      userRole === 'nutriologa' ? '/nutriologa' :
+      userRole === 'superadmin' ? '/admin' : '/login';
+
+    return <Navigate to={defaultRedirect} replace />;
   }
 
   return children;

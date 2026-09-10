@@ -17,6 +17,14 @@ export default function ModalAgregarPaciente({ onClose, onPatientAdded }) {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    if (name === "telefono") {
+      const cleanValue = value.replace(/\D/g, "").slice(0, 10);
+      setFormData({
+        ...formData,
+        telefono: cleanValue
+      });
+      return;
+    }
     setFormData({
       ...formData,
       [name]: value
@@ -29,6 +37,11 @@ export default function ModalAgregarPaciente({ onClose, onPatientAdded }) {
     // Validaciones
     if (!formData.nombres.trim() || !formData.apellidoPaterno.trim() || !formData.edad || !formData.telefono.trim() || !formData.area) {
       showError("Campos obligatorios", "Por favor complete todos los campos requeridos.");
+      return;
+    }
+
+    if (formData.telefono.replace(/\D/g, "").length !== 10) {
+      showError("Teléfono inválido", "El número de teléfono debe constar exactamente de 10 dígitos.");
       return;
     }
 
@@ -136,7 +149,8 @@ export default function ModalAgregarPaciente({ onClose, onPatientAdded }) {
                   value={formData.telefono}
                   onChange={handleInputChange}
                   className="form-input"
-                  placeholder="Teléfono"
+                  placeholder="Teléfono (10 dígitos)"
+                  maxLength={10}
                   required
                 />
               </div>

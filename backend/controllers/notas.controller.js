@@ -1,5 +1,6 @@
 import Nota from "../models/notas.model.js";
 import Cita from "../models/cita.model.js";
+import Historial from "../models/historial-pacientes.model.js";
 
 // Crear nota
 export const crearNota = async (req, res) => {
@@ -20,8 +21,22 @@ export const crearNota = async (req, res) => {
         });
         await nuevaNota.save();
 
-        // Automatización: Cambiar estado de citas activas del paciente a "Asistió"
         if (nuevaNota.identificadorPaciente) {
+            // Vincular al historial clínico si este aún no tiene soapFK asignada
+            try {
+                const historial = await Historial.findOne({
+                    identificadorPaciente: nuevaNota.identificadorPaciente,
+                    clientId: req.user.clientId
+                });
+                if (historial && !historial.soapFK) {
+                    historial.soapFK = nuevaNota._id;
+                    await historial.save();
+                }
+            } catch (histErr) {
+                console.error("Error al vincular nota al historial:", histErr);
+            }
+
+            // Automatización: Cambiar estado de citas activas del paciente a "Asistió"
             const resultCitas = await Cita.updateMany(
                 {
                     identificadorPaciente: nuevaNota.identificadorPaciente,
@@ -145,13 +160,33 @@ export const generaridHistoricoFk = async (req, res) => {
         const año = fecha.getFullYear();
         const mesAñoNota = `${mes}-${año}`;
 
-        // Contar cuántas notas tiene este paciente en el mes
-        const cantidadNotas = await Nota.countDocuments({
+        // Obtener todas las notas registradas para este paciente
+        const notasExistentes = await Nota.find({
             identificadorPaciente,
             clientId: req.user.clientId
         });
 
-        // Generar ID: iniciales + fecha + conteo + random
+        // Filtrar solo las notas con contenido real
+        const notasValidas = notasExistentes.filter(n => {
+            const hasContenido = Boolean(
+                n.contenidoNota && 
+                n.contenidoNota.trim() !== "" && 
+                n.contenidoNota !== "Nota de evolución y seguimiento clínico" &&
+                n.contenidoNota !== "Nota de seguimiento clínico sin observaciones"
+            );
+            const hasSOAP = Boolean(
+                (n.S && n.S.trim() !== "") ||
+                (n.O && n.O.trim() !== "") ||
+                (n.A && n.A.trim() !== "") ||
+                (n.P && n.P.trim() !== "")
+            );
+            return hasContenido || hasSOAP;
+        });
+
+        // La siguiente nota será el número de notas válidas + 1 (1 si no tiene ninguna)
+        const numeroNota = notasValidas.length + 1;
+
+        // Generar ID: iniciales + fecha + numeroNota
         const parts = apellidoPaciente.trim().split(/\s+/).filter(Boolean);
         let apellidoIniciales = "";
         parts.forEach(part => {
@@ -160,9 +195,9 @@ export const generaridHistoricoFk = async (req, res) => {
             }
         });
         const iniciales = `${nombrePaciente[0]}${apellidoIniciales}`.toUpperCase();
-        const idHistoricoFk = `${iniciales}-${mesAñoNota}-${cantidadNotas + 1}`;
+        const idHistoricoFk = `${iniciales}-${mesAñoNota}-${numeroNota}`;
 
-        res.json({ idHistoricoFk, mesAñoNota });
+        res.json({ idHistoricoFk, mesAñoNota, numeroNota });
     } catch (err) {
         res.status(500).json({ message: "Error al generar ID", error: err.message });
     }

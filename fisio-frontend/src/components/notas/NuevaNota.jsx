@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext.jsx";
 import ModalAgendarCita from "../layout/ModalAgendarCita.jsx";
 import api from "../../api.js";
 import { showSuccess, showError } from "../../utils/alerts.js";
@@ -7,6 +8,7 @@ import { IoCaretDown, IoCaretUp } from "react-icons/io5";
 
 export default function CrearNota() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [paciente, setPaciente] = useState(null);
   const [ultimaNota, setUltimaNota] = useState(null);
   const [openUltimaNota, setOpenUltimaNota] = useState(false);
@@ -67,16 +69,38 @@ export default function CrearNota() {
         P: "",
       });
 
-      // Obtener las notas previas para mostrar la última
+      // Obtener las notas previas para mostrar la última (solo si existen notas con contenido)
       try {
         const { data } = await api.get(`/notas/paciente/${datos.identificadorPaciente}`);
         if (data && data.length > 0) {
-          // Ordenar las notas por fecha de creación descendente (la más reciente primero)
-          const notasOrdenadas = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-          setUltimaNota(notasOrdenadas[0]);
+          const notasValidas = data.filter(n => {
+            const hasContenido = Boolean(
+              n.contenidoNota && 
+              n.contenidoNota.trim() !== "" && 
+              n.contenidoNota !== "Nota de evolución y seguimiento clínico" &&
+              n.contenidoNota !== "Nota de seguimiento clínico sin observaciones"
+            );
+            const hasSOAP = Boolean(
+              (n.S && n.S.trim() !== "") ||
+              (n.O && n.O.trim() !== "") ||
+              (n.A && n.A.trim() !== "") ||
+              (n.P && n.P.trim() !== "")
+            );
+            return hasContenido || hasSOAP;
+          });
+
+          if (notasValidas.length > 0) {
+            const notasOrdenadas = notasValidas.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            setUltimaNota(notasOrdenadas[0]);
+          } else {
+            setUltimaNota(null);
+          }
+        } else {
+          setUltimaNota(null);
         }
       } catch (err) {
         console.error("Error al obtener notas previas:", err);
+        setUltimaNota(null);
       }
     };
 
@@ -134,22 +158,14 @@ export default function CrearNota() {
         showSuccess("Nota Guardada", "La nota del paciente se guardó correctamente con la información SOAP completa.");
       }
 
-      // La nota recién creada se convierte en la última nota
-      setUltimaNota(data.nota || payload);
-
-      // Actualizar ID para la siguiente nota
-      const nuevoID = await generarIdNotaFront(paciente, form.mesAñoNota);
-
-      // Limpiar formulario y preparar la siguiente nota
-      setForm((prev) => ({
-        ...prev,
-        idNota: nuevoID,
-        contenidoNota: "",
-        S: "",
-        O: "",
-        A: "",
-        P: "",
-      }));
+      // Regresar al historial del paciente inmediatamente tras guardar
+      const rolePath = user?.role || 'fisioterapeuta';
+      const pacienteId = paciente?.identificadorPaciente || form.identificadorPaciente;
+      if (pacienteId) {
+        navigate(`/${rolePath}/paciente/${pacienteId}`);
+      } else {
+        navigate(`/${rolePath}/pacientes`);
+      }
     } catch (err) {
       console.error("Error al guardar la nota:", err);
       showError("Error al Guardar", "No se pudo conectar con el servidor para guardar la nota.");

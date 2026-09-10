@@ -9,6 +9,7 @@ const clientSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   modules: { type: [String], default: ["agenda", "pacientes", "bloquear"] },
   // Branding & Sidebar Config
+  tabTitle: { type: String, default: "FisioHesou - Sistema de Gestión Clínica" },
   sidebarName: { type: String, default: "" },
   sidebarSubtitle: { type: String, default: "" },
   theme: {

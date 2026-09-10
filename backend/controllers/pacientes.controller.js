@@ -4,6 +4,7 @@ import HistorialPacientes from "../models/historial-pacientes.model.js";
 import Nota from "../models/notas.model.js";
 import PlanTratamiento from "../models/plan-tratamiento.model.js";
 import crypto from "crypto";
+import mongoose from "mongoose";
 
 export const obtenerTodosPacientes = async (req, res) => {
   console.log("- Obteniendo todos los pacientes...");
@@ -24,7 +25,15 @@ export const obtenerTodosPacientes = async (req, res) => {
 
 export const obtenerPacientesSinNota = async (req, res) => {
   try {
-    const filter = req.user.role === 'superadmin' ? {} : { clientId: req.user.clientId };
+    const roleFilter = req.user.role === 'superadmin' ? {} : {
+      $or: [
+        { clientId: req.user.clientId },
+        { clientId: { $exists: false } },
+        { clientId: null }
+      ]
+    };
+
+    const filter = { ...roleFilter };
     
     if (req.user.role === 'fisioterapeuta') {
       filter.area = { $in: ['fisioterapia', 'fisioterapeuta'] };
@@ -32,13 +41,48 @@ export const obtenerPacientesSinNota = async (req, res) => {
       filter.area = { $in: ['nutriologa', 'nutricion', 'nutriología'] };
     }
 
+    // 1. Obtener pacientes asignados al área
     const pacientes = await Paciente.find(filter).sort({ fechaRegistro: -1 });
 
-    const notasFilter = req.user.role === 'superadmin' ? {} : { clientId: req.user.clientId };
-    const notasExistentes = await Nota.find(notasFilter).distinct("identificadorPaciente");
-    const notasSet = new Set(notasExistentes.map(id => String(id)));
+    // 2. Obtener identificadores de pacientes que SÍ TIENEN Historial Clínico registrado
+    const historiales = await HistorialPacientes.find(roleFilter, { identificadorPaciente: 1 });
+    const historialesSet = new Set(
+      historiales
+        .map(h => h.identificadorPaciente)
+        .filter(id => id && String(id).trim() !== "")
+        .map(id => String(id).trim())
+    );
 
-    const pacientesSinNota = pacientes.filter(p => !notasSet.has(String(p.identificadorPaciente)));
+    // 3. Obtener identificadores de pacientes que SÍ TIENEN Nota SOAP válida con contenido
+    const notas = await Nota.find(roleFilter);
+    const notasSet = new Set();
+    notas.forEach(n => {
+      if (!n.identificadorPaciente) return;
+      const hasContenido = Boolean(
+        n.contenidoNota && 
+        n.contenidoNota.trim() !== "" && 
+        n.contenidoNota !== "Nota de evolución y seguimiento clínico" &&
+        n.contenidoNota !== "Nota de seguimiento clínico sin observaciones"
+      );
+      const hasSOAP = Boolean(
+        (n.S && n.S.trim() !== "") ||
+        (n.O && n.O.trim() !== "") ||
+        (n.A && n.A.trim() !== "") ||
+        (n.P && n.P.trim() !== "")
+      );
+      if (hasContenido || hasSOAP) {
+        notasSet.add(String(n.identificadorPaciente).trim());
+      }
+    });
+
+    // 4. Filtrar: Mostrar UNICAMENTE pacientes que tienen Historial Clínico Y NO tienen Nota SOAP
+    const pacientesSinNota = pacientes.filter(p => {
+      if (!p.identificadorPaciente) return false;
+      const idStr = String(p.identificadorPaciente).trim();
+      const tieneHistorial = historialesSet.has(idStr);
+      const tieneNota = notasSet.has(idStr);
+      return tieneHistorial && !tieneNota;
+    });
 
     res.json({ ok: true, count: pacientesSinNota.length, pacientes: pacientesSinNota });
   } catch (err) {
@@ -141,7 +185,23 @@ export const obtenerPacientePorId = async (req, res) => {
   console.log("- Obteniendo paciente por ID:", req.params.id);
   try {
     const { id } = req.params;
-    const filter = req.user.role === 'superadmin' ? { identificadorPaciente: id } : { identificadorPaciente: id, clientId: req.user.clientId };
+    const isObjectId = mongoose.Types.ObjectId.isValid(id);
+
+    const matchConditions = [
+      { identificadorPaciente: id },
+      ...(isObjectId ? [{ _id: id }] : [])
+    ];
+
+    let filter = {};
+    if (req.user.role === 'superadmin') {
+      filter = { $or: matchConditions };
+    } else {
+      filter = {
+        clientId: req.user.clientId,
+        $or: matchConditions
+      };
+    }
+
     const paciente = await Paciente.findOne(filter);
     if (!paciente) {
       return res.status(404).json({ message: "Paciente no encontrado" });

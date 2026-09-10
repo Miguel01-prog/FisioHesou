@@ -2,6 +2,7 @@ import Notification from "../models/notification.model.js";
 import Cita from "../models/cita.model.js";
 import Paciente from "../models/pacientes.model.js";
 import Nota from "../models/notas.model.js";
+import HistorialPacientes from "../models/historial-pacientes.model.js";
 
 // Helper function to check and generate notifications for upcoming appointments today
 const checkAndGenerateUpcomingNotifications = async (area, clientId) => {
@@ -31,7 +32,7 @@ const checkAndGenerateUpcomingNotifications = async (area, clientId) => {
         // Create upcoming notification
         await Notification.create({
           title: "Consulta Próxima",
-          description: `La cita de ${cita.nombres} ${cita.apellidoPaterno} es hoy a las ${cita.horaCita}.`,
+          description: `La cita de ${cita.nombres} ${cita.apellidoPaterno || ''}`.trim() + ` es hoy a las ${cita.horaCita}.`,
           area: area,
           type: "upcoming_appointment",
           citaId: cita._id,
@@ -45,7 +46,7 @@ const checkAndGenerateUpcomingNotifications = async (area, clientId) => {
   }
 };
 
-// Helper function to check and generate notifications for patients without a SOAP note
+// Helper function to check and generate notifications for patients without a SOAP note (ONLY IF THEY ALREADY HAVE AN EXPEDIENTE/HISTORIAL CREATED)
 const checkAndGeneratePendingSoapNotifications = async (area, clientId) => {
   try {
     const areasABuscar = area === "fisioterapeuta" ? ["fisioterapia", "fisioterapeuta"] : ["nutriologa", "nutricion", "nutriología"];
@@ -57,14 +58,32 @@ const checkAndGeneratePendingSoapNotifications = async (area, clientId) => {
     });
 
     for (const pac of pacientes) {
-      // Verificar si el paciente tiene alguna nota registrada
+      if (!pac.identificadorPaciente) continue;
+
+      // 1. PRIMERO: Verificar si el paciente TIENE Expediente / Historial Clínico registrado
+      const historialExiste = await HistorialPacientes.findOne({
+        identificadorPaciente: pac.identificadorPaciente,
+        clientId
+      });
+
+      // Si NO tiene expediente creado aún, NO generar ni mantener la notificación de nota pendiente
+      if (!historialExiste) {
+        await Notification.deleteMany({
+          identificadorPaciente: pac.identificadorPaciente,
+          type: "pending_soap",
+          clientId
+        });
+        continue;
+      }
+
+      // 2. Si SÍ TIENE EXPEDIENTE, verificar si ya cuenta con alguna nota SOAP redactada
       const notaExiste = await Nota.findOne({
         identificadorPaciente: pac.identificadorPaciente,
         clientId
       });
 
       if (!notaExiste) {
-        // Si no tiene nota, verificar si ya se le notificó
+        // Si tiene expediente pero aún NO tiene nota SOAP, verificar si ya existe la notificación
         const notifExiste = await Notification.findOne({
           identificadorPaciente: pac.identificadorPaciente,
           type: "pending_soap",
@@ -75,7 +94,7 @@ const checkAndGeneratePendingSoapNotifications = async (area, clientId) => {
           const nombreCompleto = `${pac.nombres} ${pac.apellidoPaterno || ""}`.trim();
           await Notification.create({
             title: "Nota SOAP Pendiente",
-            description: `El paciente ${nombreCompleto} aún no cuenta con su primera Nota SOAP.`,
+            description: `El paciente ${nombreCompleto} cuenta con expediente pero aún no tiene nota SOAP.`,
             area: area,
             type: "pending_soap",
             identificadorPaciente: pac.identificadorPaciente,
@@ -83,7 +102,7 @@ const checkAndGeneratePendingSoapNotifications = async (area, clientId) => {
           });
         }
       } else {
-        // Si ya cuenta con nota, limpiar notificaciones pendientes si existieran
+        // Si ya cuenta con nota, limpiar cualquier notificación pendiente de este paciente
         await Notification.deleteMany({
           identificadorPaciente: pac.identificadorPaciente,
           type: "pending_soap",

@@ -46,3 +46,11 @@ export function capitalizeWords(text = "") {
     })
     .join(" ");
 }
+
+export function obfuscateId(id) {
+  return id ? String(id) : "";
+}
+
+export function deobfuscateId(encoded) {
+  return encoded ? String(encoded) : "";
+}

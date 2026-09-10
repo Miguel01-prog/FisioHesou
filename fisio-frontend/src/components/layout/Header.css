@@ -1,5 +1,5 @@
 /* ==========================================================================
-   🧱 GLASSMORPHIC HEADER BAR - PREMIUM STYLING
+   🧱 GLASSMORPHIC HEADER BAR & NOTIFICATIONS - PREMIUM STYLING
    ========================================================================== */
 
 .header-container {
@@ -104,22 +104,36 @@
   background-color: var(--primary-light);
 }
 
+.header-action-icon-btn.has-notifications {
+  color: var(--primary);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
 /* Notifications bell count badge */
 .bell-badge-count {
   position: absolute;
-  top: -2px;
-  right: -2px;
-  background-color: var(--danger);
-  color: var(--text-inverse);
-  font-size: 0.7rem;
-  font-weight: 700;
-  width: 18px;
+  top: -3px;
+  right: -3px;
+  background-color: var(--danger, #ef4444);
+  color: #ffffff;
+  font-size: 0.675rem;
+  font-weight: 800;
+  min-width: 18px;
   height: 18px;
-  border-radius: 50%;
+  border-radius: 10px;
+  padding: 0 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 2px solid var(--card-bg);
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+  animation: pulseBadge 2s infinite;
+}
+
+@keyframes pulseBadge {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
 }
 
 /* Frosted Glass dropdown notification box */
@@ -131,21 +145,23 @@
   position: absolute;
   top: 52px;
   right: -10px;
-  width: 320px;
+  width: 360px;
+  max-width: 90vw;
   padding: 0;
   z-index: 150;
-  border-radius: var(--radius-sm) !important;
-  background: var(--card-bg) !important;
-  border: 1px solid var(--card-border) !important;
+  border-radius: 16px !important;
+  background: var(--card-bg, rgba(255, 255, 255, 0.95)) !important;
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.6)) !important;
   backdrop-filter: blur(24px) saturate(140%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(140%) !important;
-  box-shadow: var(--shadow-glass), var(--shadow-lg) !important;
-  animation: dropdownFade 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.18), 0 0 15px rgba(99, 102, 241, 0.1) !important;
+  animation: dropdownFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  overflow: hidden;
 }
 
 @keyframes dropdownFade {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .bell-dropdown-header {
@@ -153,55 +169,71 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light, rgba(0,0,0,0.06));
+  background: rgba(99, 102, 241, 0.03);
 }
 
 .bell-dropdown-title {
   font-family: var(--font-family-display);
-  font-weight: 800;
+  font-weight: 700;
   font-size: 0.95rem;
+  color: var(--text-main);
+}
+
+.bell-count-pill {
+  background: var(--primary-glow);
   color: var(--primary);
+  font-size: 0.725rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
 }
 
 .bell-clear-btn {
   background: transparent;
   border: none;
-  color: var(--danger);
-  font-size: 0.8rem;
-  font-weight: 700;
+  color: var(--danger, #ef4444);
+  font-size: 0.775rem;
+  font-weight: 600;
   cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.18s;
 }
 
 .bell-clear-btn:hover {
-  background: var(--danger-bg);
+  background: rgba(239, 68, 68, 0.1);
 }
 
 .bell-notifications-list {
   list-style: none;
-  max-height: 280px;
+  max-height: 320px;
   overflow-y: auto;
+  padding: 0.5rem;
+  margin: 0;
 }
 
 .bell-notification-item {
   display: flex;
-  gap: 0.75rem;
-  padding: 0.9rem 1.25rem;
-  border-bottom: 1px solid var(--border-light);
-  transition: background-color var(--transition-fast);
+  gap: 0.85rem;
+  padding: 0.85rem;
+  border-radius: 12px;
+  margin-bottom: 0.4rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
 }
 
 .bell-notification-item:hover {
-  background-color: var(--primary-light);
+  background-color: var(--primary-light, rgba(99, 102, 241, 0.06));
+  border-color: rgba(99, 102, 241, 0.12);
+  transform: translateX(2px);
 }
 
 .bell-item-icon-wrapper {
-  color: var(--primary);
-  background: rgba(99, 102, 241, 0.08);
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -211,7 +243,8 @@
 .bell-item-content {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.2rem;
+  flex: 1;
   text-align: left;
 }
 
@@ -221,10 +254,34 @@
   color: var(--text-main);
 }
 
+.bell-item-time {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
 .bell-item-desc {
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
   line-height: 1.35;
+}
+
+.bell-empty-state {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.bell-dropdown-footer {
+  padding: 0.65rem 1.25rem;
+  border-top: 1px solid var(--border-light, rgba(0,0,0,0.06));
+  background: rgba(0, 0, 0, 0.02);
+  text-align: center;
+  font-size: 0.725rem;
+  color: var(--text-muted);
 }
 
 /* User Badge */
@@ -258,6 +315,54 @@
   font-size: 0.75rem;
   color: var(--text-muted);
   text-transform: capitalize;
+}
+
+/* ==========================================================================
+   💅 SweetAlert2 Custom Notification Styling (Theme Matched)
+   ========================================================================== */
+.custom-swal-popup {
+  border-radius: 20px !important;
+  padding: 1.75rem !important;
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.4)) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+.custom-swal-title {
+  font-family: var(--font-family-display, sans-serif) !important;
+  font-size: 1.35rem !important;
+  font-weight: 700 !important;
+  color: var(--text-main, #0f172a) !important;
+}
+
+.custom-swal-text {
+  font-size: 0.925rem !important;
+  color: var(--text-muted, #475569) !important;
+  margin-top: 0.5rem !important;
+}
+
+.custom-swal-confirm-btn {
+  height: 40px !important;
+  padding: 0 20px !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  margin: 0.5rem 0.25rem 0 0.25rem !important;
+}
+
+.custom-swal-cancel-btn {
+  height: 40px !important;
+  padding: 0 20px !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  margin: 0.5rem 0.25rem 0 0.25rem !important;
+}
+
+.custom-toast-popup {
+  border-radius: 14px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid var(--border-light, rgba(0,0,0,0.08)) !important;
 }
 
 /* ==========================================================================

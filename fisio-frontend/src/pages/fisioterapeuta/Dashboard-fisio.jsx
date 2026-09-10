@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import api from '../../api.js';
@@ -9,6 +9,7 @@ import {
   showInfo,
   showConfirm
 } from '../../utils/alerts.js';
+import { capitalizeWords, formatDateDDMMYYYY, obfuscateId } from '../../utils/utils.js';
 import {
   FiUsers,
   FiCalendar,
@@ -21,7 +22,14 @@ import {
   FiInfo,
   FiAlertCircle,
   FiFileText,
-  FiHeart
+  FiHeart,
+  FiSearch,
+  FiFilter,
+  FiUserPlus,
+  FiLock,
+  FiTrendingUp,
+  FiZap,
+  FiPhone
 } from 'react-icons/fi';
 
 export default function DashboardFisio() {
@@ -29,16 +37,27 @@ export default function DashboardFisio() {
   const navigate = useNavigate();
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('todas'); // 'todas', 'pendientes', 'completadas'
+  const [pendingNotes, setPendingNotes] = useState([]);
   const [stats, setStats] = useState({
     pacientesTotales: 0,
     citasTotales: 0,
     citasHoyCount: 0,
     completadasHoy: 0,
     alertasDolor: 0,
-    notasTotales: 0,
-    historialesTotales: 0
+    notasTotales: 0
   });
-  const [pendingNotes, setPendingNotes] = useState([]);
+  const [weeklyDistribution, setWeeklyDistribution] = useState([
+    { day: 'Lun', count: 0 },
+    { day: 'Mar', count: 0 },
+    { day: 'Mié', count: 0 },
+    { day: 'Jue', count: 0 },
+    { day: 'Vie', count: 0 },
+    { day: 'Sáb', count: 0 }
+  ]);
+
+  const userName = user?.name || user?.nombres || user?.nombre || 'Especialista';
 
   const handleAction = (patient, path) => {
     if (patient.rawPatientData) {
@@ -46,8 +65,8 @@ export default function DashboardFisio() {
     } else {
       localStorage.setItem("dataPaciente", JSON.stringify({
         identificadorPaciente: patient.identificadorPaciente,
-        nombres: patient.name.split(' ')[0],
-        apellidos: patient.name.split(' ').slice(1).join(' ')
+        nombres: (patient.name || '').split(' ')[0],
+        apellidos: (patient.name || '').split(' ').slice(1).join(' ')
       }));
     }
     navigate(path);
@@ -87,6 +106,31 @@ export default function DashboardFisio() {
       const todaySessions = citasData.filter(c => c.fechaCitaStr === hoyStr || c.fechaCita === hoyStr);
       todaySessions.sort((a, b) => (a.horaCita > b.horaCita ? 1 : -1));
 
+      // Calculate weekly appointments distribution
+      const dayMap = { 1: 'Lun', 2: 'Mar', 3: 'Mié', 4: 'Jue', 5: 'Vie', 6: 'Sáb' };
+      const counts = { Lun: 0, Mar: 0, Mié: 0, Jue: 0, Vie: 0, Sáb: 0 };
+
+      citasData.forEach(c => {
+        const fStr = c.fechaCitaStr || c.fechaCita;
+        if (fStr) {
+          const dt = new Date(fStr + 'T12:00:00');
+          const dayName = dayMap[dt.getDay()];
+          if (dayName && counts[dayName] !== undefined) {
+            counts[dayName]++;
+          }
+        }
+      });
+
+      const updatedWeekly = [
+        { day: 'Lun', count: counts.Lun },
+        { day: 'Mar', count: counts.Mar },
+        { day: 'Mié', count: counts.Mié },
+        { day: 'Jue', count: counts.Jue },
+        { day: 'Vie', count: counts.Vie },
+        { day: 'Sáb', count: counts.Sáb }
+      ];
+      setWeeklyDistribution(updatedWeekly);
+
       // Map DB appointments to component format
       const formattedPatients = todaySessions.map((c, index) => {
         const painScores = [7, 4, 8, 2, 5, 6, 9];
@@ -111,6 +155,7 @@ export default function DashboardFisio() {
           pain: `${painValue}/10`,
           painLevel: painLevel,
           status: c.estado || 'Programado',
+          telefono: c.telefono || rawPatientData.telefono || 'Sin teléfono',
           identificadorPaciente: c.identificadorPaciente || c.pacienteId || '1',
           rawPatientData: rawPatientData
         };
@@ -143,6 +188,29 @@ export default function DashboardFisio() {
     fetchDashboardData();
   }, []);
 
+  // Filtered patients list based on search and status
+  const filteredPatients = useMemo(() => {
+    return patients.filter(p => {
+      const matchesSearch = (p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            (p.treatment || '').toLowerCase().includes(searchTerm.toLowerCase());
+      
+      if (!matchesSearch) return false;
+
+      if (statusFilter === 'pendientes') {
+        return p.status !== 'Completado' && p.status !== 'Asistió';
+      }
+      if (statusFilter === 'completadas') {
+        return p.status === 'Completado' || p.status === 'Asistió';
+      }
+      return true;
+    });
+  }, [patients, searchTerm, statusFilter]);
+
+  // Next upcoming pending appointment
+  const nextAppointment = useMemo(() => {
+    return patients.find(p => p.status !== 'Completado' && p.status !== 'Asistió' && p.status !== 'Cancelado');
+  }, [patients]);
+
   const deletePatient = async (id, name) => {
     const isConfirm = await showConfirm(
       '¿Cancelar Cita?',
@@ -170,13 +238,15 @@ export default function DashboardFisio() {
         }
         return p;
       }));
-      showSuccess('Sesión Completada', `¡Tratamiento de ${name} finalizado con éxito en la base de datos!`);
+      setStats(prev => ({ ...prev, completadasHoy: prev.completadasHoy + 1 }));
+      showSuccess('Sesión Completada', `¡Tratamiento de ${name} finalizado con éxito!`);
     } catch (err) {
       console.warn("Error al actualizar estatus en servidor:", err.message);
       setPatients(prev => prev.map(p => {
         if (p.id === id) return { ...p, status: 'Completado' };
         return p;
       }));
+      setStats(prev => ({ ...prev, completadasHoy: prev.completadasHoy + 1 }));
       showSuccess('Sesión Completada', `Estatus actualizado a Completado.`);
     }
   };
@@ -185,19 +255,27 @@ export default function DashboardFisio() {
   const renderRow = (patient) => {
     const painBadgeClass = `pain-badge pain-${patient.painLevel}`;
     const statusBadgeClass = `status-badge status-${patient.status.replace(/\s+/g, '-').toLowerCase()}`;
+    const targetId = patient.identificadorPaciente || patient._id || patient.id;
 
     return (
-      <tr key={patient.id} className="desktop-table-row">
+      <tr key={patient.id || patient._id} className="desktop-table-row">
         <td>
           <div
             className="table-patient-identity"
             style={{ cursor: "pointer" }}
-            onClick={() => handleAction(patient, `/fisioterapeuta/paciente/${patient.identificadorPaciente}`)}
+            onClick={() => handleAction(patient, `/fisioterapeuta/paciente/${obfuscateId(targetId)}`)}
           >
             <div className="identity-avatar">{(patient.name || 'P').charAt(0).toUpperCase()}</div>
-            <span className="identity-name" style={{ borderBottom: "1px dashed rgba(99, 102, 241, 0.4)", display: "inline-block" }}>
-              {patient.name}
-            </span>
+            <div>
+              <span className="identity-name" style={{ borderBottom: "1px dashed rgba(99, 102, 241, 0.4)", display: "block", fontWeight: "600" }}>
+                {patient.name}
+              </span>
+              {patient.telefono && (
+                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "3px" }}>
+                  <FiPhone size={11} /> {patient.telefono}
+                </span>
+              )}
+            </div>
           </div>
         </td>
         <td><span className="table-treatment-text">{patient.treatment}</span></td>
@@ -213,24 +291,24 @@ export default function DashboardFisio() {
           <div className="table-row-actions">
             <button
               className="btn btn-secondary"
-              style={{ width: 'auto', height: '32px', fontSize: '0.8rem', padding: '0 10px', display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(139, 92, 246, 0.1)', color: 'var(--accent)', border: '1px solid rgba(139, 92, 246, 0.1)' }}
-              onClick={() => handleAction(patient, `/fisioterapeuta/paciente/${patient.identificadorPaciente}`)}
+              style={{ width: 'auto', height: '32px', fontSize: '0.8rem', padding: '0 10px', display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(139, 92, 246, 0.1)', color: 'var(--accent)', border: '1px solid rgba(139, 92, 246, 0.15)' }}
+              onClick={() => handleAction(patient, `/fisioterapeuta/paciente/${obfuscateId(targetId)}`)}
               title="Ver Ficha Clínica y Notas"
             >
               <FiInfo /> Ficha
             </button>
             <button
               className="btn btn-primary"
-              style={{ width: 'auto', height: '32px', fontSize: '0.8rem', padding: '0 10px', display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', border: '1px solid rgba(16, 185, 129, 0.1)' }}
+              style={{ width: 'auto', height: '32px', fontSize: '0.8rem', padding: '0 10px', display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', border: '1px solid rgba(16, 185, 129, 0.2)' }}
               onClick={() => handleAction(patient, `/fisioterapeuta/notas`)}
               title="Nueva Nota SOAP"
             >
               <FiPlus /> Nota
             </button>
-            {patient.status !== 'Completado' && (
+            {patient.status !== 'Completado' && patient.status !== 'Asistió' && (
               <button
                 className="btn btn-primary"
-                style={{ width: 'auto', height: '32px', fontSize: '0.8rem', padding: '0 10px', display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', border: '1px solid rgba(99, 102, 241, 0.1)' }}
+                style={{ width: 'auto', height: '32px', fontSize: '0.8rem', padding: '0 10px', display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', border: '1px solid rgba(99, 102, 241, 0.2)' }}
                 onClick={() => completeSession(patient.id, patient.name)}
                 title="Completar sesión"
               >
@@ -255,6 +333,7 @@ export default function DashboardFisio() {
   const renderCard = (patient) => {
     const painBadgeClass = `pain-badge pain-${patient.painLevel}`;
     const statusBadgeClass = `status-badge status-${patient.status.replace(/\s+/g, '-').toLowerCase()}`;
+    const targetId = patient.identificadorPaciente || patient._id || patient.id;
 
     return (
       <div key={patient.id} className="mobile-row-card glass-card">
@@ -262,12 +341,14 @@ export default function DashboardFisio() {
           <div
             className="table-patient-identity"
             style={{ cursor: "pointer" }}
-            onClick={() => handleAction(patient, `/fisioterapeuta/paciente/${patient.identificadorPaciente}`)}
+            onClick={() => handleAction(patient, `/fisioterapeuta/paciente/${obfuscateId(targetId)}`)}
           >
             <div className="identity-avatar">{(patient.name || 'P').charAt(0).toUpperCase()}</div>
-            <span className="identity-name" style={{ borderBottom: "1px dashed rgba(99, 102, 241, 0.4)" }}>
-              {patient.name}
-            </span>
+            <div>
+              <span className="identity-name" style={{ borderBottom: "1px dashed rgba(99, 102, 241, 0.4)", fontWeight: "600" }}>
+                {patient.name}
+              </span>
+            </div>
           </div>
           <span className={statusBadgeClass}>{patient.status}</span>
         </div>
@@ -293,18 +374,18 @@ export default function DashboardFisio() {
           <button
             className="btn btn-primary"
             style={{ height: '36px', fontSize: '0.825rem', gap: '0.25rem', width: '100%', justifyContent: 'center' }}
-            onClick={() => handleAction(patient, `/fisioterapeuta/paciente/${patient.identificadorPaciente}`)}
+            onClick={() => handleAction(patient, `/fisioterapeuta/paciente/${obfuscateId(targetId)}`)}
           >
             <FiInfo /> Ficha Clínica
           </button>
           <button
             className="btn btn-secondary"
-            style={{ height: '36px', fontSize: '0.825rem', color: 'var(--success)', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.1)', width: '100%', justifyContent: 'center' }}
+            style={{ height: '36px', fontSize: '0.825rem', color: 'var(--success)', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)', width: '100%', justifyContent: 'center' }}
             onClick={() => handleAction(patient, `/fisioterapeuta/notas`)}
           >
             <FiPlus /> Nueva Nota
           </button>
-          {patient.status !== 'Completado' && (
+          {patient.status !== 'Completado' && patient.status !== 'Asistió' && (
             <button
               className="btn btn-primary"
               style={{ gridColumn: 'span 2', height: '36px', fontSize: '0.825rem', gap: '0.25rem', width: '100%', justifyContent: 'center' }}
@@ -325,27 +406,56 @@ export default function DashboardFisio() {
     );
   };
 
+  const todayFormatted = new Date().toLocaleDateString('es-ES', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  const completionPct = stats.citasHoyCount > 0 
+    ? Math.round((stats.completadasHoy / stats.citasHoyCount) * 100) 
+    : 0;
+
+  const maxWeeklyCount = Math.max(...weeklyDistribution.map(w => w.count), 1);
+
   return (
     <div className="dashboard-main-view auth-wrapper-content fade-in-up">
       
-      {/* 🚀 Welcome Header */}
+      {/* 🚀 Welcome Header Banner */}
       <header style={{ marginBottom: "1.75rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
           <h1 style={{ color: "var(--primary)", fontSize: "1.75rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "10px", margin: 0 }}>
             🩺 Panel de Fisioterapia
           </h1>
           <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", margin: "4px 0 0 0" }}>
-            Supervisión clínica, agenda del día y expediente de fisioterapia en tiempo real.
+            ¡Bienvenido/a, <strong style={{ color: "var(--text-main)" }}>{userName}</strong>! | {capitalizeWords(todayFormatted)}
           </p>
         </div>
 
-        <button
-          className="btn btn-primary"
-          style={{ display: "inline-flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 18px", fontSize: "0.875rem" }}
-          onClick={() => navigate('/fisioterapeuta/agenda')}
-        >
-          <FiPlus /> Nueva Cita / Agenda
-        </button>
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <button
+            className="btn btn-secondary"
+            style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "40px", padding: "0 14px", fontSize: "0.85rem" }}
+            onClick={() => navigate('/fisioterapeuta/pacientes')}
+          >
+            <FiUserPlus /> Nuevo Paciente
+          </button>
+          <button
+            className="btn btn-secondary"
+            style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "40px", padding: "0 14px", fontSize: "0.85rem" }}
+            onClick={() => navigate('/fisioterapeuta/bloquear-horario')}
+          >
+            <FiLock /> Bloquear Horario
+          </button>
+          <button
+            className="btn btn-primary"
+            style={{ display: "inline-flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 18px", fontSize: "0.85rem" }}
+            onClick={() => navigate('/fisioterapeuta/agenda')}
+          >
+            <FiPlus /> Agendar Cita
+          </button>
+        </div>
       </header>
 
       {loading ? (
@@ -354,11 +464,99 @@ export default function DashboardFisio() {
         </div>
       ) : (
         <>
+          {/* ⚡ 0. Banner Destacado de Próxima Cita */}
+          {nextAppointment ? (
+            <div className="glass-card" style={{
+              background: "linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(16, 185, 129, 0.08) 100%)",
+              border: "1px solid rgba(99, 102, 241, 0.25)",
+              borderRadius: "16px",
+              padding: "1.25rem 1.5rem",
+              marginBottom: "1.75rem",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "1rem",
+              boxShadow: "var(--shadow-sm)"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "1.1rem" }}>
+                <div style={{
+                  background: "var(--primary)",
+                  color: "#ffffff",
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "14px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "1.4rem",
+                  boxShadow: "0 4px 12px rgba(99, 102, 241, 0.3)"
+                }}>
+                  <FiClock />
+                </div>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ fontSize: "0.75rem", background: "rgba(99, 102, 241, 0.2)", color: "var(--primary)", padding: "2px 8px", borderRadius: "12px", fontWeight: "700", textTransform: "uppercase" }}>
+                      PRÓXIMA CONSULTA DEL DÍA
+                    </span>
+                    <span style={{ fontSize: "0.85rem", fontWeight: "700", color: "var(--text-main)" }}>
+                      ⏰ {nextAppointment.hour}
+                    </span>
+                  </div>
+                  <h3 style={{ fontSize: "1.15rem", fontWeight: "700", margin: "4px 0 2px 0", color: "var(--text-main)" }}>
+                    {nextAppointment.name}
+                  </h3>
+                  <p style={{ fontSize: "0.825rem", color: "var(--text-muted)", margin: 0 }}>
+                    Tratamiento: <strong>{nextAppointment.treatment}</strong> {nextAppointment.telefono && ` | 📞 ${nextAppointment.telefono}`}
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <button
+                  className="btn btn-secondary"
+                  style={{ height: "36px", fontSize: "0.825rem", background: "rgba(255, 255, 255, 0.7)", border: "1px solid rgba(0,0,0,0.1)" }}
+                  onClick={() => handleAction(nextAppointment, `/fisioterapeuta/paciente/${obfuscateId(nextAppointment.identificadorPaciente)}`)}
+                >
+                  <FiInfo /> Ver Expediente
+                </button>
+                <button
+                  className="btn btn-primary"
+                  style={{ height: "36px", fontSize: "0.825rem" }}
+                  onClick={() => completeSession(nextAppointment.id, nextAppointment.name)}
+                >
+                  <FiCheckCircle /> Concluir Sesión
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="glass-card" style={{
+              background: "rgba(16, 185, 129, 0.06)",
+              border: "1px solid rgba(16, 185, 129, 0.18)",
+              borderRadius: "16px",
+              padding: "1rem 1.25rem",
+              marginBottom: "1.75rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px"
+            }}>
+              <FiCheckCircle style={{ color: "var(--success)", fontSize: "1.4rem" }} />
+              <div>
+                <span style={{ fontSize: "0.9rem", fontWeight: "600", color: "var(--text-main)" }}>
+                  ¡Todas las consultas de hoy han sido concluidas o no hay citas pendientes!
+                </span>
+                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", display: "block" }}>
+                  Aprovecha para redactar notas evolutivas o revisar los historiales médicos.
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* 📊 1. Metric Stats Cards Grid */}
           <div className="dashboard-grid" style={{ marginBottom: "1.75rem" }}>
 
             {/* Card 1: Patients Total */}
-            <div className="auth-card dashboard-metric-card hover-grow">
+            <div className="auth-card dashboard-metric-card hover-grow" style={{ cursor: "pointer" }} onClick={() => navigate('/fisioterapeuta/pacientes')}>
               <div className="dashboard-metric-icon" style={{ background: 'rgba(99, 102, 241, 0.08)', color: 'var(--primary)' }}>
                 <FiUsers />
               </div>
@@ -371,17 +569,25 @@ export default function DashboardFisio() {
               </div>
             </div>
 
-            {/* Card 2: Today Appointments */}
+            {/* Card 2: Today Appointments & Progress */}
             <div className="auth-card dashboard-metric-card hover-grow">
               <div className="dashboard-metric-icon" style={{ background: 'rgba(16, 185, 129, 0.08)', color: 'var(--success)' }}>
                 <FiCalendar />
               </div>
-              <div className="dashboard-metric-info">
+              <div className="dashboard-metric-info" style={{ width: "100%" }}>
                 <span className="form-label dashboard-metric-label">Citas para Hoy</span>
                 <strong className="dashboard-metric-value">
                   {stats.citasHoyCount}
                 </strong>
-                <span className="text-muted dashboard-metric-meta">Consultas agendadas</span>
+                <div style={{ marginTop: "4px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "2px" }}>
+                    <span>Progreso del día</span>
+                    <span>{completionPct}%</span>
+                  </div>
+                  <div style={{ height: "6px", width: "100%", background: "rgba(0,0,0,0.06)", borderRadius: "10px", overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${completionPct}%`, background: "var(--success)", transition: "width 0.4s ease" }}></div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -395,12 +601,12 @@ export default function DashboardFisio() {
                 <strong className="dashboard-metric-value">
                   {stats.completadasHoy} / {stats.citasHoyCount}
                 </strong>
-                <span className="text-muted dashboard-metric-meta">Concluidas hoy</span>
+                <span className="text-muted dashboard-metric-meta">Atendidos exitosamente</span>
               </div>
             </div>
 
             {/* Card 4: Soap Notes */}
-            <div className="auth-card dashboard-metric-card hover-grow">
+            <div className="auth-card dashboard-metric-card hover-grow" style={{ cursor: "pointer" }} onClick={() => navigate('/fisioterapeuta/notas')}>
               <div className="dashboard-metric-icon" style={{ background: 'rgba(245, 158, 11, 0.08)', color: 'var(--warning)' }}>
                 <FiFileText />
               </div>
@@ -409,7 +615,7 @@ export default function DashboardFisio() {
                 <strong className="dashboard-metric-value">
                   {stats.notasTotales}
                 </strong>
-                <span className="text-muted dashboard-metric-meta">Evoluciones redactadas</span>
+                <span className="text-muted dashboard-metric-meta">Evoluciones registradas</span>
               </div>
             </div>
 
@@ -509,25 +715,89 @@ export default function DashboardFisio() {
           {/* 🧱 2. Dual Column Layout (Table & Clinical Shortcuts Column) */}
           <div className="main-dashboard-content">
 
-            {/* Left Column: Scheduled Patients Table */}
+            {/* Left Column: Scheduled Patients Table with Filters */}
             <div className="auth-card table-wrapper-column">
-              <div className="glass-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-                <h2 className="glass-card-title" style={{ fontSize: "1.05rem", fontWeight: "600", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
-                  <FiActivity style={{ color: "var(--primary)" }} /> Pacientes Programados para Hoy
-                </h2>
-                <span className="clinical-table-subtitle" style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                  {patients.length} consultas en agenda
-                </span>
+              <div className="glass-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.75rem" }}>
+                <div>
+                  <h2 className="glass-card-title" style={{ fontSize: "1.05rem", fontWeight: "600", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
+                    <FiActivity style={{ color: "var(--primary)" }} /> Agenda de Citas para Hoy
+                  </h2>
+                  <span className="clinical-table-subtitle" style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                    {filteredPatients.length} consultas encontradas
+                  </span>
+                </div>
+
+                {/* Filter Tabs */}
+                <div style={{ display: "flex", background: "rgba(0,0,0,0.04)", padding: "3px", borderRadius: "10px", gap: "2px" }}>
+                  <button
+                    style={{
+                      padding: "4px 12px",
+                      fontSize: "0.78rem",
+                      borderRadius: "8px",
+                      border: "none",
+                      cursor: "pointer",
+                      fontWeight: "600",
+                      background: statusFilter === 'todas' ? "var(--primary)" : "transparent",
+                      color: statusFilter === 'todas' ? "#fff" : "var(--text-muted)"
+                    }}
+                    onClick={() => setStatusFilter('todas')}
+                  >
+                    Todas ({patients.length})
+                  </button>
+                  <button
+                    style={{
+                      padding: "4px 12px",
+                      fontSize: "0.78rem",
+                      borderRadius: "8px",
+                      border: "none",
+                      cursor: "pointer",
+                      fontWeight: "600",
+                      background: statusFilter === 'pendientes' ? "var(--primary)" : "transparent",
+                      color: statusFilter === 'pendientes' ? "#fff" : "var(--text-muted)"
+                    }}
+                    onClick={() => setStatusFilter('pendientes')}
+                  >
+                    Pendientes ({patients.filter(p => p.status !== 'Completado' && p.status !== 'Asistió').length})
+                  </button>
+                  <button
+                    style={{
+                      padding: "4px 12px",
+                      fontSize: "0.78rem",
+                      borderRadius: "8px",
+                      border: "none",
+                      cursor: "pointer",
+                      fontWeight: "600",
+                      background: statusFilter === 'completadas' ? "var(--primary)" : "transparent",
+                      color: statusFilter === 'completadas' ? "#fff" : "var(--text-muted)"
+                    }}
+                    onClick={() => setStatusFilter('completadas')}
+                  >
+                    Completadas ({stats.completadasHoy})
+                  </button>
+                </div>
               </div>
 
-              {patients.length > 0 ? (
+              {/* Realtime Search Bar */}
+              <div style={{ position: "relative", marginBottom: "1.25rem" }}>
+                <FiSearch style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre de paciente o tratamiento..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="form-input"
+                  style={{ paddingLeft: "36px", height: "38px", fontSize: "0.85rem" }}
+                />
+              </div>
+
+              {filteredPatients.length > 0 ? (
                 <div className="responsive-table-container">
 
                   {/* Desktop HTML Table (>= 1025px) */}
                   <table className="desktop-table">
                     <thead>
                       <tr>
-                        <th>Paciente</th>
+                        <th>Paciente / Contacto</th>
                         <th>Tratamiento / Motivo</th>
                         <th>Hora de Cita</th>
                         <th>Nivel Dolor</th>
@@ -536,21 +806,25 @@ export default function DashboardFisio() {
                       </tr>
                     </thead>
                     <tbody>
-                      {patients.map(p => renderRow(p))}
+                      {filteredPatients.map(p => renderRow(p))}
                     </tbody>
                   </table>
 
                   {/* iPad & Mobile Cards View (<= 1024px) */}
                   <div className="mobile-table-cards">
-                    {patients.map(p => renderCard(p))}
+                    {filteredPatients.map(p => renderCard(p))}
                   </div>
 
                 </div>
               ) : (
                 <div className="table-empty-state" style={{ padding: "3rem 1rem", textAlign: "center" }}>
                   <FiCalendar size={36} style={{ color: "var(--text-muted)", marginBottom: "0.75rem" }} />
-                  <p style={{ color: "var(--text-main)", fontWeight: "600", margin: "0 0 4px 0" }}>No hay pacientes citados para hoy</p>
-                  <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", margin: 0 }}>Usa el botón de arriba para agendar o revisar la agenda global.</p>
+                  <p style={{ color: "var(--text-main)", fontWeight: "600", margin: "0 0 4px 0" }}>
+                    {searchTerm ? "No se encontraron pacientes que coincidan con la búsqueda" : "No hay pacientes citados para hoy"}
+                  </p>
+                  <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", margin: 0 }}>
+                    Usa los botones superiores para agendar nuevas citas o revisar la agenda global.
+                  </p>
                 </div>
               )}
             </div>
@@ -561,7 +835,7 @@ export default function DashboardFisio() {
               {/* Acceso Rápido Fisioterapia */}
               <div className="glass-card-header" style={{ marginBottom: "1rem" }}>
                 <h2 className="glass-card-title" style={{ fontSize: "1.05rem", fontWeight: "600", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
-                  <FiHeart style={{ color: "#ef4444" }} /> Herramientas Rápidas
+                  <FiHeart style={{ color: "#ef4444" }} /> Accesos Rápidos
                 </h2>
               </div>
 
@@ -585,10 +859,51 @@ export default function DashboardFisio() {
                 <button
                   className="btn btn-secondary w-100"
                   style={{ justifyContent: "flex-start", padding: "0 14px", height: "42px", fontSize: "0.875rem", gap: "10px" }}
+                  onClick={() => navigate('/fisioterapeuta/planes')}
+                >
+                  <FiZap /> Planes & Ejercicios
+                </button>
+
+                <button
+                  className="btn btn-secondary w-100"
+                  style={{ justifyContent: "flex-start", padding: "0 14px", height: "42px", fontSize: "0.875rem", gap: "10px" }}
                   onClick={() => navigate('/fisioterapeuta/agenda')}
                 >
                   <FiCalendar /> Abrir Agenda Clínica
                 </button>
+              </div>
+
+              <hr className="catalog-divider" style={{ margin: "1.25rem 0" }} />
+
+              {/* 📈 Resumen Semanal de Actividad */}
+              <div style={{ marginBottom: "1.5rem" }}>
+                <h3 className="catalog-subtitle" style={{ fontSize: "0.95rem", fontWeight: "600", margin: "0 0 0.5rem 0" }}>
+                  Carga de Trabajo Semanal
+                </h3>
+                <p style={{ fontSize: "0.775rem", color: "var(--text-muted)", margin: "0 0 0.85rem 0" }}>
+                  Distribución de citas agendadas de Lunes a Sábado.
+                </p>
+
+                <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", height: "90px", gap: "8px", padding: "0 4px" }}>
+                  {weeklyDistribution.map(w => {
+                    const barHeightPct = Math.max(Math.round((w.count / maxWeeklyCount) * 100), 12);
+                    return (
+                      <div key={w.day} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, gap: "4px" }}>
+                        <span style={{ fontSize: "0.725rem", color: "var(--text-muted)", fontWeight: "600" }}>{w.count}</span>
+                        <div style={{
+                          width: "100%",
+                          maxWidth: "24px",
+                          height: `${barHeightPct}%`,
+                          background: "var(--primary-glow)",
+                          borderTop: "3px solid var(--primary)",
+                          borderRadius: "4px 4px 0 0",
+                          transition: "height 0.3s ease"
+                        }}></div>
+                        <span style={{ fontSize: "0.75rem", color: "var(--text-main)", fontWeight: "600" }}>{w.day}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               <hr className="catalog-divider" style={{ margin: "1.25rem 0" }} />
@@ -602,7 +917,7 @@ export default function DashboardFisio() {
                   Zonas anatómicas con mayor frecuencia de tratamiento registrados en notas clínicas.
                 </p>
 
-                <div className="pain-anatomy-graphic" style={{ borderRadius: "12px", border: "1px solid rgba(255,255,255,0.06)", height: "200px" }}>
+                <div className="pain-anatomy-graphic" style={{ borderRadius: "12px", border: "1px solid rgba(255,255,255,0.06)", height: "180px" }}>
                   <div 
                     className="graphic-sphere pain-high-pulse" 
                     style={{ top: '32%', left: '48%' }} 

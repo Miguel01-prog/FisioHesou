@@ -20,6 +20,7 @@ export default function CrearClinicaPage() {
   const [blockSundays, setBlockSundays] = useState(false);
 
   // Branding & Theme Fields
+  const [tabTitle, setTabTitle] = useState("FisioHesou - Sistema de Gestión Clínica");
   const [sidebarName, setSidebarName] = useState("");
   const [sidebarSubtitle, setSidebarSubtitle] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#5e50a1");
@@ -71,6 +72,7 @@ export default function CrearClinicaPage() {
             setNombre(match.name);
             setSubdominio(match.subdomain);
             setLogo(match.logo || "");
+            setTabTitle(match.tabTitle || "FisioHesou - Sistema de Gestión Clínica");
             setSidebarName(match.sidebarName || match.name || "");
             setSidebarSubtitle(match.sidebarSubtitle || "");
             if (match.theme) {
@@ -159,6 +161,7 @@ export default function CrearClinicaPage() {
       const payload = {
         name: nombre.trim(),
         subdomain: cleanSubdomain,
+        tabTitle: tabTitle.trim() || "FisioHesou - Sistema de Gestión Clínica",
         sidebarName: sidebarName.trim() || nombre.trim(),
         sidebarSubtitle: sidebarSubtitle.trim(),
         theme: {
@@ -404,6 +407,23 @@ export default function CrearClinicaPage() {
               </p>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.25rem" }}>
+                <div>
+                  <label className="form-label" style={{ display: "block", marginBottom: "0.4rem" }}>
+                    Título de la Pestaña del Navegador (&lt;title&gt;)
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={tabTitle}
+                    onChange={e => setTabTitle(e.target.value)}
+                    placeholder="Ej. FisioHesou - Sistema de Gestión Clínica"
+                    disabled={guardando}
+                  />
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "block", marginTop: "3px" }}>
+                    Texto que se mostrará en la pestaña superior del navegador cuando la clínica esté activa.
+                  </span>
+                </div>
+
                 <div>
                   <label className="form-label" style={{ display: "block", marginBottom: "0.4rem" }}>
                     Nombre del Título en Sidebar

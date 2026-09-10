@@ -1,4 +1,4 @@
-import { capitalizeWords, formatDateDDMMYYYY } from "../../utils/utils.js";
+import { capitalizeWords, formatDateDDMMYYYY, obfuscateId, deobfuscateId } from "../../utils/utils.js";
 import CardPaciente from "../pacientes/CardPaciente.jsx";
 import { useNavigate, useParams } from "react-router-dom";
 import React, { useEffect, useState } from "react";
@@ -11,7 +11,8 @@ import ModalHistorialCitas from "../layout/ModalHistorialCitas.jsx";
 import { showSuccess, showError } from "../../utils/alerts.js";
 
 export default function PacienteDetalle() {
-  const { id } = useParams();
+  const { id: rawId } = useParams();
+  const id = deobfuscateId(rawId);
   const [notas, setNotas] = useState([]);
   const [historialClinico, setHistorialClinico] = useState(null);
   const [paciente, setPaciente] = useState(null);
@@ -25,7 +26,7 @@ export default function PacienteDetalle() {
   const navigate = useNavigate();
 
 
-  const rolePath = user?.role || 'fisioterapeuta';
+  const rolePath = user?.role || user?.rol || 'fisioterapeuta';
 
   const cargarCitasPaciente = async () => {
     try {
@@ -48,33 +49,29 @@ export default function PacienteDetalle() {
         } catch (err) {
           console.error("Error al cargar paciente por ID, usando fallback:", err);
           const localData = JSON.parse(localStorage.getItem("dataPaciente"));
-          if (localData && localData.identificadorPaciente === id) {
+          if (localData) {
             setPaciente(localData);
           }
         }
 
-        // Cargar citas
-        const resCitas = await api.get(`/citas/detalles-paciente/${id}`);
-        setCitas(resCitas.data.historial || []);
-
-        // Cargar Historial Clínico
+        // Cargar historial clínico
         try {
           const resHistorial = await api.get(`/historial-notas/paciente/${id}`);
-          if (resHistorial.data.ok) {
-            setHistorialClinico(resHistorial.data.historial);
-          }
+          setHistorialClinico(resHistorial.data.historial || null);
+          setNotas(resHistorial.data.notas || []);
         } catch (e) {
-          console.warn("No se encontró historial clínico para este paciente.");
+          console.warn("No se encontró historial previo para este paciente.");
           setHistorialClinico(null);
+          setNotas([]);
         }
 
-        // Cargar Notas SOAP
+        // Cargar citas del paciente
         try {
-          const resNotas = await api.get(`/notas/paciente/${id}`);
-          setNotas(resNotas.data || []);
+          const resCitas = await api.get(`/citas/detalles-paciente/${id}`);
+          setCitas(resCitas.data.historial || []);
         } catch (e) {
-          console.warn("No se encontraron notas para este paciente.");
-          setNotas([]);
+          console.warn("No se encontraron citas previas.");
+          setCitas([]);
         }
 
         // Cargar Planes de Tratamiento
@@ -111,7 +108,7 @@ export default function PacienteDetalle() {
 
             <div className="auth-card auth-card-detail" style={{ marginTop: 0 }}>
               <div className="profile-actions-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-                <h3 className="profile-actions-title" style={{ margin: 0 }}>
+                <h3 className="title_card" style={{ margin: 0 }}>
                   Historial Clínico del Paciente
                 </h3>
 
@@ -119,7 +116,7 @@ export default function PacienteDetalle() {
 
                   {historialClinico ? (
                     <>
-                      {/* 📅 Historial de Citas */}
+                      {/* 📅 Historial de Citas 
                       <button
                         title={`Ver Historial de Citas (${citas.length})`}
                         onClick={() => setShowModalHistorial(true)}
@@ -142,6 +139,7 @@ export default function PacienteDetalle() {
                       >
                         <FaCalendarAlt size={11} /> Citas ({citas.length})
                       </button>
+                      */}
 
                       {/* ➕ Agendar Cita */}
                       <button

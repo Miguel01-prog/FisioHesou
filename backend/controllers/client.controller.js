@@ -13,6 +13,7 @@ export const crearCliente = async (req, res) => {
     const { 
       name, 
       subdomain, 
+      tabTitle,
       sidebarName,
       sidebarSubtitle,
       theme,
@@ -38,6 +39,7 @@ export const crearCliente = async (req, res) => {
     const nuevoCliente = new Client({
       name,
       subdomain: subdomain.toLowerCase(),
+      tabTitle: tabTitle || "FisioHesou - Sistema de Gestión Clínica",
       sidebarName: sidebarName || name,
       sidebarSubtitle: sidebarSubtitle || "",
       theme: theme || {
@@ -95,6 +97,7 @@ export const actualizarCliente = async (req, res) => {
   const { 
     name, 
     subdomain, 
+    tabTitle,
     sidebarName,
     sidebarSubtitle,
     theme,
@@ -120,6 +123,7 @@ export const actualizarCliente = async (req, res) => {
     const updateFields = {
       ...(name && { name }),
       ...(subdomain && { subdomain: subdomain.toLowerCase() }),
+      ...(tabTitle !== undefined && { tabTitle }),
       ...(sidebarName !== undefined && { sidebarName }),
       ...(sidebarSubtitle !== undefined && { sidebarSubtitle }),
       ...(theme && { theme }),

@@ -105,8 +105,30 @@ export default function ListaPacientes() {
   };
 
   const handleViewFicha = (p) => {
-    localStorage.setItem("dataPaciente", JSON.stringify(p));
-    navigate(`/${user?.role || 'fisioterapeuta'}/paciente/${p.identificadorPaciente}`);
+    const pacienteData = p || selectedPaciente || (() => {
+      try {
+        return JSON.parse(localStorage.getItem("dataPaciente"));
+      } catch (e) {
+        return null;
+      }
+    })();
+
+    if (!pacienteData) {
+      showError("Selección requerida", "Por favor selecciona un paciente de la lista.");
+      return;
+    }
+
+    const targetId = pacienteData.identificadorPaciente || pacienteData._id || pacienteData.id;
+    if (!targetId) {
+      showError("Error", "No se encontró el identificador del paciente.");
+      return;
+    }
+
+    const role = user?.role || user?.rol || 'fisioterapeuta';
+    localStorage.setItem("dataPaciente", JSON.stringify(pacienteData));
+    const targetUrl = `/${role}/paciente/${targetId}`;
+    console.log("Navegando a la ficha médica del paciente:", targetUrl);
+    navigate(targetUrl);
   };
 
   const handleCreateHistorial = (p) => {
@@ -171,7 +193,7 @@ export default function ListaPacientes() {
           <input
             type="text"
             className="search-input-glass"
-            placeholder="Buscar paciente por nombre, ID o número de teléfono..."
+            placeholder="Buscar paciente por nombre o número de teléfono..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -232,9 +254,11 @@ export default function ListaPacientes() {
                       const isSelected = selectedPaciente?.identificadorPaciente === p.identificadorPaciente;
                       return (
                         <tr
-                          key={p.identificadorPaciente}
+                          key={p.identificadorPaciente || p._id}
                           className={isSelected ? 'selected-row' : ''}
                           onClick={() => handleRowClick(p)}
+                          onDoubleClick={() => handleViewFicha(p)}
+                          title="Haz clic para seleccionar o doble clic para gestionar"
                           style={{ cursor: 'pointer' }}
                         >
                           <td>
@@ -419,9 +443,14 @@ export default function ListaPacientes() {
 
                   <div className="patient-detail-actions-wrapper">
                     <button
+                      type="button"
                       className="patient-detail-action-btn btn-primary-action hover-grow"
-                      onClick={() => handleViewFicha(selectedPaciente)}
-                      style={{ margin: 0, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleViewFicha(selectedPaciente);
+                      }}
+                      style={{ margin: 0, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", cursor: "pointer" }}
                     >
                       <FaFolderOpen /> Gestionar Paciente
                     </button>

@@ -29,12 +29,23 @@ export const AuthProvider = ({ children }) => {
     fetchUser();
   }, []);
 
+  // 🏷️ Sincronización automática del título de la pestaña del navegador
+  useEffect(() => {
+    if (user?.client?.tabTitle) {
+      document.title = user.client.tabTitle;
+    } else if (user?.client?.name) {
+      document.title = `${user.client.name} - FisioHesou`;
+    } else {
+      document.title = "FisioHesou - Sistema de Gestión Clínica";
+    }
+  }, [user]);
 
   // 🔐 Iniciar sesión
   const login = async (userData, userToken = null) => {
     // 1. Establecer el usuario de forma síncrona para pasar las guardas de ruta de inmediato
-    setUser(userData);
-    localStorage.setItem('user', JSON.stringify({ rol: userData.role, nombre: userData.name, signature: userData.signature })); 
+    const userObj = { role: userData.role || userData.rol, rol: userData.role || userData.rol, name: userData.name || userData.nombre, nombre: userData.name || userData.nombre, client: userData.client, signature: userData.signature };
+    setUser(userObj);
+    localStorage.setItem('user', JSON.stringify(userObj));
 
     if (userToken) {
       setToken(userToken);

@@ -1,16 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext.jsx";
 import api from "../../api";
 import LoadingSpinner from "../layout/LoadingSpinner";
 import { showError, showSuccess } from "../../utils/alerts";
-import { FaPlus, FaTrash } from "react-icons/fa";
+import { FaPlus, FaTrash, FaArrowLeft } from "react-icons/fa";
+import { deobfuscateId } from "../../utils/utils.js";
 
 const ConstructorPlan = () => {
-  const { id, idPlan } = useParams();
+  const { id: rawId, idPlan } = useParams();
+  const id = deobfuscateId(rawId);
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [ejerciciosCatalogo, setEjerciciosCatalogo] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [pacienteIdState, setPacienteIdState] = useState(id || "");
   
   // Estado del Plan
   const [notasGenerales, setNotasGenerales] = useState("");
@@ -61,14 +66,17 @@ const ConstructorPlan = () => {
         const plan = resPlan.data.plan;
         
         setNotasGenerales(plan.notasGenerales || "");
+        if (plan.identificadorPaciente) {
+          setPacienteIdState(plan.identificadorPaciente);
+        }
         
         // Mapear los ejercicios del plan al formato del estado
         const ejerciciosCargados = plan.ejercicios.map(e => ({
           ejercicio: e.ejercicio, // El populate ya trae el objeto completo
-          series: e.series,
-          repeticiones: e.repeticiones,
-          frecuencia: e.frecuencia,
-          notas: e.notas
+          series: e.series || "",
+          repeticiones: e.repeticiones || "",
+          frecuencia: e.frecuencia || "",
+          notas: e.notas || ""
         }));
         setEjerciciosPlan(ejerciciosCargados);
       }
@@ -97,10 +105,6 @@ const ConstructorPlan = () => {
         notas: ""
       }
     ]);
-    
-    // Opcional: cerrar el modal después de agregar, o dejarlo abierto para agregar varios.
-    // Dejémoslo abierto, pero agregamos una alerta sutil
-    // showError("Éxito", "Ejercicio agregado al plan"); // (O showSuccess, pero no queremos spam)
   };
 
   const quitarEjercicio = (index) => {
@@ -121,10 +125,12 @@ const ConstructorPlan = () => {
       return;
     }
 
+    const finalPacienteId = id || pacienteIdState;
+
     setGuardando(true);
     try {
       const payload = {
-        identificadorPaciente: id,
+        identificadorPaciente: finalPacienteId,
         notasGenerales,
         ejercicios: ejerciciosPlan.map(e => ({
           ejercicio: e.ejercicio._id,
@@ -136,6 +142,7 @@ const ConstructorPlan = () => {
       };
 
       let res;
+      const rolePath = user?.role || 'fisioterapeuta';
       if (idPlan) {
         // Actualizar plan existente
         res = await api.put(`/planes/${idPlan}`, payload);
@@ -146,7 +153,7 @@ const ConstructorPlan = () => {
         showSuccess("¡Plan Creado!", "El plan de tratamiento ha sido guardado.");
       }
       
-      navigate(`/fisioterapeuta/plan-documento/${res.data.plan._id}`);
+      navigate(`/${rolePath}/plan-documento/${res.data.plan._id}`);
     } catch (err) {
       console.error(err);
       showError("Error", "No se pudo guardar el plan.");
@@ -155,20 +162,47 @@ const ConstructorPlan = () => {
     }
   };
 
+  const handleVolver = () => {
+    const rolePath = user?.role || user?.rol || 'fisioterapeuta';
+    const finalId = id || pacienteIdState || (() => {
+      try {
+        const p = JSON.parse(localStorage.getItem("dataPaciente"));
+        return p?.identificadorPaciente || p?._id;
+      } catch (e) {
+        return null;
+      }
+    })();
+    if (finalId) {
+      navigate(`/${rolePath}/paciente/${finalId}`);
+    } else {
+      navigate(`/${rolePath}/pacientes`);
+    }
+  };
+
   return (
     <div className="auth-wrapper-content">
       
       <div className="cards-column">
         <div className="auth-card auth-card-detail">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '1rem' }}>
             <h2 className="title_card" style={{ margin: 0 }}>
               {idPlan ? "Editar Plan de Tratamiento" : "Nuevo Plan de Tratamiento"}
             </h2>
+            
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <button className="save-btn" onClick={() => setMostrarModal(true)} style={{ width: 'auto', backgroundColor: '#17a2b8', margin: 0 }}>
-                + Añadir Ejercicio
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => setMostrarModal(true)} 
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              >
+                <FaPlus size={12} /> Añadir Ejercicio
               </button>
-              <button className="save-btn" onClick={guardarPlan} disabled={guardando} style={{ width: '150px', margin: 0 }}>
+              <button 
+                className="btn btn-primary glow-pulse-purple" 
+                onClick={guardarPlan} 
+                disabled={guardando} 
+                style={{ minWidth: '140px' }}
+              >
                 {guardando ? <LoadingSpinner size="small" color="#fff" /> : "Guardar y Ver"}
               </button>
             </div>
@@ -187,30 +221,31 @@ const ConstructorPlan = () => {
             </div>
           </div>
 
-          <h3 className="title_card" style={{ fontSize: '16px', marginTop: '20px' }}>Ejercicios Asignados ({ejerciciosPlan.length})</h3>
+          <h3 className="title_card" style={{ fontSize: '1rem', marginTop: '20px' }}>Ejercicios Asignados ({ejerciciosPlan.length})</h3>
           
           {ejerciciosPlan.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px', background: '#f8f9fa', borderRadius: '8px', color: '#6c757d' }}>
-              Selecciona ejercicios del catálogo de la izquierda para armar el plan.
+            <div style={{ textAlign: 'center', padding: '40px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '12px', border: '1px dashed var(--border-light)', color: 'var(--text-muted)' }}>
+              Presiona <strong>"+ Añadir Ejercicio"</strong> para seleccionar los ejercicios del catálogo y armar el plan.
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {ejerciciosPlan.map((item, idx) => (
-                <div key={idx} style={{ border: '1px solid #42133B', borderRadius: '8px', padding: '15px', position: 'relative', background: '#fafafa' }}>
+                <div key={idx} style={{ border: '1px solid var(--border-light)', borderRadius: '12px', padding: '16px', position: 'relative', background: 'rgba(255, 255, 255, 0.01)' }}>
                   <button 
                     onClick={() => quitarEjercicio(idx)}
-                    style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', color: '#dc3545', cursor: 'pointer' }}
+                    style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', color: 'var(--danger, #ef4444)', cursor: 'pointer', fontSize: '1rem' }}
+                    title="Eliminar ejercicio del plan"
                   >
                     <FaTrash />
                   </button>
                   
                   <div style={{ display: 'flex', gap: '15px', marginBottom: '15px', flexWrap: 'wrap' }}>
                     {item.ejercicio.imagenUrl && (
-                        <img src={`${backendUrl}${item.ejercicio.imagenUrl}`} alt={item.ejercicio.nombre} style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '4px' }} />
+                        <img src={`${backendUrl}${item.ejercicio.imagenUrl}`} alt={item.ejercicio.nombre} style={{ width: '90px', height: '90px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-light)' }} />
                     )}
                     <div style={{ flex: '1 1 200px' }}>
-                        <h4 style={{ margin: '0 0 5px 0', color: '#42133B' }}>{item.ejercicio.nombre}</h4>
-                        <p style={{ margin: 0, fontSize: '12px', color: '#555' }}>{item.ejercicio.descripcion}</p>
+                        <h4 style={{ margin: '0 0 5px 0', color: 'var(--primary)', fontWeight: '700' }}>{item.ejercicio.nombre}</h4>
+                        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>{item.ejercicio.descripcion}</p>
                     </div>
                   </div>
                   
@@ -229,7 +264,7 @@ const ConstructorPlan = () => {
                     </div>
                     <div className="form-col" style={{ flex: '2 1 200px' }}>
                       <label className="form-label" style={{fontSize: '12px'}}>Notas específicas:</label>
-                      <input type="text" className="input" placeholder="Ej. Mantener 5 segundos..." value={item.notes || item.notas} onChange={(e) => handleChangeIndicaciones(idx, "notas", e.target.value)} />
+                      <input type="text" className="input" placeholder="Ej. Mantener 5 segundos..." value={item.notas || item.notes || ""} onChange={(e) => handleChangeIndicaciones(idx, "notas", e.target.value)} />
                     </div>
                   </div>
                 </div>

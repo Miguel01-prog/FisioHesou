@@ -136,7 +136,10 @@ export default function AgendaCitas() {
 
                       return (
                         <div key={cita._id || i} className={`appointment-card ${esNuevo ? "nuevo-paciente-card" : ""}`}
-                          onClick={() => navigate(`/fisioterapeuta/paciente/${cita.identificadorPaciente}`)}
+                          onClick={() => {
+                            const rolePath = user?.role || user?.rol || 'fisioterapeuta';
+                            navigate(`/${rolePath}/paciente/${cita.identificadorPaciente}`);
+                          }}
                           style={{ cursor: "pointer" }}
                         >
                           <div className="appointment-time">🕒 {cita.horaCita}</div>

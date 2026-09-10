@@ -706,33 +706,40 @@ const FormularioHistorial = () => {
     cargarAntecedentesFamiliares();
     cargarAntecedentesMedicos();
 
-    // Check for draft and load it if exists
+    // Check for draft and load it if exists and matches current patient
     const savedDraft = localStorage.getItem("historial_clinico_borrador");
     if (savedDraft) {
       try {
         const draft = JSON.parse(savedDraft);
-        if (draft.formData) {
-          setFormData(draft.formData);
-          if (draft.formData.sensacion) {
-            const list = draft.formData.sensacion.split(", ").map(s => s.trim());
-            const predefined = ["hormigueo", "adormecimiento", "calambre", "rigidez"];
-            const currentSelected = list.filter(item => predefined.includes(item.toLowerCase()));
-            const customList = list.filter(item => !predefined.includes(item.toLowerCase()));
-            if (customList.length > 0) {
-              currentSelected.push("otra");
-              setSensacionOtra(customList.join(", "));
+        const draftKey = draft.paciente?.identificadorPaciente || draft.paciente?._id;
+        const currentKey = datosPaciente?.identificadorPaciente || datosPaciente?._id;
+
+        if (!currentKey || (draftKey && draftKey === currentKey)) {
+          if (draft.formData) {
+            setFormData(draft.formData);
+            if (draft.formData.sensacion) {
+              const list = draft.formData.sensacion.split(", ").map(s => s.trim());
+              const predefined = ["hormigueo", "adormecimiento", "calambre", "rigidez"];
+              const currentSelected = list.filter(item => predefined.includes(item.toLowerCase()));
+              const customList = list.filter(item => !predefined.includes(item.toLowerCase()));
+              if (customList.length > 0) {
+                currentSelected.push("otra");
+                setSensacionOtra(customList.join(", "));
+              }
+              setSelectedSensaciones(currentSelected);
             }
-            setSelectedSensaciones(currentSelected);
           }
+          if (draft.lesiones) setLesiones(draft.lesiones);
+          if (draft.obser) setObser(draft.obser);
+          if (draft.antecedentesNoPatologicos) setAntecedentesNoPatologicos(draft.antecedentesNoPatologicos);
+          if (draft.isNewPatient !== undefined) setIsNewPatient(draft.isNewPatient);
+          if (draft.newPatientData) setNewPatientData(draft.newPatientData);
+          if (draft.paciente) setPaciente(draft.paciente);
+          setHasDraft(true);
+          return; // Skip loading normal patient data to preserve draft!
+        } else {
+          localStorage.removeItem("historial_clinico_borrador");
         }
-        if (draft.lesiones) setLesiones(draft.lesiones);
-        if (draft.obser) setObser(draft.obser);
-        if (draft.antecedentesNoPatologicos) setAntecedentesNoPatologicos(draft.antecedentesNoPatologicos);
-        if (draft.isNewPatient !== undefined) setIsNewPatient(draft.isNewPatient);
-        if (draft.newPatientData) setNewPatientData(draft.newPatientData);
-        if (draft.paciente) setPaciente(draft.paciente);
-        setHasDraft(true);
-        return; // Skip loading normal patient data to preserve draft!
       } catch (err) {
         console.error("Error cargando borrador:", err);
       }
@@ -820,6 +827,11 @@ const FormularioHistorial = () => {
 
   const handleNewPatientChange = (field, value) => {
     let cleaned = value;
+    if (field === "telefono") {
+      cleaned = value.replace(/\D/g, "").slice(0, 10);
+      setNewPatientData(prev => ({ ...prev, [field]: cleaned }));
+      return;
+    }
     if (typeof value === "string") {
       if (value.endsWith(" ")) {
         cleaned = value.replace(/\s+/g, " ");
@@ -948,6 +960,12 @@ const FormularioHistorial = () => {
           return;
         }
 
+        if (newPatientData.telefono.replace(/\D/g, "").length !== 10) {
+          showError("Teléfono inválido", "El número de teléfono debe constar exactamente de 10 dígitos.");
+          setLoading(false);
+          return;
+        }
+
         try {
           const resPaciente = await api.post("/pacientes", {
             nombres: newPatientData.nombres,
@@ -1069,11 +1087,11 @@ const FormularioHistorial = () => {
       localStorage.removeItem("historial_clinico_borrador");
       setHasDraft(false);
 
-      if (isNewPatient) {
-        localStorage.removeItem("dataPaciente");
+      if (finalPacienteId) {
+        navigate(`/${user?.role || 'fisioterapeuta'}/paciente/${finalPacienteId}`);
+      } else {
+        navigate(`/${user?.role || 'fisioterapeuta'}/pacientes`);
       }
-
-      navigate(`/${user?.role || 'fisioterapeuta'}/pacientes`);
     } catch (err) {
       console.error(err);
       const errorMessage = err.response?.data?.error || err.response?.data?.message || "No se pudo guardar el historial. Revisa los datos.";
@@ -1259,13 +1277,14 @@ const FormularioHistorial = () => {
                       <label className="form-label">Teléfono *</label>
                       {isNewPatient ? (
                         <input
-                          type="text"
+                          type="tel"
                           name="telefono"
                           className="input"
                           value={newPatientData.telefono}
                           onChange={(e) => handleNewPatientChange("telefono", e.target.value)}
+                          maxLength={10}
                           required
-                          placeholder="Ej. 5512345678"
+                          placeholder="Ej. 5512345678 (10 dígitos)"
                         />
                       ) : (
                         <input type="text" className="input" value={paciente.telefono} readOnly style={{ background: "rgba(226, 232, 240, 0.4)" }} />
@@ -2043,8 +2062,9 @@ const FormularioHistorial = () => {
                               <div style={{ flex: "1 1 150px" }}>
                                 <label className="form-label" style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "4px" }}>Fecha de cirugía</label>
                                 <input
-                                  type="date"
+                                  type="text"
                                   className="input"
+                                  placeholder="Ej. 2022 o DD/MM/AAAA"
                                   value={entry.date}
                                   onChange={(e) => updateSurgicalEntry(entry.id, "date", e.target.value)}
                                   style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}

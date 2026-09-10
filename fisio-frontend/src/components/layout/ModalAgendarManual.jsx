@@ -89,6 +89,10 @@ export default function ModalAgendarManual({ selectedDateInitial, onClose, onSav
       return showError("Hora requerida", "Selecciona una hora antes de confirmar.");
     }
 
+    if (telefono && telefono.replace(/\D/g, "").length !== 10) {
+      return showError("Teléfono inválido", "El número de teléfono debe constar exactamente de 10 dígitos.");
+    }
+
     const payload = {
       nombres: nombres || undefined,
       apellidoPaterno: apellidoPaterno || undefined,
@@ -108,7 +112,7 @@ export default function ModalAgendarManual({ selectedDateInitial, onClose, onSav
       if (data.datosIncompletos) {
         showSuccess(
           "Cita guardada (Incompleta)", 
-          `Se creó la cita pero se asignó un ID provisional (${data.cita.identificadorPaciente}) y teléfono provisional debido a la falta de datos.`
+          `Se creó la cita con datos provisionales para el expediente debido a la falta de información.`
         );
       } else {
         showSuccess("Cita manual agendada", `Se agendó la cita con éxito.`);
@@ -212,11 +216,12 @@ export default function ModalAgendarManual({ selectedDateInitial, onClose, onSav
             <div style={{ flex: "1 1 180px" }}>
               <label className="form-label" style={{ fontSize: "0.75rem", marginBottom: "0.15rem" }}>Teléfono</label>
               <input
-                type="text"
+                type="tel"
                 className="input"
-                placeholder="Ej. 4421234567"
+                placeholder="Ej. 4421234567 (10 dígitos)"
                 value={telefono}
-                onChange={(e) => setTelefono(e.target.value)}
+                onChange={(e) => setTelefono(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                maxLength={10}
                 style={{ height: "38px", fontSize: "0.85rem" }}
               />
             </div>

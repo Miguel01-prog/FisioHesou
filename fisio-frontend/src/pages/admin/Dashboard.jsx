@@ -304,7 +304,7 @@ export default function Dashboard() {
                         {p.nombres} {p.apellidos}
                       </span>
                       <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                        ID: <code style={{ color: "var(--primary)" }}>{p.identificadorPaciente}</code>
+                        📞 {p.telefono || "No registrado"}
                       </span>
                     </div>
                   </div>

@@ -1,11 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './Header.css';
-import { FiMenu, FiBell, FiChevronDown, FiActivity, FiUser, FiKey } from 'react-icons/fi';
+import { 
+  FiMenu, 
+  FiBell, 
+  FiChevronDown, 
+  FiActivity, 
+  FiUser, 
+  FiKey, 
+  FiClock, 
+  FiFileText, 
+  FiUserPlus, 
+  FiInfo, 
+  FiCheckCircle,
+  FiTrash2,
+  FiX
+} from 'react-icons/fi';
 import { RxExit } from "react-icons/rx";
 import ModalCambiarContrasena from './ModalCambiarContrasena.jsx';
 import api from '../../api';
+import { obfuscateId } from '../../utils/utils.js';
 
 export default function Header({
   isCollapsed,
@@ -19,11 +34,14 @@ export default function Header({
   const [bellOpen, setBellOpen] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const dropdownRef = useRef(null);
+
+  const userRole = user?.role || user?.rol || 'fisioterapeuta';
 
   const fetchNotifications = async () => {
-    if (!user || !user.role) return;
+    if (!userRole) return;
     try {
-      const { data } = await api.get(`/notifications/${user.role}`);
+      const { data } = await api.get(`/notifications/${userRole}`);
       setNotifications(data.notifications || []);
     } catch (err) {
       console.error("Error al cargar notificaciones:", err);
@@ -43,16 +61,38 @@ export default function Header({
     }
   }, [bellOpen]);
 
+  // Click outside to close notification menu
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setBellOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const handleNotificationClick = async (notif) => {
     try {
       await api.delete(`/notifications/${notif._id}`);
       setNotifications(prev => prev.filter((n) => n._id !== notif._id));
       setBellOpen(false);
       if (notif.identificadorPaciente) {
-        navigate(`/${user.role}/paciente/${notif.identificadorPaciente}`);
+        navigate(`/${userRole}/paciente/${obfuscateId(notif.identificadorPaciente)}`);
       }
     } catch (err) {
       console.error("Error al borrar notificación:", err);
+    }
+  };
+
+  const handleClearAll = async () => {
+    try {
+      await Promise.all(notifications.map(n => api.delete(`/notifications/${n._id}`)));
+      setNotifications([]);
+      setBellOpen(false);
+    } catch (err) {
+      setNotifications([]);
+      setBellOpen(false);
     }
   };
 
@@ -81,7 +121,7 @@ export default function Header({
         if (local) {
           const parsed = JSON.parse(local);
           if (parsed && (parsed.nombres || parsed.apellidos)) {
-            return `${parsed.nombres} ${parsed.apellidos}`;
+            return `${parsed.nombres} ${parsed.apellidos || ''}`.trim();
           }
         }
       } catch (e) { }
@@ -126,7 +166,7 @@ export default function Header({
       }
       list.push({ label: 'Pacientes', path: `/${pathParts[0]}/pacientes` });
       if (patientId) {
-        list.push({ label: getPatientName(), path: `/${pathParts[0]}/paciente/${patientId}` });
+        list.push({ label: getPatientName(), path: `/${pathParts[0]}/paciente/${obfuscateId(patientId)}` });
       } else {
         list.push({ label: getPatientName(), path: null });
       }
@@ -142,7 +182,7 @@ export default function Header({
       }
       list.push({ label: 'Pacientes', path: `/${pathParts[0]}/pacientes` });
       if (patientId) {
-        list.push({ label: getPatientName(), path: `/${pathParts[0]}/paciente/${patientId}` });
+        list.push({ label: getPatientName(), path: `/${pathParts[0]}/paciente/${obfuscateId(patientId)}` });
       }
       list.push({ label: 'Nueva Nota SOAP', path: location.pathname });
     } else if (page === 'nota-detail' || page === 'nota-detalle') {
@@ -156,7 +196,7 @@ export default function Header({
       }
       list.push({ label: 'Pacientes', path: `/${pathParts[0]}/pacientes` });
       if (patientId) {
-        list.push({ label: getPatientName(), path: `/${pathParts[0]}/paciente/${patientId}` });
+        list.push({ label: getPatientName(), path: `/${pathParts[0]}/paciente/${obfuscateId(patientId)}` });
       }
       list.push({ label: 'Detalle de Nota SOAP', path: location.pathname });
     } else {
@@ -167,6 +207,20 @@ export default function Header({
   };
 
   const breadcrumbs = getBreadcrumbsList();
+
+  // Helper to render icon for notification type
+  const renderNotifIcon = (type) => {
+    switch (type) {
+      case 'upcoming_appointment':
+        return <FiClock size={16} style={{ color: 'var(--danger, #ef4444)' }} />;
+      case 'pending_note':
+        return <FiFileText size={16} style={{ color: 'var(--warning, #f59e0b)' }} />;
+      case 'new_patient':
+        return <FiUserPlus size={16} style={{ color: 'var(--primary)' }} />;
+      default:
+        return <FiActivity size={16} style={{ color: 'var(--info, #06b6d4)' }} />;
+    }
+  };
 
   return (
     <header className="header-container">
@@ -206,31 +260,16 @@ export default function Header({
       <div className="header-right-block">
 
         {/* Floating Bell Trigger */}
-        <div className="notifications-bell-dropdown-wrapper">
+        <div className="notifications-bell-dropdown-wrapper" ref={dropdownRef}>
           <button
-            className="header-action-icon-btn"
+            className={`header-action-icon-btn ${notifications.length > 0 ? 'has-notifications' : ''}`}
             onClick={() => setBellOpen(!bellOpen)}
             aria-label="Notificaciones"
             style={{ position: 'relative' }}
           >
-            <FiBell size={18} />
+            <FiBell size={19} />
             {notifications.length > 0 && (
-              <span className="bell-badge" style={{
-                position: 'absolute',
-                top: '-4px',
-                right: '-4px',
-                background: 'var(--danger, #ef4444)',
-                color: '#fff',
-                borderRadius: '50%',
-                width: '16px',
-                height: '16px',
-                fontSize: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 'bold',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
-              }}>
+              <span className="bell-badge-count">
                 {notifications.length}
               </span>
             )}
@@ -238,62 +277,73 @@ export default function Header({
 
           {bellOpen && (
             <div className="bell-dropdown-card glass-card">
+              
+              {/* Dropdown Header */}
               <div className="bell-dropdown-header">
-                <span className="bell-dropdown-title">Avisos del Consultorio</span>
-                <button className="bell-clear-btn" onClick={() => setBellOpen(false)}>Cerrar</button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <FiBell size={16} style={{ color: 'var(--primary)' }} />
+                  <span className="bell-dropdown-title">Avisos del Consultorio</span>
+                  {notifications.length > 0 && (
+                    <span className="bell-count-pill">{notifications.length}</span>
+                  )}
+                </div>
+                {notifications.length > 0 && (
+                  <button className="bell-clear-btn" onClick={handleClearAll} title="Limpiar todas las notificaciones">
+                    Limpiar todo
+                  </button>
+                )}
               </div>
-              <ul className="bell-notifications-list" style={{ maxHeight: '280px', overflowY: 'auto', padding: '0 0.5rem', listStyle: 'none', margin: 0 }}>
+
+              {/* Notifications List */}
+              <ul className="bell-notifications-list">
                 {notifications.length === 0 ? (
-                  <p style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>
-                    No tienes notificaciones pendientes.
-                  </p>
+                  <div className="bell-empty-state">
+                    <FiCheckCircle size={32} style={{ color: 'var(--success)', marginBottom: '0.5rem', opacity: 0.8 }} />
+                    <p style={{ fontWeight: '600', color: 'var(--text-main)', margin: '0 0 2px 0', fontSize: '0.875rem' }}>
+                      Sin notificaciones pendientes
+                    </p>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                      ¡Todo está al día en tu agenda clínica!
+                    </span>
+                  </div>
                 ) : (
                   notifications.map((notif) => (
                     <li 
                       key={notif._id} 
                       className="bell-notification-item"
                       onClick={() => handleNotificationClick(notif)}
-                      style={{ 
-                        cursor: 'pointer', 
-                        padding: '0.75rem', 
-                        borderRadius: '8px', 
-                        marginBottom: '0.5rem',
-                        transition: 'background 0.2s',
-                        display: 'flex',
-                        alignItems: 'start',
-                        gap: '0.65rem'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(94, 80, 161, 0.05)'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                      title="Haz clic para archivar esta notificación"
+                      title="Haz clic para ver expediente y archivar"
                     >
-                      <div className="bell-item-icon-wrapper" style={{ 
-                        background: notif.type === 'upcoming_appointment' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(94, 80, 161, 0.1)',
-                        color: notif.type === 'upcoming_appointment' ? 'var(--danger, #ef4444)' : 'var(--primary)',
-                        padding: '0.4rem',
-                        borderRadius: '6px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginTop: '2px'
+                      <div className="bell-item-icon-wrapper" style={{
+                        background: notif.type === 'upcoming_appointment' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(99, 102, 241, 0.12)',
+                        border: notif.type === 'upcoming_appointment' ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(99, 102, 241, 0.2)'
                       }}>
-                        <FiActivity size={14} />
+                        {renderNotifIcon(notif.type)}
                       </div>
-                      <div className="bell-item-content" style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-                        <span className="bell-item-title" style={{ fontWeight: '600', fontSize: '0.85rem', color: 'var(--text-main)', textAlign: 'left' }}>
-                          {notif.title}
-                        </span>
-                        <span className="bell-item-desc" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: '1.25', textAlign: 'left' }}>
+
+                      <div className="bell-item-content">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+                          <span className="bell-item-title">
+                            {notif.title}
+                          </span>
+                          <span className="bell-item-time">
+                            {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <span className="bell-item-desc">
                           {notif.description}
-                        </span>
-                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '2px', textAlign: 'left' }}>
-                          {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(notif.createdAt).toLocaleDateString([], { day: '2-digit', month: 'short' })}
                         </span>
                       </div>
                     </li>
                   ))
                 )}
               </ul>
+
+              {/* Dropdown Footer */}
+              <div className="bell-dropdown-footer">
+                <span>Presiona una notificación para ir al expediente</span>
+              </div>
+
             </div>
           )}
         </div>
@@ -301,32 +351,20 @@ export default function Header({
         {/* Practitioner details badge */}
         <div
           className="header-practitioner-profile"
-          onClick={() => navigate(`/${user?.role || 'fisioterapeuta'}/perfil`)}
+          onClick={() => navigate(`/${userRole}/perfil`)}
           style={{ cursor: 'pointer' }}
           title="Editar mi perfil"
         >
           <div className="practitioner-profile-details">
-            <span className="profile-details-name">{user?.name ?? 'Usuario'}</span>
-            <span className="profile-details-role">{user?.role ?? 'Practicante'}</span>
+            <span className="profile-details-name">{user?.name || user?.nombres || 'Usuario'}</span>
+            <span className="profile-details-role">{userRole}</span>
           </div>
           <div className="practitioner-avatar-wrapper" style={{ width: 34, height: 34 }}>
             <div className="practitioner-avatar-fallback" style={{ fontSize: '0.8rem' }}>
-              {user?.name ? user.name.substring(0, 2).toUpperCase() : 'HE'}
+              {(user?.name || user?.nombres || 'HE').substring(0, 2).toUpperCase()}
             </div>
           </div>
         </div>
-
-        {/* Change Password Button 
-        <button 
-          className="header-action-icon-btn" 
-          onClick={() => setShowChangePasswordModal(true)}
-          title="Cambiar Contraseña"
-          aria-label="Cambiar contraseña"
-          style={{ marginRight: '8px', borderColor: 'rgba(94, 80, 161, 0.15)', color: 'var(--primary)' }}
-        >
-          <FiKey size={18} />
-        </button>
-        */}
 
         {/* Exit Button */}
         <button
