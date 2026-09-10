@@ -4,6 +4,7 @@ import api from "../../api.js";
 import { showSuccess, showError } from "../../utils/alerts.js";
 import { FiCalendar, FiClock, FiPlusCircle } from "react-icons/fi";
 import LoadingSpinner from "./LoadingSpinner.jsx";
+import { getUsuarioRol } from "../../utils/utils.js";
 
 export default function ModalAgendarManual({ selectedDateInitial, onClose, onSaveSuccess }) {
   // Form Fields
@@ -15,11 +16,12 @@ export default function ModalAgendarManual({ selectedDateInitial, onClose, onSav
   const [email, setEmail] = useState("");
   
   const user = JSON.parse(localStorage.getItem("user"));
-  const userRole = user?.role || "fisioterapeuta";
+  const userRole = user?.role || user?.rol || "fisioterapeuta";
+  const defaultArea = getUsuarioRol(user) || "fisioterapia";
   
   // Si es superadmin o administrador, dejamos elegir. Si es especialista, lo tomamos del rol
   const esEspecialista = userRole === "fisioterapeuta" || userRole === "nutriologa";
-  const [area, setArea] = useState(esEspecialista ? userRole : "fisioterapeuta");
+  const [area, setArea] = useState(esEspecialista ? defaultArea : "fisioterapia");
 
   const [selectedHour, setSelectedHour] = useState(null);
   const [availableHours, setAvailableHours] = useState([]);
@@ -44,7 +46,9 @@ export default function ModalAgendarManual({ selectedDateInitial, onClose, onSav
     if (!area) return;
     const fetchBlockedDates = async () => {
       try {
-        const { data } = await api.get(`/horarios/${area}`);
+        const clientId = user?.client?._id || (typeof user?.client === "string" ? user.client : "");
+        const query = clientId ? `?clientId=${clientId}` : "";
+        const { data } = await api.get(`/horarios/${area}${query}`);
         setBlockedHoursAdmin(data.blockedHoursAdmin || {});
         setBlockedHoursCitas(data.blockedHoursCitas || {});
       } catch (err) {

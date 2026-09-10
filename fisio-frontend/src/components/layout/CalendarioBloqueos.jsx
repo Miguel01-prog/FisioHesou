@@ -29,7 +29,10 @@ const CalendarioBloqueo = ({ role }) => {
     const fetchBlockedData = async () => {
       try {
         setLoading(true);
-        const { data } = await api.get(`/horarios/${role}`);
+        const userStored = JSON.parse(localStorage.getItem("user"));
+        const clientId = userStored?.client?._id || (typeof userStored?.client === "string" ? userStored.client : "");
+        const query = clientId ? `?clientId=${clientId}` : "";
+        const { data } = await api.get(`/horarios/${role}${query}`);
         setBlockedDatesAdmin(data.blockedDatesAdmin || []);
         setBlockedHoursAdmin(data.blockedHoursAdmin || {});
         setBlockedNotesAdmin(data.blockedNotesAdmin || {});
@@ -79,6 +82,9 @@ const CalendarioBloqueo = ({ role }) => {
   const saveHours = async () => {
     if (!selectedDay) return;
 
+    const userStored = JSON.parse(localStorage.getItem("user"));
+    const clientId = userStored?.client?._id || (typeof userStored?.client === "string" ? userStored.client : "");
+
     const newBlockedHours = { ...blockedHoursAdmin, [selectedDay]: selectedHours };
     const newBlockedNotes = { ...blockedNotesAdmin, [selectedDay]: noteText };
     const newBlockedDates = Object.entries(newBlockedHours)
@@ -90,6 +96,7 @@ const CalendarioBloqueo = ({ role }) => {
         blockedDates: newBlockedDates,
         blockedHours: newBlockedHours,
         blockedNotes: newBlockedNotes,
+        clientId
       });
 
       setBlockedDatesAdmin(newBlockedDates);
@@ -107,6 +114,9 @@ const CalendarioBloqueo = ({ role }) => {
 
   // Eliminar todos los bloqueos de un día
   const deleteDayBlocks = async (fechaStr) => {
+    const userStored = JSON.parse(localStorage.getItem("user"));
+    const clientId = userStored?.client?._id || (typeof userStored?.client === "string" ? userStored.client : "");
+
     const newBlockedHours = { ...blockedHoursAdmin };
     delete newBlockedHours[fechaStr];
     const newBlockedNotes = { ...blockedNotesAdmin };
@@ -119,6 +129,7 @@ const CalendarioBloqueo = ({ role }) => {
         blockedDates: newBlockedDates,
         blockedHours: newBlockedHours,
         blockedNotes: newBlockedNotes,
+        clientId
       });
 
       setBlockedDatesAdmin(newBlockedDates);
