@@ -29,12 +29,23 @@ export default function AgendaCitas() {
       const { data } = await api.get(endpoint);
       setCitas(data || []);
 
-      const adminDays = [
-        ...new Set(data.filter(c => c.area === "administrador").map(c => c.fechaCitaStr))
-      ];
-      const pacienteDays = [
+      const clientId = user?.client?._id || (typeof user?.client === "string" ? user.client : "");
+      const query = clientId ? `?clientId=${clientId}` : "";
+      
+      let adminDays = [];
+      let pacienteDays = [
         ...new Set(data.filter(c => c.area !== "administrador").map(c => c.fechaCitaStr))
       ];
+
+      if (rolUsuario) {
+        try {
+          const { data: horariosData } = await api.get(`/horarios/${rolUsuario}${query}`);
+          adminDays = horariosData.blockedDatesAdmin || [];
+        } catch (errHorarios) {
+          console.error("Error al obtener bloqueos de horario en agenda:", errHorarios);
+        }
+      }
+
       setBlockedDatesAdmin(adminDays);
       setBlockedDatesPaciente(pacienteDays);
 

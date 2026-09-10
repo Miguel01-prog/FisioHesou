@@ -68,7 +68,9 @@ export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = n
     if (!paciente || !paciente.area) return;
     const fetchBlockedDates = async () => {
       try {
-        const { data } = await api.get(`/horarios/${paciente.area}`);
+        const clientId = user?.client?._id || (typeof user?.client === "string" ? user.client : "");
+        const query = clientId ? `?clientId=${clientId}` : "";
+        const { data } = await api.get(`/horarios/${paciente.area}${query}`);
         setBlockedDatesAdmin(data.blockedDatesAdmin || []);
         setBlockedHoursAdmin(data.blockedHoursAdmin || {});
         setBlockedNotesAdmin(data.blockedNotesAdmin || {});
@@ -79,7 +81,7 @@ export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = n
       }
     };
     fetchBlockedDates();
-  }, [paciente]);
+  }, [paciente, user]);
 
   useEffect(() => {
     if (selectedDate && Object.keys(blockedHoursAdmin).length >= 0) {
