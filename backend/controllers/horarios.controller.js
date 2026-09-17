@@ -4,6 +4,32 @@ import Cita from "../models/cita.model.js";
 // Convierte "YYYY-MM-DD" en Date sin errores de zona horaria
 const toDate = (fechaStr) => new Date(fechaStr + "T00:00:00.000Z");
 
+// Helper para determinar si una cita ya transcurrió según la hora local
+const hasAppointmentPassed = (fechaCitaStr, horaCita) => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hoyStr = `${year}-${month}-${day}`;
+
+  if (fechaCitaStr < hoyStr) return true;
+  if (fechaCitaStr > hoyStr) return false;
+
+  if (!horaCita) return false;
+  const match = horaCita.match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return false;
+
+  let apptHour = parseInt(match[1], 10);
+  const apptMin = parseInt(match[2], 10);
+  const upper = horaCita.toUpperCase();
+  if (upper.includes("PM") && apptHour < 12) apptHour += 12;
+  if (upper.includes("AM") && apptHour === 12) apptHour = 0;
+
+  const currentMinutes = d.getHours() * 60 + d.getMinutes();
+  const apptMinutes = apptHour * 60 + apptMin;
+  return currentMinutes >= apptMinutes;
+};
+
 // ---- Crear o actualizar bloqueos manuales (días y horas) ----
 export const crearOBloquear = async (req, res) => {
   const { area } = req.params;
@@ -54,7 +80,6 @@ export const obtenerBloqueos = async (req, res) => {
     return res.status(400).json({ error: "clientId es requerido para esta consulta" });
   }
 
-  // Unificar las variaciones de nombre de área
   const areasABuscar = [area];
   if (area === "fisioterapia" || area === "fisioterapeuta") {
     areasABuscar.push("fisioterapia", "fisioterapeuta");
@@ -75,7 +100,7 @@ export const obtenerBloqueos = async (req, res) => {
       blockedDatesAdmin.push(b.fechaStr);
     });
 
-    // 2️⃣ Bloqueos por citas de pacientes (excluyendo canceladas)
+    // 2️⃣ Bloqueos por citas de pacientes (excluyendo canceladas y citas pasadas)
     const citas = await Cita.find({ 
       area: { $in: areasABuscar },
       estado: { $ne: "Cancelado" },
@@ -88,12 +113,13 @@ export const obtenerBloqueos = async (req, res) => {
       const fecha = cita.fechaCitaStr;
       const hora = cita.horaCita;
 
-      if (!blockedHoursCitas[fecha]) blockedHoursCitas[fecha] = [];
-      blockedHoursCitas[fecha].push(hora);
-      blockedDatesPaciente.push(fecha);
+      if (!hasAppointmentPassed(fecha, hora)) {
+        if (!blockedHoursCitas[fecha]) blockedHoursCitas[fecha] = [];
+        blockedHoursCitas[fecha].push(hora);
+        blockedDatesPaciente.push(fecha);
+      }
     });
 
-    // Quitar duplicados
     const blockedDatesPacienteUnique = [...new Set(blockedDatesPaciente)];
 
     res.status(200).json({
@@ -104,7 +130,7 @@ export const obtenerBloqueos = async (req, res) => {
       blockedHoursCitas,
     });
   } catch (e) {
-    console.error("Error al obtener bloqueos:", e);
+    console.error("Error al obtener bloqueos:", error);
     res.status(500).json({ error: e.message });
   }
 };

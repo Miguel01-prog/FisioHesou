@@ -14,7 +14,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
 
   React.useEffect(() => {
-    document.title = "SAAS - Iniciar Sesión";
+    document.title = "HESOU - Iniciar Sesión";
   }, []);
 
   const handleSubmit = async (e) => {
@@ -46,7 +46,7 @@ export default function LoginPage() {
   return (
     <div className="auth-wrapper-public">
       <div className="auth-card" style={{ maxWidth: '420px', width: '90%' }}>
-        <h2 className="text-center mb-1" style={{ color: 'var(--primary)' }}>SAAS</h2>
+        <h2 className="text-center mb-1" style={{ color: 'var(--primary)' }}>HESOU</h2>
         <p className="text-muted text-center mb-2">Ingresa tus credenciales para continuar</p>
 
         <form className="form" onSubmit={handleSubmit}>

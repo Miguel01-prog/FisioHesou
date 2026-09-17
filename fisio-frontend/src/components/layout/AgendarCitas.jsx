@@ -1,4 +1,4 @@
-import { getUsuarioRol, formatDateDDMMYYYY, toLocalISODate } from "../../utils/utils";
+import { getUsuarioRol, formatDateDDMMYYYY, toLocalISODate, isHourPassed } from "../../utils/utils";
 import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect, useRef } from "react";
 import "react-calendar/dist/Calendar.css";
@@ -31,7 +31,7 @@ export default function AgendaCitas() {
 
       const clientId = user?.client?._id || (typeof user?.client === "string" ? user.client : "");
       const query = clientId ? `?clientId=${clientId}` : "";
-      
+
       let adminDays = [];
       let pacienteDays = [
         ...new Set(data.filter(c => c.area !== "administrador").map(c => c.fechaCitaStr))
@@ -50,9 +50,15 @@ export default function AgendaCitas() {
       setBlockedDatesPaciente(pacienteDays);
 
       const targetDay = selectedDay || hoyStr;
-      const citasDia = data.filter(c => c.fechaCitaStr === targetDay);
+      let citasDia = data.filter(c => c.fechaCitaStr === targetDay);
+
+      // Quitar de la lista las citas de hoy cuya hora ya transcurrió
+      if (targetDay === hoyStr) {
+        citasDia = citasDia.filter(c => !isHourPassed(c.horaCita, targetDay));
+      }
+
       citasDia.sort((a, b) => (a.horaCita > b.horaCita ? 1 : -1));
-      
+
       if (!selectedDay) {
         setSelectedDay(hoyStr);
       }
@@ -61,6 +67,7 @@ export default function AgendaCitas() {
       console.error("Error al cargar citas:", err);
     }
   };
+
 
   // Cargar citas por rol o cambio de día
   useEffect(() => {

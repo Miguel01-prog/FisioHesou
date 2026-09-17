@@ -4,15 +4,61 @@ import Paciente from "../models/pacientes.model.js";
 import Nota from "../models/notas.model.js";
 import HistorialPacientes from "../models/historial-pacientes.model.js";
 
-// Helper function to check and generate notifications for upcoming appointments today
+const getTodayLocalString = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const hasAppointmentPassed = (fechaCitaStr, horaCita) => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hoyStr = `${year}-${month}-${day}`;
+
+  if (fechaCitaStr < hoyStr) return true;
+  if (fechaCitaStr > hoyStr) return false;
+
+  if (!horaCita) return false;
+  const match = horaCita.match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return false;
+
+  let apptHour = parseInt(match[1], 10);
+  const apptMin = parseInt(match[2], 10);
+  const upper = horaCita.toUpperCase();
+  if (upper.includes("PM") && apptHour < 12) apptHour += 12;
+  if (upper.includes("AM") && apptHour === 12) apptHour = 0;
+
+  const currentMinutes = d.getHours() * 60 + d.getMinutes();
+  const apptMinutes = apptHour * 60 + apptMin;
+  return currentMinutes >= apptMinutes;
+};
+
 const checkAndGenerateUpcomingNotifications = async (area, clientId) => {
   try {
-    const hoyStr = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-    
-    // Unify area name strings
+    const hoyStr = getTodayLocalString();
     const areasABuscar = area === "fisioterapeuta" ? ["fisioterapia", "fisioterapeuta"] : ["nutriologa", "nutricion", "nutriología"];
-    
-    // Find all today's active appointments for these areas
+
+    const existingUpcomingNotifs = await Notification.find({
+      type: "upcoming_appointment",
+      area: area,
+      clientId
+    });
+
+    for (const notif of existingUpcomingNotifs) {
+      if (notif.citaId) {
+        const cita = await Cita.findById(notif.citaId);
+        if (!cita || cita.estado === "Cancelado" || hasAppointmentPassed(cita.fechaCitaStr, cita.horaCita)) {
+          await Notification.deleteOne({ _id: notif._id });
+        }
+      } else {
+        await Notification.deleteOne({ _id: notif._id });
+      }
+    }
+
     const citasHoy = await Cita.find({
       area: { $in: areasABuscar },
       fechaCitaStr: hoyStr,
@@ -21,24 +67,24 @@ const checkAndGenerateUpcomingNotifications = async (area, clientId) => {
     });
 
     for (const cita of citasHoy) {
-      // Check if an upcoming notification already exists for this appointment
-      const exists = await Notification.findOne({
-        citaId: cita._id,
-        type: "upcoming_appointment",
-        clientId
-      });
-
-      if (!exists) {
-        // Create upcoming notification
-        await Notification.create({
-          title: "Consulta Próxima",
-          description: `La cita de ${cita.nombres} ${cita.apellidoPaterno || ''}`.trim() + ` es hoy a las ${cita.horaCita}.`,
-          area: area,
-          type: "upcoming_appointment",
+      if (!hasAppointmentPassed(cita.fechaCitaStr, cita.horaCita)) {
+        const exists = await Notification.findOne({
           citaId: cita._id,
-          identificadorPaciente: cita.identificadorPaciente,
+          type: "upcoming_appointment",
           clientId
         });
+
+        if (!exists) {
+          await Notification.create({
+            title: "Consulta Próxima",
+            description: `La cita de ${cita.nombres} ${cita.apellidoPaterno || ""}`.trim() + ` es hoy a las ${cita.horaCita}.`,
+            area: area,
+            type: "upcoming_appointment",
+            citaId: cita._id,
+            identificadorPaciente: cita.identificadorPaciente,
+            clientId
+          });
+        }
       }
     }
   } catch (err) {
@@ -46,50 +92,21 @@ const checkAndGenerateUpcomingNotifications = async (area, clientId) => {
   }
 };
 
-// Helper function to check and generate notifications for patients without a SOAP note (ONLY IF THEY ALREADY HAVE AN EXPEDIENTE/HISTORIAL CREATED)
 const checkAndGeneratePendingSoapNotifications = async (area, clientId) => {
   try {
     const areasABuscar = area === "fisioterapeuta" ? ["fisioterapia", "fisioterapeuta"] : ["nutriologa", "nutricion", "nutriología"];
-
-    // Buscar todos los pacientes registrados del área
-    const pacientes = await Paciente.find({
-      area: { $in: areasABuscar },
-      clientId
-    });
+    const pacientes = await Paciente.find({ area: { $in: areasABuscar }, clientId });
 
     for (const pac of pacientes) {
       if (!pac.identificadorPaciente) continue;
-
-      // 1. PRIMERO: Verificar si el paciente TIENE Expediente / Historial Clínico registrado
-      const historialExiste = await HistorialPacientes.findOne({
-        identificadorPaciente: pac.identificadorPaciente,
-        clientId
-      });
-
-      // Si NO tiene expediente creado aún, NO generar ni mantener la notificación de nota pendiente
+      const historialExiste = await HistorialPacientes.findOne({ identificadorPaciente: pac.identificadorPaciente, clientId });
       if (!historialExiste) {
-        await Notification.deleteMany({
-          identificadorPaciente: pac.identificadorPaciente,
-          type: "pending_soap",
-          clientId
-        });
+        await Notification.deleteMany({ identificadorPaciente: pac.identificadorPaciente, type: "pending_soap", clientId });
         continue;
       }
-
-      // 2. Si SÍ TIENE EXPEDIENTE, verificar si ya cuenta con alguna nota SOAP redactada
-      const notaExiste = await Nota.findOne({
-        identificadorPaciente: pac.identificadorPaciente,
-        clientId
-      });
-
+      const notaExiste = await Nota.findOne({ identificadorPaciente: pac.identificadorPaciente, clientId });
       if (!notaExiste) {
-        // Si tiene expediente pero aún NO tiene nota SOAP, verificar si ya existe la notificación
-        const notifExiste = await Notification.findOne({
-          identificadorPaciente: pac.identificadorPaciente,
-          type: "pending_soap",
-          clientId
-        });
-
+        const notifExiste = await Notification.findOne({ identificadorPaciente: pac.identificadorPaciente, type: "pending_soap", clientId });
         if (!notifExiste) {
           const nombreCompleto = `${pac.nombres} ${pac.apellidoPaterno || ""}`.trim();
           await Notification.create({
@@ -102,12 +119,7 @@ const checkAndGeneratePendingSoapNotifications = async (area, clientId) => {
           });
         }
       } else {
-        // Si ya cuenta con nota, limpiar cualquier notificación pendiente de este paciente
-        await Notification.deleteMany({
-          identificadorPaciente: pac.identificadorPaciente,
-          type: "pending_soap",
-          clientId
-        });
+        await Notification.deleteMany({ identificadorPaciente: pac.identificadorPaciente, type: "pending_soap", clientId });
       }
     }
   } catch (err) {
@@ -115,17 +127,12 @@ const checkAndGeneratePendingSoapNotifications = async (area, clientId) => {
   }
 };
 
-// Fetch notifications for a given user role/area
 export const obtenerNotificaciones = async (req, res) => {
-  const { area } = req.params; // "fisioterapeuta" o "nutriologa"
+  const { area } = req.params;
   const clientId = req.user.clientId;
-
   try {
-    // Generate upcoming appointment & pending SOAP alerts on demand
     await checkAndGenerateUpcomingNotifications(area, clientId);
     await checkAndGeneratePendingSoapNotifications(area, clientId);
-
-    // Fetch active notifications sorted by newest first
     const notifications = await Notification.find({ area, clientId }).sort({ createdAt: -1 });
     res.status(200).json({ ok: true, notifications });
   } catch (err) {
@@ -133,10 +140,8 @@ export const obtenerNotificaciones = async (req, res) => {
   }
 };
 
-// Delete notification on click
 export const eliminarNotificacion = async (req, res) => {
   const { id } = req.params;
-
   try {
     const deleted = await Notification.findOneAndDelete({ _id: id, clientId: req.user.clientId });
     if (!deleted) {

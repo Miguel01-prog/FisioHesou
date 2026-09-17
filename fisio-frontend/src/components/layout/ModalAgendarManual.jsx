@@ -4,7 +4,8 @@ import api from "../../api.js";
 import { showSuccess, showError } from "../../utils/alerts.js";
 import { FiCalendar, FiClock, FiPlusCircle } from "react-icons/fi";
 import LoadingSpinner from "./LoadingSpinner.jsx";
-import { getUsuarioRol } from "../../utils/utils.js";
+import { getUsuarioRol, isHourPassed } from "../../utils/utils.js";
+
 
 export default function ModalAgendarManual({ selectedDateInitial, onClose, onSaveSuccess }) {
   // Form Fields
@@ -69,24 +70,15 @@ export default function ModalAgendarManual({ selectedDateInitial, onClose, onSav
     const bloqueadasPacientes = blockedHoursCitas[iso] || [];
     const bloqueadas = [...new Set([...bloqueadasAdmin, ...bloqueadasPacientes])];
 
-    const ahora = new Date();
-    const hoy = ahora.getFullYear() + "-" + String(ahora.getMonth() + 1).padStart(2, "0") + "-" + String(ahora.getDate()).padStart(2, "0");
-    const esHoy = iso === hoy;
-
     const disponibles = allHours.filter((h) => {
       if (bloqueadas.includes(h)) return false;
-      if (esHoy) {
-        const [hNum, mNum] = h.split(":").map(Number);
-        const horaCita = new Date(ahora);
-        horaCita.setHours(hNum, mNum, 0, 0);
-        const diffHoras = (horaCita - ahora) / (1000 * 60 * 60);
-        if (diffHoras < 2) return false;
-      }
+      if (isHourPassed(h, iso)) return false;
       return true;
     });
 
     setAvailableHours(disponibles);
   };
+
 
   const handleGuardarCita = async () => {
     if (!selectedDateInitial || !selectedHour) {
@@ -263,9 +255,9 @@ export default function ModalAgendarManual({ selectedDateInitial, onClose, onSav
             <label className="form-label" style={{ display: "flex", alignItems: "center", gap: "0.3rem", fontSize: "0.75rem" }}>
               <FiClock size={12} /> Seleccionar Hora
             </label>
-            {availableHours.length > 0 || allHours.length > 0 ? (
+            {availableHours.length > 0 ? (
               <div className="hours-grid-modern">
-                {allHours.map((hour) => {
+                {allHours.filter((h) => !isHourPassed(h, selectedDateInitial)).map((hour) => {
                   const isBlockedAdmin = blockedHoursAdmin[selectedDateInitial]?.includes(hour);
                   const isBlockedPaciente = blockedHoursCitas[selectedDateInitial]?.includes(hour);
                   const isAvailable = availableHours.includes(hour);
@@ -293,6 +285,7 @@ export default function ModalAgendarManual({ selectedDateInitial, onClose, onSav
                 No hay horarios disponibles para esta fecha.
               </p>
             )}
+
           </div>
 
           {!nombres.trim() || !apellidoPaterno.trim() || !telefono.trim() ? (

@@ -10,6 +10,8 @@ import { showSuccess, showError } from "../../utils/alerts.js";
 import { FaCalendarAlt } from "react-icons/fa";
 import { FiChevronLeft, FiClock, FiCheckCircle } from "react-icons/fi";
 import LoadingSpinner from "../../components/layout/LoadingSpinner.jsx";
+import { isHourPassed } from "../../utils/utils.js";
+
 
 export default function AppointmentForm() {
   const { subdomain } = useParams();
@@ -132,24 +134,15 @@ export default function AppointmentForm() {
     const bloqueadasPacientes = blockedHoursCitas[iso] || [];
     const bloqueadas = [...new Set([...bloqueadasAdmin, ...bloqueadasPacientes])];
 
-    const ahora = new Date();
-    const esHoy = iso === hoy;
-
-    // ✅ Mostrar solo horas disponibles
     const disponibles = allHours.filter((h) => {
       if (bloqueadas.includes(h)) return false;
-      if (esHoy) {
-        const [hNum, mNum] = h.split(":").map(Number);
-        const horaCita = new Date(ahora);
-        horaCita.setHours(hNum, mNum, 0, 0);
-        const diffHoras = (horaCita - ahora) / (1000 * 60 * 60);
-        if (diffHoras < 2) return false;
-      }
+      if (isHourPassed(h, iso)) return false;
       return true;
     });
 
     setAvailableHours(disponibles);
   };
+
 
   const handleHourSelect = (hour) => {
     setSelectedHour(hour);
@@ -474,7 +467,7 @@ export default function AppointmentForm() {
                     )}
                     {availableHours.length > 0 ? (
                       <div className="hours-grid-modern">
-                        {allHours.map((hour) => {
+                        {allHours.filter((h) => !isHourPassed(h, selectedDate)).map((hour) => {
                           const isBlockedAdmin = blockedHoursAdmin[selectedDate]?.includes(hour);
                           const isBlockedPaciente = blockedHoursCitas[selectedDate]?.includes(hour);
                           const isAvailable = availableHours.includes(hour);
@@ -500,6 +493,7 @@ export default function AppointmentForm() {
                     ) : (
                       <p className="text-muted mt-2" style={{ fontSize: "0.85rem" }}>No hay horarios disponibles en esta fecha.</p>
                     )}
+
                   </div>
                 )}
               </>

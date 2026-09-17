@@ -145,99 +145,132 @@
   position: absolute;
   top: 52px;
   right: -10px;
-  width: 360px;
+  width: 370px;
   max-width: 90vw;
   padding: 0;
   z-index: 150;
-  border-radius: 16px !important;
-  background: var(--card-bg, rgba(255, 255, 255, 0.95)) !important;
-  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.6)) !important;
-  backdrop-filter: blur(24px) saturate(140%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(140%) !important;
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.18), 0 0 15px rgba(99, 102, 241, 0.1) !important;
+  border-radius: 18px !important;
+  background: #ffffff !important; /* Fondo sólido para evitar transparencia no deseada */
+  border: 1px solid rgba(99, 102, 241, 0.18) !important;
+  box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.22), 0 4px 16px rgba(0, 0, 0, 0.08) !important;
   animation: dropdownFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   overflow: hidden;
 }
 
-@keyframes dropdownFade {
-  from { opacity: 0; transform: translateY(12px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+[data-theme="dark"] .bell-dropdown-card,
+.dark .bell-dropdown-card {
+  background: #0f172a !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
 }
+
+@keyframes dropdownFade {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 
 .bell-dropdown-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.25rem;
+  padding: 0.9rem 1.25rem;
   border-bottom: 1px solid var(--border-light, rgba(0,0,0,0.06));
-  background: rgba(99, 102, 241, 0.03);
+  background: rgba(99, 102, 241, 0.04);
 }
 
 .bell-dropdown-title {
-  font-family: var(--font-family-display);
+  font-family: var(--font-family-display, sans-serif);
   font-weight: 700;
-  font-size: 0.95rem;
-  color: var(--text-main);
+  font-size: 0.925rem;
+  color: var(--text-main, #0f172a);
 }
 
 .bell-count-pill {
-  background: var(--primary-glow);
-  color: var(--primary);
+  background: rgba(99, 102, 241, 0.14);
+  color: var(--primary, #6366f1);
   font-size: 0.725rem;
-  font-weight: 700;
+  font-weight: 800;
   padding: 2px 8px;
   border-radius: 12px;
 }
 
 .bell-clear-btn {
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   color: var(--danger, #ef4444);
-  font-size: 0.775rem;
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: background 0.18s;
+  padding: 4px 10px;
+  border-radius: 8px;
+  transition: all 0.18s ease;
 }
 
 .bell-clear-btn:hover {
   background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
 }
 
 .bell-notifications-list {
   list-style: none;
-  max-height: 320px;
+  max-height: 330px;
   overflow-y: auto;
-  padding: 0.5rem;
+  padding: 0.6rem;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
 }
 
+/* Individual notification item */
 .bell-notification-item {
   display: flex;
-  gap: 0.85rem;
+  align-items: flex-start;
+  gap: 0.75rem;
   padding: 0.85rem;
-  border-radius: 12px;
-  margin-bottom: 0.4rem;
+  border-radius: 14px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
   border: 1px solid transparent;
+  background: transparent;
+  position: relative;
 }
 
 .bell-notification-item:hover {
-  background-color: var(--primary-light, rgba(99, 102, 241, 0.06));
+  background-color: rgba(99, 102, 241, 0.05);
   border-color: rgba(99, 102, 241, 0.12);
   transform: translateX(2px);
 }
 
+/* Icon style variants */
 .bell-item-icon-wrapper {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.notif-type-upcoming_appointment .bell-item-icon-wrapper {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.notif-type-pending_soap .bell-item-icon-wrapper,
+.notif-type-pending_note .bell-item-icon-wrapper {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.notif-type-new_patient .bell-item-icon-wrapper {
+  background: rgba(99, 102, 241, 0.12);
+  color: #6366f1;
+  border: 1px solid rgba(99, 102, 241, 0.25);
 }
 
 .bell-item-content {
@@ -248,26 +281,74 @@
   text-align: left;
 }
 
+.bell-item-header-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 2px;
+}
+
+.bell-type-tag {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: 5px;
+}
+
+.tag-appointment { background: rgba(239, 68, 68, 0.12); color: #dc2626; }
+.tag-soap        { background: rgba(245, 158, 11, 0.12); color: #d97706; }
+.tag-patient     { background: rgba(99, 102, 241, 0.12); color: #4f46e5; }
+.tag-info        { background: rgba(6, 182, 212, 0.12);  color: #0891b2; }
+
 .bell-item-title {
   font-weight: 700;
   font-size: 0.85rem;
-  color: var(--text-main);
+  color: var(--text-main, #0f172a);
 }
 
 .bell-item-time {
-  font-size: 0.7rem;
-  color: var(--text-muted);
+  font-size: 0.685rem;
+  color: var(--text-muted, #64748b);
   font-weight: 500;
 }
 
 .bell-item-desc {
-  font-size: 0.78rem;
-  color: var(--text-muted);
+  font-size: 0.775rem;
+  color: var(--text-muted, #475569);
   line-height: 1.35;
 }
 
+/* Quick dismiss X button on item hover */
+.bell-item-dismiss-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.bell-notification-item:hover .bell-item-dismiss-btn {
+  opacity: 1;
+}
+
+.bell-item-dismiss-btn:hover {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
 .bell-empty-state {
-  padding: 2.5rem 1rem;
+  padding: 2.25rem 1rem;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -281,8 +362,9 @@
   background: rgba(0, 0, 0, 0.02);
   text-align: center;
   font-size: 0.725rem;
-  color: var(--text-muted);
+  color: var(--text-muted, #64748b);
 }
+
 
 /* User Badge */
 .header-practitioner-profile {

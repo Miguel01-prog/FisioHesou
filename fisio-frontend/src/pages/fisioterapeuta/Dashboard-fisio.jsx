@@ -101,7 +101,7 @@ export default function DashboardFisio() {
       }
 
       const hoyStr = new Date().toISOString().split('T')[0];
-      
+
       // Filter today's sessions or upcoming active sessions
       const todaySessions = citasData.filter(c => c.fechaCitaStr === hoyStr || c.fechaCita === hoyStr);
       todaySessions.sort((a, b) => (a.horaCita > b.horaCita ? 1 : -1));
@@ -192,8 +192,8 @@ export default function DashboardFisio() {
   const filteredPatients = useMemo(() => {
     return patients.filter(p => {
       const matchesSearch = (p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            (p.treatment || '').toLowerCase().includes(searchTerm.toLowerCase());
-      
+        (p.treatment || '').toLowerCase().includes(searchTerm.toLowerCase());
+
       if (!matchesSearch) return false;
 
       if (statusFilter === 'pendientes') {
@@ -413,15 +413,15 @@ export default function DashboardFisio() {
     day: 'numeric'
   });
 
-  const completionPct = stats.citasHoyCount > 0 
-    ? Math.round((stats.completadasHoy / stats.citasHoyCount) * 100) 
+  const completionPct = stats.citasHoyCount > 0
+    ? Math.round((stats.completadasHoy / stats.citasHoyCount) * 100)
     : 0;
 
   const maxWeeklyCount = Math.max(...weeklyDistribution.map(w => w.count), 1);
 
   return (
     <div className="dashboard-main-view auth-wrapper-content fade-in-up">
-      
+
       {/* 🚀 Welcome Header Banner */}
       <header style={{ marginBottom: "1.75rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
@@ -605,7 +605,7 @@ export default function DashboardFisio() {
               </div>
             </div>
 
-            {/* Card 4: Soap Notes */}
+            {/* Card 4: Soap Notes 
             <div className="auth-card dashboard-metric-card hover-grow" style={{ cursor: "pointer" }} onClick={() => navigate('/fisioterapeuta/notas')}>
               <div className="dashboard-metric-icon" style={{ background: 'rgba(245, 158, 11, 0.08)', color: 'var(--warning)' }}>
                 <FiFileText />
@@ -617,7 +617,7 @@ export default function DashboardFisio() {
                 </strong>
                 <span className="text-muted dashboard-metric-meta">Evoluciones registradas</span>
               </div>
-            </div>
+            </div>*/}
 
           </div>
 
@@ -777,7 +777,7 @@ export default function DashboardFisio() {
                 </div>
               </div>
 
-              {/* Realtime Search Bar */}
+              {/* Realtime Search Bar 
               <div style={{ position: "relative", marginBottom: "1.25rem" }}>
                 <FiSearch style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
                 <input
@@ -788,7 +788,7 @@ export default function DashboardFisio() {
                   className="form-input"
                   style={{ paddingLeft: "36px", height: "38px", fontSize: "0.85rem" }}
                 />
-              </div>
+              </div>*/}
 
               {filteredPatients.length > 0 ? (
                 <div className="responsive-table-container">
@@ -831,7 +831,7 @@ export default function DashboardFisio() {
 
             {/* Right Column: Panel de Gestión Clínica Limpio */}
             <div className="auth-card component-catalog-column">
-              
+
               {/* Acceso Rápido Fisioterapia */}
               <div className="glass-card-header" style={{ marginBottom: "1rem" }}>
                 <h2 className="glass-card-title" style={{ fontSize: "1.05rem", fontWeight: "600", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
@@ -848,13 +848,13 @@ export default function DashboardFisio() {
                   <FiUsers /> Consultar Lista de Pacientes
                 </button>
 
-                <button
+                {/*<button
                   className="btn btn-secondary w-100"
                   style={{ justifyContent: "flex-start", padding: "0 14px", height: "42px", fontSize: "0.875rem", gap: "10px" }}
                   onClick={() => navigate('/fisioterapeuta/notas')}
                 >
                   <FiFileText /> Redactar Nota SOAP
-                </button>
+                </button>*/}
 
                 <button
                   className="btn btn-secondary w-100"
@@ -908,7 +908,7 @@ export default function DashboardFisio() {
 
               <hr className="catalog-divider" style={{ margin: "1.25rem 0" }} />
 
-              {/* Mapa Anatómico de Dolor (Visualización Médica Relevante) */}
+              {/* Mapa Anatómico de Dolor (Visualización Médica Relevante) 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <h3 className="catalog-subtitle" style={{ fontSize: "0.95rem", fontWeight: "600", margin: 0 }}>
                   Mapa de Puntos Dolorosos Frecuentes
@@ -938,7 +938,7 @@ export default function DashboardFisio() {
                   ></div>
                   <span className="anatomy-caption">Zonas de Mayor Impacto Clínico</span>
                 </div>
-              </div>
+              </div>*/}
 
             </div>
 

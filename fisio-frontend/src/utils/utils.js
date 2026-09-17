@@ -54,3 +54,23 @@ export function obfuscateId(id) {
 export function deobfuscateId(encoded) {
   return encoded ? String(encoded) : "";
 }
+
+export function isHourPassed(hourStr, isoDate) {
+  if (!hourStr || !isoDate) return false;
+  const ahora = new Date();
+  const year = ahora.getFullYear();
+  const month = String(ahora.getMonth() + 1).padStart(2, "0");
+  const day = String(ahora.getDate()).padStart(2, "0");
+  const hoyStr = `${year}-${month}-${day}`;
+
+  if (isoDate < hoyStr) return true;
+  if (isoDate > hoyStr) return false;
+
+  const [hNum, mNum] = hourStr.split(":").map(Number);
+  if (isNaN(hNum)) return false;
+  const horaCita = new Date(ahora);
+  horaCita.setHours(hNum, mNum || 0, 0, 0);
+
+  return horaCita <= ahora;
+}
+

@@ -5,6 +5,7 @@ import "react-calendar/dist/Calendar.css";
 import api from "../../api.js";
 import { showSuccess, showError } from "../../utils/alerts.js";
 import { useAuth } from "../../context/AuthContext";
+import { isHourPassed } from "../../utils/utils.js";
 
 export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = null }) {
   const { user } = useAuth();
@@ -45,24 +46,15 @@ export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = n
       : bloqueadasPacientes;
     const bloqueadas = [...new Set([...bloqueadasAdmin, ...bloqueadasPacientesFiltered])];
 
-    const ahora = new Date();
-    const hoy = toLocalISODate(ahora);
-    const esHoy = iso === hoy;
-
     const disponibles = allHours.filter((h) => {
       if (bloqueadas.includes(h)) return false;
-      if (esHoy) {
-        const [hNum, mNum] = h.split(":").map(Number);
-        const horaCita = new Date(ahora);
-        horaCita.setHours(hNum, mNum, 0, 0);
-        const diffHoras = (horaCita - ahora) / (1000 * 60 * 60);
-        if (diffHoras < 2) return false;
-      }
+      if (isHourPassed(h, iso)) return false;
       return true;
     });
 
     setAvailableHours(disponibles);
   };
+
 
   useEffect(() => {
     if (!paciente || !paciente.area) return;
@@ -239,7 +231,7 @@ export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = n
             )}
             {availableHours.length > 0 ? (
               <div className="hours-grid-modern">
-                {allHours.map((hour) => {
+                {allHours.filter((h) => !isHourPassed(h, selectedDate)).map((hour) => {
                   const isBlockedAdmin = blockedHoursAdmin[selectedDate]?.includes(hour);
                   const isBlockedPaciente = blockedHoursCitas[selectedDate]?.includes(hour);
                   const isAvailable = availableHours.includes(hour);
@@ -265,6 +257,7 @@ export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = n
             ) : (
               <p className="text-muted mt-2" style={{ fontSize: '0.9rem' }}>No hay horas disponibles para esta fecha.</p>
             )}
+
           </div>
         )}
 

@@ -202,7 +202,7 @@ export const obtenerStatsSuperadmin = async (req, res) => {
     const totalPlans = await PlanTratamiento.countDocuments();
 
     // Citas de hoy
-    const hoyStr = new Date().toISOString().split('T')[0];
+    const now = new Date(); const hoyStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const todayAppointments = await Cita.countDocuments({
       $or: [{ fechaCitaStr: hoyStr }, { fechaCita: hoyStr }]
     });

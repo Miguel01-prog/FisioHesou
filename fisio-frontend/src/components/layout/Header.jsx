@@ -85,6 +85,16 @@ export default function Header({
     }
   };
 
+  const handleDismissSingle = async (e, notifId) => {
+    e.stopPropagation();
+    try {
+      await api.delete(`/notifications/${notifId}`);
+      setNotifications(prev => prev.filter((n) => n._id !== notifId));
+    } catch (err) {
+      console.error("Error al descartar notificación:", err);
+    }
+  };
+
   const handleClearAll = async () => {
     try {
       await Promise.all(notifications.map(n => api.delete(`/notifications/${n._id}`)));
@@ -95,6 +105,7 @@ export default function Header({
       setBellOpen(false);
     }
   };
+
 
   const handleLogout = () => {
     logout();
@@ -212,13 +223,28 @@ export default function Header({
   const renderNotifIcon = (type) => {
     switch (type) {
       case 'upcoming_appointment':
-        return <FiClock size={16} style={{ color: 'var(--danger, #ef4444)' }} />;
+        return <FiClock size={16} />;
+      case 'pending_soap':
       case 'pending_note':
-        return <FiFileText size={16} style={{ color: 'var(--warning, #f59e0b)' }} />;
+        return <FiFileText size={16} />;
       case 'new_patient':
-        return <FiUserPlus size={16} style={{ color: 'var(--primary)' }} />;
+        return <FiUserPlus size={16} />;
       default:
-        return <FiActivity size={16} style={{ color: 'var(--info, #06b6d4)' }} />;
+        return <FiActivity size={16} />;
+    }
+  };
+
+  const renderNotifTag = (type) => {
+    switch (type) {
+      case 'upcoming_appointment':
+        return <span className="bell-type-tag tag-appointment">Cita Hoy</span>;
+      case 'pending_soap':
+      case 'pending_note':
+        return <span className="bell-type-tag tag-soap">Nota SOAP</span>;
+      case 'new_patient':
+        return <span className="bell-type-tag tag-patient">Paciente</span>;
+      default:
+        return <span className="bell-type-tag tag-info">Aviso</span>;
     }
   };
 
@@ -298,8 +324,8 @@ export default function Header({
               <ul className="bell-notifications-list">
                 {notifications.length === 0 ? (
                   <div className="bell-empty-state">
-                    <FiCheckCircle size={32} style={{ color: 'var(--success)', marginBottom: '0.5rem', opacity: 0.8 }} />
-                    <p style={{ fontWeight: '600', color: 'var(--text-main)', margin: '0 0 2px 0', fontSize: '0.875rem' }}>
+                    <FiCheckCircle size={32} style={{ color: 'var(--success, #10b981)', marginBottom: '0.5rem', opacity: 0.85 }} />
+                    <p style={{ fontWeight: '700', color: 'var(--text-main)', margin: '0 0 2px 0', fontSize: '0.875rem' }}>
                       Sin notificaciones pendientes
                     </p>
                     <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
@@ -310,30 +336,37 @@ export default function Header({
                   notifications.map((notif) => (
                     <li 
                       key={notif._id} 
-                      className="bell-notification-item"
+                      className={`bell-notification-item notif-type-${notif.type || 'info'}`}
                       onClick={() => handleNotificationClick(notif)}
-                      title="Haz clic para ver expediente y archivar"
+                      title="Haz clic para abrir el expediente"
                     >
-                      <div className="bell-item-icon-wrapper" style={{
-                        background: notif.type === 'upcoming_appointment' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(99, 102, 241, 0.12)',
-                        border: notif.type === 'upcoming_appointment' ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(99, 102, 241, 0.2)'
-                      }}>
+                      <div className="bell-item-icon-wrapper">
                         {renderNotifIcon(notif.type)}
                       </div>
 
                       <div className="bell-item-content">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
-                          <span className="bell-item-title">
-                            {notif.title}
-                          </span>
+                        <div className="bell-item-header-meta">
+                          {renderNotifTag(notif.type)}
                           <span className="bell-item-time">
                             {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
+                        <span className="bell-item-title">
+                          {notif.title}
+                        </span>
                         <span className="bell-item-desc">
                           {notif.description}
                         </span>
                       </div>
+
+                      <button
+                        className="bell-item-dismiss-btn"
+                        onClick={(e) => handleDismissSingle(e, notif._id)}
+                        title="Descartar notificación"
+                        aria-label="Descartar"
+                      >
+                        <FiX size={14} />
+                      </button>
                     </li>
                   ))
                 )}
@@ -341,12 +374,13 @@ export default function Header({
 
               {/* Dropdown Footer */}
               <div className="bell-dropdown-footer">
-                <span>Presiona una notificación para ir al expediente</span>
+                <span>Selecciona una notificación para abrir su expediente</span>
               </div>
 
             </div>
           )}
         </div>
+
 
         {/* Practitioner details badge */}
         <div
