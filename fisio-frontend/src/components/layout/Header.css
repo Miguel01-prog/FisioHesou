@@ -400,54 +400,6 @@
 }
 
 /* ==========================================================================
-   💅 SweetAlert2 Custom Notification Styling (Theme Matched)
-   ========================================================================== */
-.custom-swal-popup {
-  border-radius: 20px !important;
-  padding: 1.75rem !important;
-  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.4)) !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
-  backdrop-filter: blur(16px) !important;
-}
-
-.custom-swal-title {
-  font-family: var(--font-family-display, sans-serif) !important;
-  font-size: 1.35rem !important;
-  font-weight: 700 !important;
-  color: var(--text-main, #0f172a) !important;
-}
-
-.custom-swal-text {
-  font-size: 0.925rem !important;
-  color: var(--text-muted, #475569) !important;
-  margin-top: 0.5rem !important;
-}
-
-.custom-swal-confirm-btn {
-  height: 40px !important;
-  padding: 0 20px !important;
-  border-radius: 10px !important;
-  font-weight: 600 !important;
-  font-size: 0.875rem !important;
-  margin: 0.5rem 0.25rem 0 0.25rem !important;
-}
-
-.custom-swal-cancel-btn {
-  height: 40px !important;
-  padding: 0 20px !important;
-  border-radius: 10px !important;
-  font-weight: 600 !important;
-  font-size: 0.875rem !important;
-  margin: 0.5rem 0.25rem 0 0.25rem !important;
-}
-
-.custom-toast-popup {
-  border-radius: 14px !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15) !important;
-  border: 1px solid var(--border-light, rgba(0,0,0,0.08)) !important;
-}
-
-/* ==========================================================================
    📱 3. iPad/Tablet & Mobile Responsive optimizations (<= 1200px)
    ========================================================================== */
 @media (max-width: 1200px) {

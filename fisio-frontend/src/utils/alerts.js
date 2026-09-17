@@ -1,6 +1,6 @@
 import Swal from "sweetalert2";
 
-// Custom SweetAlert2 Mixin for Toast Notifications (Top Right)
+// Toast Notifications (Top Right)
 export const showToast = (title = "", icon = "success") => {
   const Toast = Swal.mixin({
     toast: true,
@@ -8,11 +8,6 @@ export const showToast = (title = "", icon = "success") => {
     showConfirmButton: false,
     timer: 3000,
     timerProgressBar: true,
-    background: "var(--card-bg, #ffffff)",
-    color: "var(--text-main, #0f172a)",
-    customClass: {
-      popup: "custom-toast-popup",
-    },
     didOpen: (toast) => {
       toast.addEventListener("mouseenter", Swal.stopTimer);
       toast.addEventListener("mouseleave", Swal.resumeTimer);
@@ -25,23 +20,9 @@ export const showToast = (title = "", icon = "success") => {
   });
 };
 
-// Custom SweetAlert2 style defaults matching Amethyst / Teal design system
-const customSwal = Swal.mixin({
-  background: "var(--card-bg, #ffffff)",
-  color: "var(--text-main, #0f172a)",
-  buttonsStyling: false,
-  customClass: {
-    popup: "custom-swal-popup",
-    title: "custom-swal-title",
-    htmlContainer: "custom-swal-text",
-    confirmButton: "btn btn-primary custom-swal-confirm-btn",
-    cancelButton: "btn btn-secondary custom-swal-cancel-btn"
-  }
-});
-
-// Mostrar alerta de éxito
+// Alertas clásicas de SweetAlert2 sin estilos ni clases personalizadas
 export const showSuccess = (title = "Éxito", text = "") => {
-  customSwal.fire({
+  Swal.fire({
     icon: "success",
     title,
     text,
@@ -54,7 +35,7 @@ export const showSuccess = (title = "Éxito", text = "") => {
 
 // Mostrar alerta de error
 export const showError = (title = "Error", text = "") => {
-  customSwal.fire({
+  Swal.fire({
     icon: "error",
     title,
     text,
@@ -66,7 +47,7 @@ export const showError = (title = "Error", text = "") => {
 
 // Mostrar alerta informativa
 export const showInfo = (title = "Información", text = "") => {
-  customSwal.fire({
+  Swal.fire({
     icon: "info",
     title,
     text,
@@ -79,7 +60,7 @@ export const showInfo = (title = "Información", text = "") => {
 
 // Confirmación antes de acción
 export const showConfirm = async (title = "¿Estás seguro?", text = "") => {
-  const result = await customSwal.fire({
+  const result = await Swal.fire({
     title,
     text,
     icon: "warning",
@@ -90,3 +71,4 @@ export const showConfirm = async (title = "¿Estás seguro?", text = "") => {
 
   return result.isConfirmed;
 };
+
