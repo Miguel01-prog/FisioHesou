@@ -49,9 +49,9 @@ export default function Sidebar({
     return <IconComponent />;
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login', { replace: true });
   };
 
   const getNavItemsByRole = (role) => {

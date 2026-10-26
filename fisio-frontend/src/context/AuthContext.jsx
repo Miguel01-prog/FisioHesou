@@ -11,17 +11,28 @@ export const AuthProvider = ({ children }) => {
   
   useEffect(() => {
     const fetchUser = async () => {
+      const storedToken = localStorage.getItem('token');
+      // Si no existe token, el usuario NO está logeado
+      if (!storedToken) {
+        setUser(null);
+        setToken(null);
+        localStorage.removeItem('user');
+        setLoading(false);
+        return;
+      }
+
       try {
-        const storedToken = localStorage.getItem('token');
-        if (storedToken) setToken(storedToken);
+        setToken(storedToken);
         const res = await api.get('/auth/me');
         setUser({ name: res.data.name, role: res.data.role, client: res.data.client, signature: res.data.signature });
         localStorage.setItem('user', JSON.stringify({ role: res.data.role, nombre: res.data.name, client: res.data.client, signature: res.data.signature }));
       } catch (err) {
+        console.error("Error al autenticar sesión:", err);
         setUser(null);
         setToken(null);
         localStorage.removeItem('user');
         localStorage.removeItem('token');
+        localStorage.removeItem('dataPaciente');
       } finally {
         setLoading(false);
       }
@@ -68,11 +79,15 @@ export const AuthProvider = ({ children }) => {
     try {
       await api.post('/auth/logout');
     } catch (err) {
-      console.error("Error al cerrar sesión", err);
+      console.error("Error al cerrar sesión en servidor:", err);
+    } finally {
+      setToken(null);
+      setUser(null);
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('dataPaciente');
+      sessionStorage.clear();
     }
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('user');
   };
 
   // 🔄 Actualizar datos de usuario reactivamente

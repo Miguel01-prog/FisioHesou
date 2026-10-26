@@ -55,7 +55,7 @@ export default function AppRouter() {
 
       {/* Superadmin */}
       <Route
-        path="/admin/*"
+        path="/admin"
         element={
           <PrivateRoute allowedRoles={['superadmin']}>
             <AdminLayout />
@@ -73,7 +73,7 @@ export default function AppRouter() {
 
       {/* Fisioterapeuta */}
       <Route
-        path="/fisioterapeuta/*"
+        path="/fisioterapeuta"
         element={
           <PrivateRoute allowedRoles={['fisioterapeuta']}>
             <FisioLayout />
@@ -100,7 +100,7 @@ export default function AppRouter() {
       </Route>
 
       {/* Nutrióloga */}
-      <Route path="/nutriologa/*" 
+      <Route path="/nutriologa" 
         element={
           <PrivateRoute allowedRoles={['nutriologa']}>
             <NutriologaLayout />

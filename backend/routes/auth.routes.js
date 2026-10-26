@@ -104,11 +104,7 @@ router.post('/login', async (req, res) => {
 
 // Logout
 router.post('/logout', (req, res) => {
-  res.clearCookie('token', {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none'
-  });
+  res.clearCookie('token', { httpOnly: true, secure: true, sameSite: 'none' }); res.clearCookie('token');
   res.json({ message: 'Sesión cerrada correctamente' });
 });
 
@@ -268,3 +264,4 @@ router.get('/empleados', verifyToken, async (req, res) => {
 });
 
 export default router;
+

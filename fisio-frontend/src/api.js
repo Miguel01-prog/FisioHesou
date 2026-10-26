@@ -20,6 +20,27 @@ api.interceptors.request.use(
   }
 );
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      const isLoginRequest = error.config?.url?.includes("/auth/login");
+      if (!isLoginRequest) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("dataPaciente");
+        if (
+          window.location.pathname !== "/login" &&
+          !window.location.pathname.startsWith("/citas/")
+        ) {
+          window.location.href = "/login";
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const SERVER_URL = baseURL.replace(/\/api$/, "");
 
 export default api;
