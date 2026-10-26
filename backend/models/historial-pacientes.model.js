@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 
 const historialPacienteSchema = new mongoose.Schema({
 
@@ -44,6 +44,7 @@ const historialPacienteSchema = new mongoose.Schema({
     antecedentesNoPatologicos: { type: Object, default: {} },
     lesiones: { type: Object, default: {} },
     obser: { type: Object, default: {} },
+    adjuntos: { type: [Object], default: [] },
     firmaPaciente: { type: String, default: "" },
     firmaProfesional: { type: String, default: "" },
     nombrePacienteFirma: { type: String, default: "" },

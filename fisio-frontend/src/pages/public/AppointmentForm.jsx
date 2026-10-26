@@ -7,9 +7,10 @@ import "../../styles/design-system.css";
 import "../../styles/calendary.css";
 import api from "../../api.js";
 import { showSuccess, showError } from "../../utils/alerts.js";
-import { FaCalendarAlt } from "react-icons/fa";
+import { FaCalendarAlt, FaExclamationTriangle, FaStickyNote } from "react-icons/fa";
 import { FiChevronLeft, FiClock, FiCheckCircle } from "react-icons/fi";
 import LoadingSpinner from "../../components/layout/LoadingSpinner.jsx";
+import CalendarLegend from "../../components/layout/CalendarLegend.jsx";
 import { isHourPassed } from "../../utils/utils.js";
 
 
@@ -231,7 +232,9 @@ export default function AppointmentForm() {
     return (
       <div className="auth-wrapper-public" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
         <div className="auth-card text-center" style={{ maxWidth: '420px', padding: '2rem' }}>
-          <h2 style={{ color: '#ef4444', marginBottom: '1rem' }}>⚠️ Clínica No Encontrada</h2>
+          <h2 style={{ color: '#ef4444', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <FaExclamationTriangle /> Clínica No Encontrada
+          </h2>
           <p className="text-muted">La dirección a la que intentas acceder no corresponde a ninguna clínica registrada o activa en nuestro sistema.</p>
         </div>
       </div>
@@ -250,9 +253,7 @@ export default function AppointmentForm() {
             {clinic.logo ? (
               <img src={clinic.logo} alt="Logo" style={{ maxHeight: "60px", marginBottom: "1rem" }} />
             ) : (
-              <div className="brand-logo-sphere" style={{ margin: "0 auto 1rem auto", width: "50px", height: "50px", fontSize: "1.4rem" }}>
-                <span>{clinic.name ? clinic.name.substring(0, 1).toUpperCase() : "H"}</span>
-              </div>
+              <img src="/hesou-logo.svg" alt="HESOU" style={{ width: "56px", height: "56px", borderRadius: "14px", margin: "0 auto 1rem auto", display: "block" }} />
             )}
             <h2 className="logo-agendar mb-1" style={{ color: "var(--primary)" }}>{clinic.name}</h2>
             <p className="text-muted">Completa tus datos para agendar tu consulta</p>
@@ -354,7 +355,7 @@ export default function AppointmentForm() {
                 className={`specialty-card-glass ${tipoConsulta === service.key ? "active" : ""}`}
                 onClick={() => handleTipoChange(service.key)}
               >
-                <div className="specialty-card-icon">{service.icon || "📅"}</div>
+                <div className="specialty-card-icon">{service.icon && service.icon.startsWith("ri-") ? <i className={service.icon} /> : <FaCalendarAlt />}</div>
                 <div className="specialty-card-info">
                   <span className="specialty-title">{service.name}</span>
                   {service.description && (
@@ -437,6 +438,8 @@ export default function AppointmentForm() {
                   }}
                 />
  
+                <CalendarLegend showSundays={!!clinic?.blockSundays} style={{ maxWidth: '440px', margin: '1.25rem auto 0 auto' }} />
+ 
                 {showHours && selectedDate && (
                   <div style={{ marginTop: "20px", textAlign: "center" }}>
                     <h4 className="text-muted mb-3" style={{ fontSize: "0.9rem", fontWeight: "600" }}>
@@ -461,7 +464,7 @@ export default function AppointmentForm() {
                           gap: '0.5rem'
                         }}
                       >
-                        <span>📝</span>
+                        <FaStickyNote size={14} style={{ color: "var(--primary)", flexShrink: 0 }} />
                         <span><strong>Nota:</strong> {blockedNotesAdmin[selectedDate]}</span>
                       </div>
                     )}

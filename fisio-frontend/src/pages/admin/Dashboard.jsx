@@ -18,6 +18,7 @@ import {
   FiSearch,
   FiGrid
 } from "react-icons/fi";
+import { FaBolt, FaPhoneAlt } from "react-icons/fa";
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
@@ -71,7 +72,7 @@ export default function Dashboard() {
       <header style={{ marginBottom: "2rem", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem" }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "0.25rem" }}>
-            <span style={{ fontSize: "1.8rem" }}>⚡</span>
+            <FaBolt style={{ color: "var(--warning)", fontSize: "1.5rem" }} />
             <h1 style={{ color: "var(--primary)", fontSize: "1.8rem", fontWeight: "700", margin: 0 }}>
               Panel de Control General
             </h1>
@@ -303,8 +304,8 @@ export default function Dashboard() {
                       <span style={{ fontWeight: "600", color: "var(--text-main)", fontSize: "0.925rem", display: "block" }}>
                         {p.nombres} {p.apellidos}
                       </span>
-                      <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                        📞 {p.telefono || "No registrado"}
+                      <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "4px" }}>
+                        <FaPhoneAlt size={10} /> {p.telefono || "No registrado"}
                       </span>
                     </div>
                   </div>

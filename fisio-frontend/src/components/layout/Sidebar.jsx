@@ -195,7 +195,7 @@ export default function Sidebar({
     }
   }, [user?.client?.theme]);
 
-  const brandTitle = user?.client?.sidebarName || user?.client?.name || "Hesou";
+  const brandTitle = user?.client?.sidebarName || user?.client?.name || "HESOU";
   const brandSubtitle = user?.client?.sidebarSubtitle || "";
   const sidebarBg = user?.client?.theme?.sidebarBg;
   const titleColor = user?.client?.theme?.titleColor;
@@ -229,9 +229,11 @@ export default function Sidebar({
                 style={{ width: "34px", height: "34px", borderRadius: "50%", objectFit: "contain", flexShrink: 0 }}
               />
             ) : (
-              <div className="brand-logo-sphere" style={{ background: user?.client?.theme?.primaryColor || undefined, flexShrink: 0 }}>
-                <span>{brandTitle.substring(0, 1).toUpperCase()}</span>
-              </div>
+              <img
+                src="/hesou-logo.svg"
+                alt="HESOU"
+                style={{ width: "36px", height: "36px", borderRadius: "8px", objectFit: "contain", flexShrink: 0 }}
+              />
             )}
             {!isCollapsed && (
               <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>

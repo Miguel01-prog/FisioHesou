@@ -250,4 +250,21 @@ router.get('/users', verifyToken, checkRole('superadmin'), async (req, res) => {
   }
 });
 
+
+// Obtener empleados / especialistas de la clínica (accesible para cualquier usuario autenticado de la clínica)
+router.get('/empleados', verifyToken, async (req, res) => {
+  try {
+    const filter = { role: { $ne: 'superadmin' } };
+    if (req.user && req.user.clientId) {
+      filter.clientId = req.user.clientId;
+    }
+    const empleados = await User.find(filter)
+      .select('_id name email role clientId')
+      .sort({ name: 1 });
+    res.json(empleados);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

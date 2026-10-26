@@ -12,6 +12,8 @@ const citaSchema = new mongoose.Schema({
   fechaCitaStr: { type: String, required: true }, 
   horaCita: { type: String, required: true },
   area: { type: String, required: true },
+  especialistaId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  especialistaNombre: { type: String, default: "" },
   fechaCreado: { type: Date, default: Date.now },
   identificadorPaciente: { type: String, required: true },
   esNuevoPaciente: { type: Boolean, default: false },

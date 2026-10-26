@@ -5,6 +5,7 @@ import ModalAgendarCita from "../layout/ModalAgendarCita.jsx";
 import api from "../../api.js";
 import { showSuccess, showError } from "../../utils/alerts.js";
 import { IoCaretDown, IoCaretUp } from "react-icons/io5";
+import { FaCalendarAlt } from "react-icons/fa";
 
 export default function CrearNota() {
   const navigate = useNavigate();
@@ -152,7 +153,7 @@ export default function CrearNota() {
       if (faltaSOAP) {
         showSuccess(
           "Nota Guardada Exitosamente",
-          "La nota se guardó en la base de datos. ⚠️ Notificación: Se detectaron campos SOAP (Subjetivo, Objetivo, Análisis, Plan) pendientes. Te sugerimos completarlos para el expediente del paciente."
+          "La nota se guardó en la base de datos. Aviso: Se detectaron campos SOAP (Subjetivo, Objetivo, Análisis, Plan) pendientes. Te sugerimos completarlos para el expediente del paciente."
         );
       } else {
         showSuccess("Nota Guardada", "La nota del paciente se guardó correctamente con la información SOAP completa.");
@@ -234,7 +235,7 @@ export default function CrearNota() {
               className="btn btn-primary btn-size-sm hover-grow glow-pulse-purple" 
               onClick={() => setShowModalCita(true)}
             >
-              📅 Agendar Cita
+              <FaCalendarAlt size={12} style={{ marginRight: "6px" }} /> Agendar Cita
             </button>
           </div>
           <hr className="mb-4" />

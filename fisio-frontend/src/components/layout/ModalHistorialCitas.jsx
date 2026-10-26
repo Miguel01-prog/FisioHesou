@@ -13,21 +13,21 @@ export default function ModalHistorialCitas({
   return createPortal(
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "600px", width: "100%" }}>
-        <button 
-          className="close-btn" 
-          onClick={onClose} 
+        <button
+          className="close-btn"
+          onClick={onClose}
           aria-label="Cerrar modal"
         >
           ✕
         </button>
-        
+
         <h4 className="logo-agendar" style={{ marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <FaCalendarAlt /> Historial de Citas
         </h4>
         <hr style={{ marginBottom: "1.5rem" }} />
-        
+
         <p className="text-muted text-center mb-3" style={{ fontSize: '1rem', lineHeight: '1.5' }}>
-          Paciente: <strong>{paciente?.nombres} {paciente?.apellidos}</strong><br/>
+          Paciente: <strong>{paciente?.nombres} {paciente?.apellidos}</strong><br />
           Expediente: <strong>{paciente?.identificadorPaciente}</strong>
         </p>
         <hr style={{ marginBottom: "1.5rem" }} />
@@ -40,17 +40,17 @@ export default function ModalHistorialCitas({
               {[...citas]
                 .sort((a, b) => new Date(`${b.fechaCitaStr}T${b.horaCita}`) - new Date(`${a.fechaCitaStr}T${a.horaCita}`))
                 .map((cita) => (
-                  <div 
-                    key={cita._id} 
-                    style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center', 
-                      padding: '0.75rem', 
+                  <div
+                    key={cita._id}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '0.75rem',
                       borderRadius: '8px',
                       background: 'rgba(255, 255, 255, 0.03)',
                       border: '1px solid var(--card-border)',
-                      fontSize: '0.9rem' 
+                      fontSize: '0.9rem'
                     }}
                   >
                     <div>
@@ -63,7 +63,7 @@ export default function ModalHistorialCitas({
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <select
-                        value={cita.estado || "Programado"}
+                        value={cita.estado || ""}
                         onChange={(e) => onStatusChange(cita._id, e.target.value)}
                         style={{
                           padding: '4px 8px',
@@ -76,10 +76,10 @@ export default function ModalHistorialCitas({
                           fontSize: '0.85rem'
                         }}
                       >
-                        <option value="Programado">📅 Programado</option>
-                        <option value="Asistió">✅ Asistió</option>
-                        <option value="No asistió">❌ No asistió</option>
-                        <option value="Cancelado">🚫 Cancelado</option>
+                        <option value="Programado">Programado</option>
+                        <option value="Asistió">Asistió</option>
+                        <option value="No asistió">No asistió</option>
+                        <option value="Cancelado">Cancelado</option>
                       </select>
 
                       <button
@@ -110,10 +110,10 @@ export default function ModalHistorialCitas({
         </div>
 
         <div style={{ marginTop: '25px', display: 'flex', justifyContent: 'flex-end' }}>
-          <button 
-            type="button" 
-            className="save-btn" 
-            style={{ background: "#64748b", margin: 0, padding: '0.5rem 1.5rem' }} 
+          <button
+            type="button"
+            className="save-btn"
+            style={{ background: "#64748b", margin: 0, padding: '0.5rem 1.5rem' }}
             onClick={onClose}
           >
             Cerrar

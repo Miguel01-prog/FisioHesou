@@ -3,6 +3,7 @@ import api from "../../api.js";
 import LoadingSpinner from "../../components/layout/LoadingSpinner.jsx";
 import { showError, showSuccess } from "../../utils/alerts.js";
 import { FiPlus, FiSettings, FiTrash2, FiEdit2, FiCheck, FiX, FiLink, FiImage, FiChevronDown, FiChevronRight, FiFolder } from "react-icons/fi";
+import { FaCogs, FaClipboardList, FaRoute, FaIcons, FaExclamationTriangle } from "react-icons/fa";
 
 export default function ModulosPage() {
   const [modules, setModules] = useState([]);
@@ -123,8 +124,8 @@ export default function ModulosPage() {
     <div className="modulos-admin-container" style={{ padding: "1.5rem", maxWidth: "1200px", margin: "0 auto" }}>
       {/* Cabecera */}
       <header style={{ marginBottom: "2rem" }}>
-        <h1 style={{ color: "var(--primary)", fontSize: "1.8rem", fontWeight: "700" }}>
-          ⚙️ Administrador de Módulos del Sistema
+        <h1 style={{ color: "var(--primary)", fontSize: "1.8rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "10px" }}>
+          <FaCogs /> Administrador de Módulos del Sistema
         </h1>
         <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
           Registra nuevas secciones del menú, iconos y rutas para expandir el sistema a otros giros de negocio.
@@ -352,8 +353,8 @@ export default function ModulosPage() {
                   border: "1px solid rgba(94, 80, 161, 0.2)",
                   marginTop: "0.5rem"
                 }}>
-                  <h4 style={{ fontSize: "0.85rem", color: "var(--primary)", marginBottom: "0.5rem", fontWeight: "600" }}>
-                    📋 Módulos Hijos Anidados:
+                  <h4 style={{ fontSize: "0.85rem", color: "var(--primary)", marginBottom: "0.5rem", fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <FaClipboardList /> Módulos Hijos Anidados:
                   </h4>
                   <ul style={{ paddingLeft: "1.2rem", margin: 0, fontSize: "0.8rem", color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: "4px" }}>
                     {childModules.map(child => (
@@ -489,8 +490,8 @@ export default function ModulosPage() {
                             </div>
                           </td>
                           <td style={{ padding: "12px 10px", fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                            <div>🚩 Route: <code>/{parent.path}</code></div>
-                            <div style={{ marginTop: "3px" }}>🎨 Icon: <code>{parent.icon}</code></div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><FaRoute size={10} /> Route: <code>/{parent.path}</code></div>
+                            <div style={{ marginTop: "3px", display: "flex", alignItems: "center", gap: "4px" }}><FaIcons size={10} /> Icon: <code>{parent.icon}</code></div>
                           </td>
                           <td style={{ padding: "12px 10px" }}>
                             <span style={{
@@ -540,8 +541,8 @@ export default function ModulosPage() {
                                 {child.label}
                               </td>
                               <td style={{ padding: "12px 10px", fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                                <div>🚩 Route: <code>/{child.path}</code></div>
-                                <div>🎨 Icon: <code>{child.icon}</code></div>
+                                <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><FaRoute size={10} /> Route: <code>/{child.path}</code></div>
+                                <div style={{ marginTop: "3px", display: "flex", alignItems: "center", gap: "4px" }}><FaIcons size={10} /> Icon: <code>{child.icon}</code></div>
                               </td>
                               <td style={{ padding: "12px 10px" }}>
                                 <span style={{
@@ -589,16 +590,16 @@ export default function ModulosPage() {
                         <tr key={orphan._id} style={{ borderBottom: "1px solid rgba(255,255,255,0.03)", background: "rgba(239,68,68,0.03)" }}>
                           <td style={{ padding: "12px 10px", fontSize: "0.82rem" }}>
                             <code style={{ color: "#ef4444" }}>{orphan.key}</code>
-                            <div style={{ fontSize: "0.65rem", color: "#ef4444", marginTop: "2px" }}>
-                              ⚠️ Padre inexistente: <code>{orphan.parentKey}</code>
+                            <div style={{ fontSize: "0.65rem", color: "#ef4444", marginTop: "2px", display: "flex", alignItems: "center", gap: "4px" }}>
+                              <FaExclamationTriangle size={10} /> Padre inexistente: <code>{orphan.parentKey}</code>
                             </div>
                           </td>
                           <td style={{ padding: "12px 10px", fontSize: "0.82rem", color: "var(--text-main)" }}>
                             {orphan.label}
                           </td>
                           <td style={{ padding: "12px 10px", fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                            <div>🚩 Route: <code>/{orphan.path}</code></div>
-                            <div style={{ marginTop: "3px" }}>🎨 Icon: <code>{orphan.icon}</code></div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><FaRoute size={10} /> Route: <code>/{orphan.path}</code></div>
+                            <div style={{ marginTop: "3px", display: "flex", alignItems: "center", gap: "4px" }}><FaIcons size={10} /> Icon: <code>{orphan.icon}</code></div>
                           </td>
                           <td style={{ padding: "12px 10px" }}>
                             <span style={{

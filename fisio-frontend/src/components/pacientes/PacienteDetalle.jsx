@@ -165,7 +165,7 @@ export default function PacienteDetalle() {
                         }}
                         className="hover-grow"
                       >
-                        <span>➕</span> Agendar
+                        <FaPlus size={11} /> Agendar
                       </button>
 
                       {/* 📋 Ver Historial Completo */}
@@ -196,7 +196,12 @@ export default function PacienteDetalle() {
                     /* 📋 Registrar Historial Clínico (Cuando no tiene) */
                     <button
                       title="Registrar Historial Médico"
-                      onClick={() => navigate(`/${rolePath}/creacion-historial`)}
+                      onClick={() => {
+                        if (paciente) {
+                          localStorage.setItem("dataPaciente", JSON.stringify(paciente));
+                        }
+                        navigate(`/${rolePath}/creacion-historial`);
+                      }}
                       style={{
                         background: 'rgba(245, 158, 11, 0.12)',
                         color: '#f59e0b',

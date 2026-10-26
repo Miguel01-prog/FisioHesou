@@ -29,11 +29,18 @@ export default function RegisterPage() {
     }
   };
 
+  React.useEffect(() => {
+    document.title = "HESOU";
+  }, []);
+
   return (
     <div className="auth-wrapper-public">
       <div className="auth-card" style={{ maxWidth: '420px', width: '90%' }}>
-        <h2 className="text-center mb-1" style={{ color: 'var(--primary)' }}>Crear Cuenta</h2>
-        <p className="text-muted text-center mb-2">Únete a FisioHesou</p>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+          <img src="/hesou-logo.svg" alt="HESOU" style={{ width: '56px', height: '56px', borderRadius: '14px', boxShadow: '0 6px 20px rgba(94, 80, 161, 0.25)' }} />
+        </div>
+        <h2 className="text-center mb-1" style={{ color: 'var(--primary)', fontWeight: '800' }}>Crear Cuenta</h2>
+        <p className="text-muted text-center mb-2">Únete a HESOU</p>
 
         <form className="form" onSubmit={handleSubmit}>
           <div style={{ position: 'relative' }}>

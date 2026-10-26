@@ -30,6 +30,7 @@ import {
   FiPieChart,
   FiPhone
 } from 'react-icons/fi';
+import { FaAppleAlt, FaPhoneAlt } from 'react-icons/fa';
 
 export default function DashboardNutri() {
   const { user } = useAuth();
@@ -412,7 +413,7 @@ export default function DashboardNutri() {
       <header style={{ marginBottom: "1.75rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
           <h1 style={{ color: "var(--primary)", fontSize: "1.75rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "10px", margin: 0 }}>
-            🥗 Panel de Nutrición
+            <FaAppleAlt /> Panel de Nutrición
           </h1>
           <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", margin: "4px 0 0 0" }}>
             ¡Bienvenida/o, <strong style={{ color: "var(--text-main)" }}>{userName}</strong>! | {capitalizeWords(todayFormatted)}
@@ -492,8 +493,8 @@ export default function DashboardNutri() {
                   <h3 style={{ fontSize: "1.15rem", fontWeight: "700", margin: "4px 0 2px 0", color: "var(--text-main)" }}>
                     {nextAppointment.name}
                   </h3>
-                  <p style={{ fontSize: "0.825rem", color: "var(--text-muted)", margin: 0 }}>
-                    Consulta: <strong>{nextAppointment.treatment}</strong> {nextAppointment.telefono && ` | 📞 ${nextAppointment.telefono}`}
+                  <p style={{ fontSize: "0.825rem", color: "var(--text-muted)", margin: 0, display: "flex", alignItems: "center", flexWrap: "wrap", gap: "4px" }}>
+                    Consulta: <strong>{nextAppointment.treatment}</strong> {nextAppointment.telefono && <><span>|</span> <FaPhoneAlt size={10} /> {nextAppointment.telefono}</>}
                   </p>
                 </div>
               </div>
@@ -652,8 +653,8 @@ export default function DashboardNutri() {
                           Sin Nota
                         </span>
                       </div>
-                      <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "4px" }}>
-                        📞 {pn.telefono || 'Sin teléfono'} | {pn.edad ? `${pn.edad} años` : 'Sin edad'}
+                      <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "4px", display: "flex", alignItems: "center", gap: "6px" }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><FaPhoneAlt size={10} /> {pn.telefono || 'Sin teléfono'}</span> <span>|</span> {pn.edad ? `${pn.edad} años` : 'Sin edad'}
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: "0.5rem", marginTop: "4px" }}>

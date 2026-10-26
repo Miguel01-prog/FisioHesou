@@ -5,6 +5,27 @@ import InformacionClinica from "../layout/InformacionClinica";
 import api from "../../api";
 import LoadingSpinner from "../layout/LoadingSpinner";
 import { deobfuscateId } from "../../utils/utils";
+import ArchivosExpediente from "../expediente/ArchivosExpediente";
+import { 
+  FaClipboardList, 
+  FaStethoscope, 
+  FaSearch, 
+  FaNotesMedical, 
+  FaXRay, 
+  FaFileSignature, 
+  FaLock,
+  FaQuestionCircle,
+  FaBullseye,
+  FaRunning,
+  FaCut,
+  FaHeartbeat,
+  FaExclamationTriangle,
+  FaHands,
+  FaBolt,
+  FaMapMarkerAlt,
+  FaFlask,
+  FaUserMd
+} from "react-icons/fa";
 
 const getEvaTextDescription = (val) => {
   const v = Number(val);
@@ -208,20 +229,33 @@ const VistaHistorial = () => {
                 letterSpacing: "0.3px",
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "4px"
+                gap: "5px"
               }}>
-                🔒 Solo lectura
+                <FaLock size={10} /> Solo lectura
               </span>
             </div>
           </div>
           <hr style={{ marginBottom: "1.5rem" }} />
 
           <div className="tabs" style={{ marginBottom: "2rem" }}>
-            <button type="button" className={`tab ${activeTab === "anamnesis" ? "active" : ""}`} onClick={() => setActiveTab("anamnesis")}>📋 Anamnesis</button>
-            <button type="button" className={`tab ${activeTab === "antecedentes" ? "active" : ""}`} onClick={() => setActiveTab("antecedentes")}>🩺 Antecedentes</button>
-            <button type="button" className={`tab ${activeTab === "evaluacion" ? "active" : ""}`} onClick={() => setActiveTab("evaluacion")}>🔍 Evaluación Física</button>
-            <button type="button" className={`tab ${activeTab === "soap" ? "active" : ""}`} onClick={() => setActiveTab("soap")}>📝 Notas SOAP</button>
-            <button type="button" className={`tab ${activeTab === "consentimiento" ? "active" : ""}`} onClick={() => setActiveTab("consentimiento")}>✍️ Consentimiento Informado</button>
+            <button type="button" className={`tab ${activeTab === "anamnesis" ? "active" : ""}`} onClick={() => setActiveTab("anamnesis")}>
+              <FaClipboardList style={{ marginRight: "6px" }} /> Anamnesis
+            </button>
+            <button type="button" className={`tab ${activeTab === "antecedentes" ? "active" : ""}`} onClick={() => setActiveTab("antecedentes")}>
+              <FaStethoscope style={{ marginRight: "6px" }} /> Antecedentes
+            </button>
+            <button type="button" className={`tab ${activeTab === "evaluacion" ? "active" : ""}`} onClick={() => setActiveTab("evaluacion")}>
+              <FaSearch style={{ marginRight: "6px" }} /> Evaluación Física
+            </button>
+            <button type="button" className={`tab ${activeTab === "soap" ? "active" : ""}`} onClick={() => setActiveTab("soap")}>
+              <FaNotesMedical style={{ marginRight: "6px" }} /> Notas SOAP
+            </button>
+            <button type="button" className={`tab ${activeTab === "archivos" ? "active" : ""}`} onClick={() => setActiveTab("archivos")}>
+              <FaXRay style={{ marginRight: "6px" }} /> Radiografías y Recetas
+            </button>
+            <button type="button" className={`tab ${activeTab === "consentimiento" ? "active" : ""}`} onClick={() => setActiveTab("consentimiento")}>
+              <FaFileSignature style={{ marginRight: "6px" }} /> Consentimiento Informado
+            </button>
           </div>
 
           <form className="form">
@@ -229,7 +263,7 @@ const VistaHistorial = () => {
               <div className="tab-content">
                 {paciente && (
                   <div className="clinical-form-section">
-                    <h3 className="clinical-section-title">📋 Anamnesis y Datos Generales</h3>
+                    <h3 className="clinical-section-title"><FaClipboardList style={{ marginRight: "8px" }} /> Anamnesis y Datos Generales</h3>
                     <div className="clinical-grid-3">
                       <div className="col" style={{ gridColumn: "span 2" }}>
                         <label className="form-label">Nombre completo</label>
@@ -276,8 +310,8 @@ const VistaHistorial = () => {
                 )}
 
                 <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">❓ Motivo de Consulta y Diagnóstico</h3>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1.5rem" }}>
+                  <h3 className="clinical-section-title"><FaQuestionCircle style={{ marginRight: "8px" }} /> Motivo de Consulta y Diagnóstico</h3>
+                  <div className="clinical-grid-2" style={{ marginBottom: "1.5rem" }}>
                     <div className="col" style={{ margin: 0 }}>
                       <label className="form-label">Motivo de consulta</label>
                       <textarea className="textarea" value={formData.motivoConsulta || "Ninguno registrado"} disabled style={{ height: "100px" }} />
@@ -296,7 +330,7 @@ const VistaHistorial = () => {
                 </div>
 
                 <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">🎯 Plan de Tratamiento Proyectado</h3>
+                  <h3 className="clinical-section-title"><FaBullseye style={{ marginRight: "8px" }} /> Plan de Tratamiento Proyectado</h3>
                   <div className="clinical-grid-2">
                     <div className="col">
                       <label className="form-label">Duración estimada del plan</label>
@@ -314,7 +348,7 @@ const VistaHistorial = () => {
             {activeTab === "antecedentes" && (
               <div className="tab-content">
                 <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">🏃 Actividades y Participaciones con Deficiencia</h3>
+                  <h3 className="clinical-section-title"><FaRunning style={{ marginRight: "8px" }} /> Actividades y Participaciones con Deficiencia</h3>
                   <div className="clinical-grid-1">
                     <div className="col">
                       <textarea
@@ -328,7 +362,7 @@ const VistaHistorial = () => {
                 </div>
 
                 <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">🩺 Antecedentes Clínicos</h3>
+                  <h3 className="clinical-section-title"><FaStethoscope style={{ marginRight: "8px" }} /> Antecedentes Clínicos</h3>
                   <div className="clinical-grid-2" style={{ marginBottom: "1rem" }}>
                     <div className="col">
                       <label className="form-label">Antecedentes familiares</label>
@@ -361,14 +395,14 @@ const VistaHistorial = () => {
                     </div>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                  <div className="clinical-grid-2">
                     <div className="col" style={{ margin: 0 }}>
                       <label className="form-label">Medicación actual</label>
                       <textarea className="textarea" value={formData.medicacionActual || formData.medActual || "Ninguno registrado"} disabled style={{ height: "100px" }} />
                     </div>
                     <div className="col" style={{ margin: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
                       <div>
-                        <label className="form-label">🔪 Antecedentes quirúrgicos</label>
+                        <label className="form-label"><FaCut style={{ marginRight: "6px" }} /> Antecedentes quirúrgicos</label>
                         <textarea className="textarea" value={Array.isArray(formData.antecedentesQuirurgicos) ? (formData.antecedentesQuirurgicos.filter(Boolean).join(", ") || "Ninguno registrado") : formData.antecedentesQuirurgicos || "Ninguno registrado"} disabled style={{ height: "60px" }} />
                       </div>
                       {formData.anioQuirurgico && (
@@ -382,7 +416,7 @@ const VistaHistorial = () => {
                 </div>
 
                 <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">🤸 Estilo de Vida y Hábitos</h3>
+                  <h3 className="clinical-section-title"><FaHeartbeat style={{ marginRight: "8px" }} /> Estilo de Vida y Hábitos</h3>
                   <div className="clinical-grid-3" style={{ marginBottom: "1rem" }}>
                     <div className="col">
                       <label className="form-label">Actividad física</label>
@@ -475,7 +509,7 @@ const VistaHistorial = () => {
 
                   <div className="modern-accordion">
                     <button type="button" className={`modern-accordion-header ${openLesiones ? "open" : ""}`} onClick={() => setOpenLesiones(!openLesiones)}>
-                      <span className="form-label" style={{ fontWeight: "700", color: "var(--primary)" }}>⚠️ Antecedentes de lesiones músculo-esqueléticas</span>
+                      <span className="form-label" style={{ fontWeight: "700", color: "var(--primary)", display: "flex", alignItems: "center", gap: "6px" }}><FaExclamationTriangle /> Antecedentes de lesiones músculo-esqueléticas</span>
                       <span className="accordion-icon" style={{ fontSize: "1.2rem" }}>{openLesiones ? <IoCaretUp /> : <IoCaretDown />}</span>
                     </button>
 
@@ -513,11 +547,11 @@ const VistaHistorial = () => {
             {activeTab === "evaluacion" && (
               <div className="tab-content">
                 <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">🔍 Observación Física Inicial</h3>
+                  <h3 className="clinical-section-title"><FaSearch style={{ marginRight: "8px" }} /> Observación Física Inicial</h3>
                   {!Object.values(obser).some(o => o?.activo) ? (
                     <span style={{ fontStyle: "italic", color: "var(--text-muted)", fontSize: "0.85rem", display: "block", padding: "0.5rem 0" }}>Ninguno registrado</span>
                   ) : (
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                    <div className="clinical-grid-2" style={{ gap: "0.75rem" }}>
                       {[
                         { key: "edema", label: "Presencia de Edema" },
                         { key: "enrojecimiento", label: "Zonas de Enrojecimiento / Eritema" },
@@ -560,7 +594,7 @@ const VistaHistorial = () => {
                 </div>
 
                 <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">👐 Palpación Clínica</h3>
+                  <h3 className="clinical-section-title"><FaHands style={{ marginRight: "8px" }} /> Palpación Clínica</h3>
                   <div className="clinical-grid-2">
                     <div className="col">
                       <label className="form-label">Zonas de dolor a la palpación</label>
@@ -574,7 +608,7 @@ const VistaHistorial = () => {
                 </div>
 
                 <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">⚡ Evaluación del Dolor</h3>
+                  <h3 className="clinical-section-title"><FaBolt style={{ marginRight: "8px" }} /> Evaluación del Dolor</h3>
                   <div className="clinical-grid-3">
                     <div className="col">
                       <label className="form-label">Escala EVA</label>
@@ -633,7 +667,7 @@ const VistaHistorial = () => {
                       />
                     </div>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginTop: "1.5rem" }}>
+                  <div className="clinical-grid-2" style={{ marginTop: "1.5rem" }}>
                     <div className="col" style={{ margin: 0 }}>
                       <label className="form-label">Dolor últimas 24hrs</label>
                       <textarea className="textarea" value={formData.dolor24hrs || "Ninguno registrado"} disabled style={{ height: "80px" }} />
@@ -647,8 +681,8 @@ const VistaHistorial = () => {
                   {/* Listado de Zonas de Dolor Registradas */}
                   {formData.dolorZonas && formData.dolorZonas.length > 0 && (
                     <div style={{ marginTop: "2rem", paddingTop: "1.5rem", borderTop: "1px dashed rgba(139, 92, 246, 0.15)" }}>
-                      <h4 style={{ fontWeight: "700", fontSize: "0.95rem", color: "var(--primary)", marginBottom: "1rem" }}>
-                        📍 Zonas de Dolor Detalladas
+                      <h4 style={{ fontWeight: "700", fontSize: "0.95rem", color: "var(--primary)", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "6px" }}>
+                        <FaMapMarkerAlt /> Zonas de Dolor Detalladas
                       </h4>
                       <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
                         {formData.dolorZonas.map((dz, idx) => {
@@ -676,8 +710,8 @@ const VistaHistorial = () => {
                                 gap: "1rem"
                               }}
                             >
-                              <span style={{ fontWeight: "700", fontSize: "0.9rem", color: "var(--text-main)", display: "flex", alignItems: "center", gap: "4px" }}>
-                                📍 {dz.zona}
+                              <span style={{ fontWeight: "700", fontSize: "0.9rem", color: "var(--text-main)", display: "flex", alignItems: "center", gap: "6px" }}>
+                                <FaMapMarkerAlt style={{ color: "var(--primary)" }} /> {dz.zona}
                               </span>
                               <span
                                 style={{
@@ -712,7 +746,7 @@ const VistaHistorial = () => {
               <div className="tab-content">
                 {(!formData.soapFK || (!formData.soapFK.contenidoNota && !formData.soapFK.S && !formData.soapFK.O && !formData.soapFK.A && !formData.soapFK.P)) ? (
                   <div className="clinical-form-section" style={{ padding: "3.5rem 2rem", textAlign: "center", background: "rgba(255, 255, 255, 0.02)", borderRadius: "16px", border: "1px dashed rgba(139, 92, 246, 0.2)" }}>
-                    <div style={{ fontSize: "2.75rem", marginBottom: "0.75rem" }}>📋</div>
+                    <div style={{ fontSize: "2.75rem", marginBottom: "0.75rem", color: "var(--text-muted)" }}><FaNotesMedical /></div>
                     <h3 style={{ color: "var(--primary)", fontSize: "1.25rem", fontWeight: "700", margin: "0 0 0.4rem 0" }}>
                       Sin primera nota SOAP
                     </h3>
@@ -723,7 +757,7 @@ const VistaHistorial = () => {
                 ) : (
                   <>
                     <div className="clinical-form-section">
-                      <h3 className="clinical-section-title">📝 Notas SOAP y Registro Diario</h3>
+                      <h3 className="clinical-section-title"><FaNotesMedical style={{ marginRight: "8px" }} /> Notas SOAP y Registro Diario</h3>
                       <div className="clinical-grid-3" style={{ marginBottom: "1rem" }}>
                         <div className="col">
                           <label className="form-label">ID Nota asignado</label>
@@ -743,8 +777,8 @@ const VistaHistorial = () => {
                     </div>
 
                     <div className="clinical-form-section">
-                      <h3 className="clinical-section-title">🧪 Desglose de Metodología SOAP</h3>
-                      <div className="soap-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                      <h3 className="clinical-section-title"><FaFlask style={{ marginRight: "8px" }} /> Desglose de Metodología SOAP</h3>
+                      <div className="soap-grid">
                         <div className="col">
                           <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)" }}>Subjetivo (S)</label>
                           <textarea className="textarea" value={formData.soapFK?.S || "Sin registrar"} disabled style={{ height: "120px" }} />
@@ -773,7 +807,7 @@ const VistaHistorial = () => {
                 <div className="clinical-form-section" style={{ background: "#ffffff", border: "1px solid var(--border-light)", boxShadow: "var(--shadow-md)", padding: "2.5rem", borderRadius: "16px", color: "#1e293b", fontFamily: "var(--font-family-display, inherit)", lineHeight: "1.6" }}>
                   <div style={{ textAlign: "center", marginBottom: "2.5rem", borderBottom: "2px double var(--primary-light)", paddingBottom: "1.5rem" }}>
                     <h2 style={{ textTransform: "uppercase", fontSize: "1.4rem", letterSpacing: "1px", fontWeight: "900", color: "var(--primary)", margin: "0 0 5px 0" }}>Consentimiento Informado</h2>
-                    <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: "600" }}>SERVICIO DE FISIOTERAPIA - FISIOHESOU</span>
+                    <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: "600" }}>SERVICIO DE FISIOTERAPIA - HESOU</span>
                   </div>
 
                   <div style={{ marginBottom: "1.5rem" }}>
@@ -846,7 +880,7 @@ const VistaHistorial = () => {
 
                   <div className="clinical-grid-2" style={{ borderTop: "1px dashed var(--border-light)", paddingTop: "2rem" }}>
                     <div style={{ border: "1px solid rgba(139, 92, 246, 0.15)", borderRadius: "12px", padding: "1.25rem", background: "var(--card-bg)" }}>
-                      <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)", marginBottom: "0.5rem", display: "block" }}>✍️ Firma del Paciente</label>
+                      <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "6px" }}><FaFileSignature /> Firma del Paciente</label>
                       <div style={{ background: "#ffffff", border: "1px solid var(--border-light)", borderRadius: "8px", height: "160px", display: "flex", justifyContent: "center", alignItems: "center", overflow: "hidden", marginBottom: "1rem" }}>
                         {formData.firmaPaciente ? (
                           <img src={formData.firmaPaciente} alt="Firma del Paciente" style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }} />
@@ -867,7 +901,7 @@ const VistaHistorial = () => {
                     </div>
 
                     <div style={{ border: "1px solid rgba(139, 92, 246, 0.15)", borderRadius: "12px", padding: "1.25rem", background: "var(--card-bg)" }}>
-                      <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)", marginBottom: "0.5rem", display: "block" }}>🩺 Firma del Profesional de la Salud</label>
+                      <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "6px" }}><FaUserMd /> Firma del Profesional de la Salud</label>
                       <div style={{ background: "#ffffff", border: "1px solid var(--border-light)", borderRadius: "8px", height: "160px", display: "flex", justifyContent: "center", alignItems: "center", overflow: "hidden", marginBottom: "1rem" }}>
                         {formData.firmaProfesional ? (
                           <img src={formData.firmaProfesional} alt="Firma del Profesional" style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }} />
@@ -888,6 +922,14 @@ const VistaHistorial = () => {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {activeTab === "archivos" && (
+              <div className="tab-content">
+                <ArchivosExpediente 
+                  identificadorPaciente={formData.identificadorPaciente || paciente?.identificadorPaciente} 
+                />
               </div>
             )}
           </form>

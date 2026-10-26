@@ -5,8 +5,10 @@ import "react-calendar/dist/Calendar.css";
 import Calendar from "react-calendar";
 import "../../styles/calendary.css";
 import api from "../../api";
+import { FaPlus, FaClock, FaStar } from "react-icons/fa";
 
 import ModalAgendarManual from "./ModalAgendarManual.jsx";
+import CalendarLegend from "./CalendarLegend.jsx";
 
 export default function AgendaCitas() {
   const [citas, setCitas] = useState([]);
@@ -111,6 +113,7 @@ export default function AgendaCitas() {
                 return null;
               }}
             />
+            <CalendarLegend showSundays={!!user?.client?.blockSundays} />
           </div>
 
           {/* Citas del día */}
@@ -140,7 +143,7 @@ export default function AgendaCitas() {
                     width: 'auto'
                   }}
                 >
-                  ➕ Agendar Cita Manual
+                  <FaPlus size={12} style={{ marginRight: "6px" }} /> Agendar Cita Manual
                 </button>
               )}
             </div>
@@ -160,13 +163,18 @@ export default function AgendaCitas() {
                           }}
                           style={{ cursor: "pointer" }}
                         >
-                          <div className="appointment-time">🕒 {cita.horaCita}</div>
+                          <div className="appointment-time" style={{ display: "flex", alignItems: "center", gap: "4px" }}><FaClock size={11} /> {cita.horaCita}</div>
                           <div className="appointment-info">
                             <div className="appointment-name">
                               <strong>{cita.nombres} {cita.apellidos}</strong>
                             </div>
                             <div className="appointment-area">Área: {cita.area}</div>
-                            {esNuevo && <span className="nuevo-paciente">🆕 Nuevo</span>}
+                            {cita.especialistaNombre && (
+                              <div style={{ fontSize: "0.75rem", color: "var(--primary)", fontWeight: "600" }}>
+                                Atiende: {cita.especialistaNombre}
+                              </div>
+                            )}
+                            {esNuevo && <span className="nuevo-paciente" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><FaStar size={10} /> Nuevo</span>}
                           </div>
                         </div>
                       );

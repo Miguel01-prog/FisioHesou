@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { capitalizeWords, formatDateDDMMYYYY } from "../../utils/utils";
 import { useNavigate } from "react-router-dom";
-import { FaEye, FaCalendarAlt, FaFolderOpen, FaNotesMedical, FaSearch, FaTrashAlt } from "react-icons/fa";
+import { FaEye, FaCalendarAlt, FaFolderOpen, FaNotesMedical, FaSearch, FaTrashAlt, FaPlus, FaPhoneAlt, FaExclamationTriangle, FaUserPlus } from "react-icons/fa";
 import api from "../../api";
 import LoadingSpinner from "../layout/LoadingSpinner";
 import { useAuth } from "../../context/AuthContext";
@@ -220,7 +220,7 @@ export default function ListaPacientes() {
                   navigate(`/${user?.role || 'fisioterapeuta'}/creacion-historial`);
                 }}
               >
-                <span>➕</span> Registrar Paciente
+                <FaPlus size={12} /> Registrar Paciente
               </button>
             </div>
           </div>
@@ -276,7 +276,7 @@ export default function ListaPacientes() {
                           </td>
                           <td>
                             <div className="patient-list-phone">
-                              <span className="phone-icon-span">📞</span> {p.telefono || "No registrado"}
+                              <span className="phone-icon-span"><FaPhoneAlt size={11} /></span> {p.telefono || "No registrado"}
                             </div>
                           </td>
                         </tr>
@@ -393,16 +393,18 @@ export default function ListaPacientes() {
                               {ultimaCita ? (
                                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                                   {formatDateDDMMYYYY(ultimaCita.fechaCitaStr)} a las {ultimaCita.horaCita} hs
-                                  <span style={{
-                                    fontSize: '0.75rem',
-                                    padding: '2px 6px',
-                                    borderRadius: '4px',
-                                    background: ultimaCita.estado === "Asistió" ? "rgba(16, 185, 129, 0.15)" : ultimaCita.estado === "No asistió" ? "rgba(239, 68, 68, 0.15)" : "rgba(255, 255, 255, 0.08)",
-                                    color: ultimaCita.estado === "Asistió" ? "#10b981" : ultimaCita.estado === "No asistió" ? "#ef4444" : "inherit",
-                                    fontWeight: '500'
-                                  }}>
-                                    {ultimaCita.estado}
-                                  </span>
+                                  {ultimaCita.estado && ultimaCita.estado !== "Programado" && (
+                                    <span style={{
+                                      fontSize: '0.75rem',
+                                      padding: '2px 6px',
+                                      borderRadius: '4px',
+                                      background: ultimaCita.estado === "Asistió" ? "rgba(16, 185, 129, 0.15)" : ultimaCita.estado === "No asistió" ? "rgba(239, 68, 68, 0.15)" : "rgba(255, 255, 255, 0.08)",
+                                      color: ultimaCita.estado === "Asistió" ? "#10b981" : ultimaCita.estado === "No asistió" ? "#ef4444" : "inherit",
+                                      fontWeight: '500'
+                                    }}>
+                                      {ultimaCita.estado}
+                                    </span>
+                                  )}
                                 </span>
                               ) : selectedPaciente.esNuevo ? (
                                 <span style={{
@@ -416,7 +418,7 @@ export default function ListaPacientes() {
                                   alignItems: 'center',
                                   gap: '0.3rem'
                                 }}>
-                                  🆕 Nuevo Paciente
+                                  <FaUserPlus size={12} /> Nuevo Paciente
                                 </span>
                               ) : 'Ninguna registrada'}
                             </span>
@@ -430,8 +432,8 @@ export default function ListaPacientes() {
 
                                 </span>
                               ) : (
-                                <span style={{ color: '#ef4444', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                                  ⚠️ Sin cita próxima
+                                <span style={{ color: '#ef4444', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                                  <FaExclamationTriangle size={12} /> Sin cita próxima
                                 </span>
                               )}
                             </span>

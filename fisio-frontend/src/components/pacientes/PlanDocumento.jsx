@@ -31,8 +31,8 @@ const PlanDocumento = () => {
   };
 
   const handleShareEmail = () => {
-    const subject = `Tu Plan de Ejercicios - FisioHesou`;
-    const body = `Hola ${paciente ? paciente.nombres : ""},\n\nTe envío tu plan de ejercicios y rehabilitación. Por favor, revisa el archivo PDF adjunto.\n\nSaludos,\nFisioHesou`;
+    const subject = `Tu Plan de Ejercicios - HESOU`;
+    const body = `Hola ${paciente ? paciente.nombres : ""},\n\nTe envío tu plan de ejercicios y rehabilitación. Por favor, revisa el archivo PDF adjunto.\n\nSaludos,\nHESOU`;
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
   };
 
@@ -217,9 +217,12 @@ const PlanDocumento = () => {
       >
         {/* Encabezado Profesional */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '3px solid #42133B', paddingBottom: '20px', marginBottom: '30px' }}>
-          <div>
-            <h1 style={{ color: '#42133B', margin: '0 0 10px 0', fontSize: '28px', fontWeight: 'bold' }}>FisioHesou</h1>
-            <p style={{ margin: '0', fontSize: '14px', color: '#666' }}>Clínica de Fisioterapia y Rehabilitación</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            <img src="/hesou-logo.svg" alt="HESOU" style={{ width: '48px', height: '48px', borderRadius: '10px' }} />
+            <div>
+              <h1 style={{ color: '#42133B', margin: '0 0 5px 0', fontSize: '28px', fontWeight: 'bold' }}>HESOU</h1>
+              <p style={{ margin: '0', fontSize: '14px', color: '#666' }}>Clínica de Fisioterapia y Rehabilitación</p>
+            </div>
           </div>
           <div style={{ textAlign: 'right', fontSize: '14px' }}>
             <p style={{ margin: '0 0 5px 0' }}><strong>Fecha:</strong> {formatDateDDMMYYYY(plan.fechaCreacion)}</p>

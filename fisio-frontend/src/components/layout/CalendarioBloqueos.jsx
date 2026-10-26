@@ -4,8 +4,10 @@ import "react-calendar/dist/Calendar.css";
 import api from "../../api";
 import "../../styles/calendary.css";
 import LoadingSpinner from "./LoadingSpinner";
+import CalendarLegend from "./CalendarLegend.jsx";
 import { showSuccess, showError } from "../../utils/alerts";
 import { formatDateDDMMYYYY } from "../../utils/utils";
+import { FaLock, FaClock, FaStickyNote, FaTrashAlt } from "react-icons/fa";
 
 const WORK_HOURS = [
   "08:00", "09:00", "10:00", "11:00",
@@ -193,16 +195,7 @@ const CalendarioBloqueo = ({ role }) => {
             />
           )}
 
-          <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.85rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '3px', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid var(--danger, #ef4444)' }}></span>
-              <span>Día con horas bloqueadas por ti</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '3px', background: 'rgba(13, 148, 136, 0.15)', border: '1px solid rgb(13, 148, 136)' }}></span>
-              <span>Día con citas agendadas por pacientes</span>
-            </div>
-          </div>
+          <CalendarLegend showSundays={!!blockSundays} style={{ marginTop: '1.25rem' }} />
         </div>
 
         {/* Right Card: Hours Selector & Blocked Days Summary */}
@@ -356,12 +349,12 @@ const CalendarioBloqueo = ({ role }) => {
                           >
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', flex: 1, minWidth: 0 }}>
                               <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{formatDateDDMMYYYY(dateStr)}</span>
-                              <span style={{ fontSize: '0.8rem', color: isFull ? 'var(--danger, #ef4444)' : 'var(--text-muted)' }}>
-                                {isFull ? "🔒 Día Completo Bloqueado" : `⏰ Horas: ${hours.join(", ")}`}
+                              <span style={{ fontSize: '0.8rem', color: isFull ? 'var(--danger, #ef4444)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                {isFull ? <><FaLock size={11} /> Día Completo Bloqueado</> : <><FaClock size={11} /> Horas: {hours.join(", ")}</>}
                               </span>
                               {blockedNotesAdmin[dateStr] && (
-                                <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontStyle: 'italic', wordBreak: 'break-word' }}>
-                                  📝 Nota: {blockedNotesAdmin[dateStr]}
+                                <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontStyle: 'italic', wordBreak: 'break-word', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <FaStickyNote size={11} /> Nota: {blockedNotesAdmin[dateStr]}
                                 </span>
                               )}
                             </div>
@@ -377,6 +370,7 @@ const CalendarioBloqueo = ({ role }) => {
                                 height: '32px',
                                 display: 'flex',
                                 alignItems: 'center',
+                                justifySelf: 'center',
                                 justifyContent: 'center',
                                 cursor: 'pointer',
                                 fontSize: '0.85rem',
@@ -384,7 +378,7 @@ const CalendarioBloqueo = ({ role }) => {
                               }}
                               title="Eliminar bloqueos de este día"
                             >
-                              🗑️
+                              <FaTrashAlt size={12} />
                             </button>
                           </div>
                         );

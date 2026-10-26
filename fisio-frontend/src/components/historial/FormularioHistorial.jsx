@@ -10,6 +10,38 @@ import { showError, showSuccess } from "../../utils/alerts";
 import { useAuth } from "../../context/AuthContext";
 import LoadingSpinner from "../layout/LoadingSpinner";
 import { useNavigate } from "react-router-dom";
+import ArchivosExpediente from "../expediente/ArchivosExpediente";
+import { 
+  FaCloudUploadAlt, 
+  FaTimes, 
+  FaXRay, 
+  FaFilePdf, 
+  FaPills, 
+  FaVial, 
+  FaCamera, 
+  FaFileMedical,
+  FaUser,
+  FaHospital,
+  FaSearch,
+  FaNotesMedical,
+  FaFileSignature,
+  FaArrowLeft,
+  FaArrowRight,
+  FaSave,
+  FaPhoneAlt,
+  FaUserMd,
+  FaBolt,
+  FaMapMarkerAlt,
+  FaPlus,
+  FaRunning,
+  FaStethoscope,
+  FaUsers,
+  FaCut,
+  FaHeartbeat,
+  FaExclamationTriangle,
+  FaHands,
+  FaFlask
+} from "react-icons/fa";
 
 const getEvaTextDescription = (val) => {
   const v = Number(val);
@@ -22,7 +54,7 @@ const getEvaTextDescription = (val) => {
   return "";
 };
 
-const SignaturePad = ({ label, value, onChange, placeholderName, nameValue, onNameChange, dateValue, onDateChange, readOnly }) => {
+const SignaturePad = ({ icon, label, value, onChange, placeholderName, nameValue, onNameChange, dateValue, onDateChange, readOnly }) => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
@@ -123,7 +155,7 @@ const SignaturePad = ({ label, value, onChange, placeholderName, nameValue, onNa
 
   return (
     <div className="signature-pad-container" style={{ border: "1px solid rgba(139, 92, 246, 0.15)", borderRadius: "12px", padding: "1.25rem", background: "var(--card-bg)", boxShadow: "var(--shadow-sm)" }}>
-      <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)", marginBottom: "0.5rem", display: "block" }}>{label}</label>
+      <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "6px" }}>{icon} {label}</label>
 
       <div className="canvas-wrapper" style={{ position: "relative", background: "#ffffff", border: "1px dashed rgba(139, 92, 246, 0.25)", borderRadius: "8px", overflow: "hidden", height: "160px", marginBottom: "1rem" }}>
         <canvas
@@ -328,6 +360,41 @@ const FormularioHistorial = () => {
   const [nuevaZonaEva, setNuevaZonaEva] = useState("");
   const [nuevaZonaComentario, setNuevaZonaComentario] = useState("");
   const [nuevaZonaOtra, setNuevaZonaOtra] = useState("");
+
+  // Estados para fotos/radiografías/recetas adjuntas al expediente
+  const [archivosExpedienteForm, setArchivosExpedienteForm] = useState([]);
+  const [nuevaFotoCategoria, setNuevaFotoCategoria] = useState("Radiografía");
+  const [nuevaFotoDescripcion, setNuevaFotoDescripcion] = useState("");
+  const fileFormInputRef = useRef(null);
+
+  const handleFormFilesChosen = (filesList) => {
+    const valid = Array.from(filesList).filter(f => f.type.startsWith("image/") || f.type === "application/pdf");
+    if (valid.length === 0) {
+      showError("Formato no válido", "Por favor seleccione imágenes (JPG, PNG, WEBP) o documentos PDF.");
+      return;
+    }
+    valid.forEach(file => {
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setArchivosExpedienteForm(prev => [
+            ...prev,
+            { file, name: file.name, size: file.size, preview: e.target.result, isPdf: false, categoria: nuevaFotoCategoria, descripcion: nuevaFotoDescripcion }
+          ]);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setArchivosExpedienteForm(prev => [
+          ...prev,
+          { file, name: file.name, size: file.size, preview: null, isPdf: true, categoria: nuevaFotoCategoria, descripcion: nuevaFotoDescripcion }
+        ]);
+      }
+    });
+  };
+
+  const removeFormFile = (index) => {
+    setArchivosExpedienteForm(prev => prev.filter((_, i) => i !== index));
+  };
 
   const agregarDolorZona = () => {
     const zonaFinal = nuevaZona === "otra" ? nuevaZonaOtra : nuevaZona;
@@ -649,6 +716,7 @@ const FormularioHistorial = () => {
   };
 
   const [loading, setLoading] = useState(false);
+  const isSubmittingRef = useRef(false);
   const [mensaje, setMensaje] = useState("");
 
   const generarIdNotaFront = async (paciente, mesAñoNota) => {
@@ -920,6 +988,8 @@ const FormularioHistorial = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmittingRef.current || loading) return;
+
     setMensaje("");
 
     const faltantes = [];
@@ -932,6 +1002,7 @@ const FormularioHistorial = () => {
       return;
     }
 
+    isSubmittingRef.current = true;
     setLoading(true);
 
     const limpiarEspacios = (obj) => {
@@ -956,12 +1027,14 @@ const FormularioHistorial = () => {
       if (isNewPatient) {
         if (!newPatientData.nombres.trim() || !newPatientData.apellidoPaterno.trim() || !newPatientData.edad || !newPatientData.telefono.trim()) {
           showError("Datos del Paciente Incompletos", "Por favor, complete los campos obligatorios del paciente (Nombres, Apellido Paterno, Edad, Teléfono) en la pestaña Resumen.");
+          isSubmittingRef.current = false;
           setLoading(false);
           return;
         }
 
         if (newPatientData.telefono.replace(/\D/g, "").length !== 10) {
           showError("Teléfono inválido", "El número de teléfono debe constar exactamente de 10 dígitos.");
+          isSubmittingRef.current = false;
           setLoading(false);
           return;
         }
@@ -980,15 +1053,51 @@ const FormularioHistorial = () => {
           finalPacienteId = pacienteObj.identificadorPaciente;
         } catch (err) {
           console.error("Error al registrar paciente:", err);
-          const errMsg = err.response?.data?.message || "No se pudo registrar al paciente antes de guardar el historial.";
-          showError("Error al registrar paciente", errMsg);
-          setLoading(false);
-          return;
+
+          // Si el paciente ya existe (409 Conflict), recuperar sus datos para asociar el historial
+          if (err.response?.status === 409) {
+            let existingPaciente = err.response?.data?.paciente;
+            if (!existingPaciente) {
+              try {
+                const { data: listaPacientes } = await api.get("/pacientes");
+                const cleanTel = newPatientData.telefono.replace(/\D/g, "");
+                const nameNorm = newPatientData.nombres.trim().toLowerCase();
+                const patNorm = newPatientData.apellidoPaterno.trim().toLowerCase();
+                existingPaciente = (listaPacientes || []).find(p => {
+                  const pTel = (p.telefono || "").replace(/\D/g, "");
+                  const pName = (p.nombres || "").trim().toLowerCase();
+                  const pPat = (p.apellidoPaterno || (p.apellidos || "").split(" ")[0] || "").trim().toLowerCase();
+                  return (cleanTel && pTel === cleanTel) || (pName === nameNorm && pPat === patNorm);
+                });
+              } catch (searchErr) {
+                console.warn("No se pudo buscar paciente existente en fallback:", searchErr);
+              }
+            }
+
+            if (existingPaciente && existingPaciente.identificadorPaciente) {
+              console.log("Paciente ya existía en BD, enlazando historial a paciente existente:", existingPaciente);
+              pacienteObj = existingPaciente;
+              finalPacienteId = existingPaciente.identificadorPaciente;
+            } else {
+              const errMsg = err.response?.data?.message || "No se pudo registrar al paciente antes de guardar el historial.";
+              showError("Error al registrar paciente", errMsg);
+              isSubmittingRef.current = false;
+              setLoading(false);
+              return;
+            }
+          } else {
+            const errMsg = err.response?.data?.message || "No se pudo registrar al paciente antes de guardar el historial.";
+            showError("Error al registrar paciente", errMsg);
+            isSubmittingRef.current = false;
+            setLoading(false);
+            return;
+          }
         }
 
         // Generar ID de nota
         const idGenerado = await generarIdNotaFront(pacienteObj, mesAñoNota);
         if (!idGenerado) {
+          isSubmittingRef.current = false;
           setLoading(false);
           return;
         }
@@ -997,12 +1106,14 @@ const FormularioHistorial = () => {
 
       if (!finalPacienteId) {
         showError("Error", "No hay datos del paciente");
+        isSubmittingRef.current = false;
         setLoading(false);
         return;
       }
 
       if (!formData.firmaPaciente || !formData.firmaProfesional) {
         showError("Firmas requeridas", "Por favor, complete las firmas del paciente y del profesional en la pestaña de Consentimiento Informado antes de guardar.");
+        isSubmittingRef.current = false;
         setLoading(false);
         return;
       }
@@ -1081,7 +1192,26 @@ const FormularioHistorial = () => {
         notaData: notaDataLimpio
       });
 
-      showSuccess("¡Historial Guardado!", "El historial se ha creado exitosamente.");
+      // Subir fotos o recetas adjuntas al expediente si se seleccionaron
+      if (archivosExpedienteForm.length > 0 && finalPacienteId) {
+        try {
+          const filesFormData = new FormData();
+          filesFormData.append("identificadorPaciente", finalPacienteId);
+          archivosExpedienteForm.forEach(item => {
+            filesFormData.append("archivos", item.file);
+            filesFormData.append("categoria", item.categoria || "Radiografía");
+            filesFormData.append("descripcion", item.descripcion || "");
+          });
+          await api.post("/expediente-archivos/subir", filesFormData, {
+            headers: { "Content-Type": "multipart/form-data" }
+          });
+          console.log("Fotos/archivos del expediente subidos correctamente.");
+        } catch (filesErr) {
+          console.warn("Advertencia al subir fotos del expediente:", filesErr);
+        }
+      }
+
+      showSuccess("¡Historial Guardado!", "El historial se ha creado exitosamente con sus documentos.");
 
       // Clear draft locally
       localStorage.removeItem("historial_clinico_borrador");
@@ -1097,6 +1227,7 @@ const FormularioHistorial = () => {
       const errorMessage = err.response?.data?.error || err.response?.data?.message || "No se pudo guardar el historial. Revisa los datos.";
       showError("Error al guardar", errorMessage);
     } finally {
+      isSubmittingRef.current = false;
       setLoading(false);
     }
   };
@@ -1127,8 +1258,8 @@ const FormularioHistorial = () => {
               alignItems: "center",
               justifyContent: "space-between"
             }}>
-              <span>
-                ⚠️ <strong>Borrador local cargado:</strong> Tienes cambios sin guardar localmente en este navegador. Recuerda presionar "Guardar Historial" al final para registrarlos en el servidor.
+              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <FaExclamationTriangle style={{ color: "#f59e0b" }} /> <strong>Borrador local cargado:</strong> Tienes cambios sin guardar localmente en este navegador. Recuerda presionar "Guardar Historial" al final para registrarlos en el servidor.
               </span>
               <button
                 type="button"
@@ -1146,20 +1277,31 @@ const FormularioHistorial = () => {
           )}
 
           <div className="tabs" style={{ marginBottom: "2rem" }}>
-            <button type="button" className={`tab ${activeTab === "datosPersonales" ? "active" : ""}`} onClick={() => setActiveTab("datosPersonales")}>👤 Resumen</button>
-            <button type="button" className={`tab ${activeTab === "AnaAnte" ? "active" : ""}`} onClick={() => setActiveTab("AnaAnte")}>🏥 Anamnesis y Antecedentes</button>
-            <button type="button" className={`tab ${activeTab === "evaluacion" ? "active" : ""}`} onClick={() => setActiveTab("evaluacion")}>🔍 Evaluación Física</button>
-            <button type="button" className={`tab ${activeTab === "soap" ? "active" : ""}`} onClick={() => setActiveTab("soap")}>
-              📝 Notas SOAP {!formData.contenidoNota?.trim() && <span style={{ color: "#ef4444", fontSize: "0.8rem", marginLeft: "4px" }} title="Nota SOAP pendiente de registrar">⚠️</span>}
+            <button type="button" className={`tab ${activeTab === "datosPersonales" ? "active" : ""}`} onClick={() => setActiveTab("datosPersonales")}>
+              <FaUser style={{ marginRight: "6px" }} /> Resumen
             </button>
-            <button type="button" className={`tab ${activeTab === "consentimiento" ? "active" : ""}`} onClick={() => setActiveTab("consentimiento")}>✍️ Consentimiento</button>
+            <button type="button" className={`tab ${activeTab === "AnaAnte" ? "active" : ""}`} onClick={() => setActiveTab("AnaAnte")}>
+              <FaHospital style={{ marginRight: "6px" }} /> Anamnesis y Antecedentes
+            </button>
+            <button type="button" className={`tab ${activeTab === "evaluacion" ? "active" : ""}`} onClick={() => setActiveTab("evaluacion")}>
+              <FaSearch style={{ marginRight: "6px" }} /> Evaluación Física
+            </button>
+            <button type="button" className={`tab ${activeTab === "soap" ? "active" : ""}`} onClick={() => setActiveTab("soap")}>
+              <FaNotesMedical style={{ marginRight: "6px" }} /> Notas SOAP {!formData.contenidoNota?.trim() && <span style={{ color: "#ef4444", fontSize: "0.8rem", marginLeft: "4px" }} title="Nota SOAP pendiente de registrar"><FaExclamationTriangle /></span>}
+            </button>
+            <button type="button" className={`tab ${activeTab === "archivos" ? "active" : ""}`} onClick={() => setActiveTab("archivos")}>
+              <FaXRay style={{ marginRight: "6px" }} /> Radiografías y Recetas {archivosExpedienteForm.length > 0 && `(${archivosExpedienteForm.length})`}
+            </button>
+            <button type="button" className={`tab ${activeTab === "consentimiento" ? "active" : ""}`} onClick={() => setActiveTab("consentimiento")}>
+              <FaFileSignature style={{ marginRight: "6px" }} /> Consentimiento
+            </button>
           </div>
 
           <form className="form" onSubmit={handleSubmit} onBlur={handleInputBlur}>
             {activeTab === "datosPersonales" && paciente && (
               <div className="tab-content">
                 <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">👤 Información Básica</h3>
+                  <h3 className="clinical-section-title"><FaUser style={{ marginRight: "8px" }} /> Información Básica</h3>
                   <div className="clinical-grid-3">
                     {isNewPatient ? (
                       <>
@@ -1263,7 +1405,7 @@ const FormularioHistorial = () => {
                 </div>
 
                 <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">📞 Datos de Contacto y Medidas</h3>
+                  <h3 className="clinical-section-title"><FaPhoneAlt style={{ marginRight: "8px" }} /> Datos de Contacto y Medidas</h3>
                   <div className="clinical-grid-3">
                     <div className="col">
                       <label className="form-label">Talla (cm)</label>
@@ -1313,7 +1455,7 @@ const FormularioHistorial = () => {
 
                   <div style={{ textAlign: "center", marginBottom: "2.5rem", borderBottom: "2px double var(--primary-light)", paddingBottom: "1.5rem" }}>
                     <h2 style={{ textTransform: "uppercase", fontSize: "1.4rem", letterSpacing: "1px", fontWeight: "900", color: "var(--primary)", margin: "0 0 5px 0" }}>Consentimiento Informado</h2>
-                    <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: "600" }}>SERVICIO DE FISIOTERAPIA - FISIOHESOU</span>
+                    <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: "600" }}>SERVICIO DE FISIOTERAPIA - HESOU</span>
                   </div>
 
                   <div style={{ marginBottom: "1.5rem" }}>
@@ -1386,7 +1528,8 @@ const FormularioHistorial = () => {
 
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "2rem", borderTop: "1px dashed var(--border-light)", paddingTop: "2rem" }}>
                     <SignaturePad
-                      label="✍️ Firma del Paciente"
+                      icon={<FaFileSignature />}
+                      label="Firma del Paciente"
                       value={formData.firmaPaciente}
                       onChange={(val) => updateSignature("firmaPaciente", val)}
                       placeholderName="Nombre del Paciente"
@@ -1397,7 +1540,8 @@ const FormularioHistorial = () => {
                     />
 
                     <SignaturePad
-                      label="🩺 Firma del Profesional de la Salud"
+                      icon={<FaUserMd />}
+                      label="Firma del Profesional de la Salud"
                       value={formData.firmaProfesional}
                       onChange={(val) => updateSignature("firmaProfesional", val)}
                       placeholderName="Nombre del Fisioterapeuta"
@@ -1416,8 +1560,8 @@ const FormularioHistorial = () => {
             {activeTab === "AnaAnte" && (
               <div className="tab-content">
                 <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">🏥 Anamnesis General</h3>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1.5rem" }}>
+                  <h3 className="clinical-section-title"><FaHospital style={{ marginRight: "8px" }} /> Anamnesis General</h3>
+                  <div className="clinical-grid-2" style={{ marginBottom: "1.5rem" }}>
                     <div className="col" style={{ margin: 0 }}>
                       <label className="form-label">Motivo de consulta *</label>
                       <textarea name="motivoConsulta" className="textarea" placeholder="Describa a detalle el motivo de la consulta..." value={formData.motivoConsulta} onChange={handleInputChange} required style={{ height: "100px" }} />
@@ -1436,7 +1580,7 @@ const FormularioHistorial = () => {
                 </div>
 
                 <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">⚡ Valoración del Dolor y Síntomas</h3>
+                  <h3 className="clinical-section-title"><FaBolt style={{ marginRight: "8px" }} /> Valoración del Dolor y Síntomas</h3>
                   <div className="clinical-grid-3">
                     <div className="col">
                       <label className="form-label">Escala EVA *</label>
@@ -1524,7 +1668,7 @@ const FormularioHistorial = () => {
                       )}
                     </div>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginTop: "1.5rem" }}>
+                  <div className="clinical-grid-2" style={{ marginTop: "1.5rem" }}>
                     <div className="col" style={{ margin: 0 }}>
                       <label className="form-label">Dolor últimas 24hrs</label>
                       <textarea name="dolor24hrs" className="textarea" placeholder="Describa el comportamiento del dolor en las últimas 24 horas..." value={formData.dolor24hrs} onChange={handleInputChange} style={{ height: "80px" }} />
@@ -1538,7 +1682,7 @@ const FormularioHistorial = () => {
                   {/* Selector de Múltiples Zonas de Dolor */}
                   <div style={{ marginTop: "2rem", paddingTop: "1.5rem", borderTop: "1px dashed rgba(139, 92, 246, 0.15)" }}>
                     <h4 style={{ fontWeight: "700", fontSize: "0.95rem", color: "var(--primary)", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                      📍 Detallar Zonas Específicas de Dolor (Múltiples)
+                      <FaMapMarkerAlt /> Detallar Zonas Específicas de Dolor (Múltiples)
                     </h4>
 
                     <div style={{
@@ -1638,7 +1782,7 @@ const FormularioHistorial = () => {
                         style={{ margin: 0, padding: "0.55rem", width: "42px", height: "42px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.1rem", borderRadius: "8px", flexShrink: 0 }}
                         title="Agregar zona de dolor"
                       >
-                        ➕
+                        <FaPlus />
                       </button>
                     </div>
 
@@ -1672,8 +1816,8 @@ const FormularioHistorial = () => {
                               }}
                             >
                               <div style={{ display: "flex", alignItems: "center", gap: "1rem", flex: 1 }}>
-                                <span style={{ fontWeight: "700", fontSize: "0.9rem", color: "var(--text-main)", display: "flex", alignItems: "center", gap: "4px" }}>
-                                  📍 {dz.zona}
+                                <span style={{ fontWeight: "700", fontSize: "0.9rem", color: "var(--text-main)", display: "flex", alignItems: "center", gap: "6px" }}>
+                                  <FaMapMarkerAlt style={{ color: "var(--primary)" }} /> {dz.zona}
                                 </span>
                                 <span
                                   style={{
@@ -1725,7 +1869,7 @@ const FormularioHistorial = () => {
                 </div>
 
                 <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">🏃 Actividades y Participaciones con Deficiencia</h3>
+                  <h3 className="clinical-section-title"><FaRunning style={{ marginRight: "8px" }} /> Actividades y Participaciones con Deficiencia</h3>
                   <div className="clinical-grid-1">
                     <div className="col">
                       <label className="form-label">Describa las limitaciones en actividades y participación (de la vida diaria, laboral, deportiva, etc.)</label>
@@ -1742,8 +1886,8 @@ const FormularioHistorial = () => {
                 </div>
 
                 <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">🩺 Antecedentes Clínicos</h3>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem", marginBottom: "1rem" }}>
+                  <h3 className="clinical-section-title"><FaStethoscope style={{ marginRight: "8px" }} /> Antecedentes Clínicos</h3>
+                  <div className="clinical-grid-2" style={{ marginBottom: "1rem" }}>
 
                     {/* Antecedentes Familiares */}
                     <div className="col" style={{ background: "rgba(255,255,255,0.01)", padding: "1.25rem", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)" }}>
@@ -1754,7 +1898,7 @@ const FormularioHistorial = () => {
                           onChange={(e) => toggleAplicaFam(e.target.checked)}
                           style={{ width: "16px", height: "16px", accentColor: "var(--primary)" }}
                         />
-                        <span>👨‍👩‍👧‍👦 ¿Aplica antecedentes familiares?</span>
+                        <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><FaUsers /> ¿Aplica antecedentes familiares?</span>
                       </label>
 
                       {aplicaFam && (
@@ -1826,7 +1970,7 @@ const FormularioHistorial = () => {
                               }}
                               title="Agregar antecedente"
                             >
-                              ➕
+                              <FaPlus />
                             </button>
                           </div>
 
@@ -1874,7 +2018,7 @@ const FormularioHistorial = () => {
                           onChange={(e) => toggleAplicaMed(e.target.checked)}
                           style={{ width: "16px", height: "16px", accentColor: "var(--primary)" }}
                         />
-                        <span>🏥 ¿Aplica antecedentes médicos?</span>
+                        <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><FaHospital /> ¿Aplica antecedentes médicos?</span>
                       </label>
 
                       {aplicaMed && (
@@ -1940,7 +2084,7 @@ const FormularioHistorial = () => {
                               }}
                               title="Agregar antecedente"
                             >
-                              ➕
+                              <FaPlus />
                             </button>
                           </div>
 
@@ -1989,7 +2133,7 @@ const FormularioHistorial = () => {
                           onChange={(e) => toggleAplicaMedActual(e.target.checked)}
                           style={{ width: "16px", height: "16px", accentColor: "var(--primary)" }}
                         />
-                        <span>💊 ¿Lleva medicación actual?</span>
+                        <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><FaPills /> ¿Lleva medicación actual?</span>
                       </label>
 
                       {aplicaMedActual && (
@@ -2013,7 +2157,7 @@ const FormularioHistorial = () => {
                             }}
                             style={{ width: "16px", height: "16px", accentColor: "var(--primary)" }}
                           />
-                          <span>🔪 ¿Tiene antecedentes quirúrgicos?</span>
+                          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><FaCut /> ¿Tiene antecedentes quirúrgicos?</span>
                         </label>
                         {aplicaQuirurgico && (
                           <button
@@ -2039,7 +2183,7 @@ const FormularioHistorial = () => {
                             }}
                             title="Agregar cirugía"
                           >
-                            ➕
+                            <FaPlus />
                           </button>
                         )}
                       </div>
@@ -2086,7 +2230,7 @@ const FormularioHistorial = () => {
                                   }}
                                   title="Eliminar cirugía"
                                 >
-                                  🗑️
+                                  <FiTrash2 size={15} />
                                 </button>
                               </div>
                             </div>
@@ -2098,7 +2242,7 @@ const FormularioHistorial = () => {
                 </div>
 
                 <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">🤸 Estilo de Vida y Hábitos</h3>
+                  <h3 className="clinical-section-title"><FaHeartbeat style={{ marginRight: "8px" }} /> Estilo de Vida y Hábitos</h3>
                   <div className="clinical-grid-3" style={{ marginBottom: "1rem" }}>
                     <div className="col">
                       <label className="form-label">Actividad física</label>
@@ -2174,7 +2318,7 @@ const FormularioHistorial = () => {
 
                   <div className="modern-accordion">
                     <button type="button" className={`modern-accordion-header ${openLesiones ? "open" : ""}`} onClick={() => setOpenLesiones(!openLesiones)}>
-                      <span className="form-label" style={{ fontWeight: "700", color: "var(--primary)" }}>⚠️ Antecedentes de lesiones músculo-esqueléticas</span>
+                      <span className="form-label" style={{ fontWeight: "700", color: "var(--primary)", display: "flex", alignItems: "center", gap: "6px" }}><FaExclamationTriangle /> Antecedentes de lesiones músculo-esqueléticas</span>
                       <span className="accordion-icon" style={{ fontSize: "1.2rem" }}>{openLesiones ? <IoCaretUp /> : <IoCaretDown />}</span>
                     </button>
 
@@ -2208,8 +2352,8 @@ const FormularioHistorial = () => {
             {activeTab === "evaluacion" && (
               <div className="tab-content">
                 <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">🔍 Observación Física Inicial</h3>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                  <h3 className="clinical-section-title"><FaSearch style={{ marginRight: "8px" }} /> Observación Física Inicial</h3>
+                  <div className="clinical-grid-2" style={{ gap: "0.75rem" }}>
                     {[
                       { key: "edema", label: "Presencia de Edema" },
                       { key: "enrojecimiento", label: "Zonas de Enrojecimiento / Eritema" },
@@ -2252,7 +2396,7 @@ const FormularioHistorial = () => {
                 </div>
 
                 <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">👐 Palpación Clínica</h3>
+                  <h3 className="clinical-section-title"><FaHands style={{ marginRight: "8px" }} /> Palpación Clínica</h3>
                   <div className="clinical-grid-2">
                     <div className="col">
                       <label className="form-label">Zonas de dolor a la palpación</label>
@@ -2270,7 +2414,7 @@ const FormularioHistorial = () => {
             {activeTab === "soap" && (
               <div className="tab-content">
                 <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">📝 Notas SOAP y Registro Diario</h3>
+                  <h3 className="clinical-section-title"><FaNotesMedical style={{ marginRight: "8px" }} /> Notas SOAP y Registro Diario</h3>
                   <div className="clinical-grid-3" style={{ marginBottom: "1rem" }}>
                     <div className="col">
                       <label className="form-label">ID Nota asignado</label>
@@ -2290,8 +2434,8 @@ const FormularioHistorial = () => {
                 </div>
 
                 <div className="clinical-form-section">
-                  <h3 className="clinical-section-title">🧪 Desglose de Metodología SOAP</h3>
-                  <div className="soap-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                  <h3 className="clinical-section-title"><FaFlask style={{ marginRight: "8px" }} /> Desglose de Metodología SOAP</h3>
+                  <div className="soap-grid">
                     <div className="col">
                       <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)" }}>Subjetivo (S)</label>
                       <textarea name="S" className="textarea" placeholder="Subjetivo: Síntomas referidos, sensaciones y comentarios expresados por el paciente..." value={formData.S || ""} onChange={handleInputChange} style={{ height: "120px" }} />
@@ -2313,7 +2457,234 @@ const FormularioHistorial = () => {
               </div>
             )}
 
+            {activeTab === "archivos" && (
+              <div className="tab-content">
+                {!isNewPatient && paciente?.identificadorPaciente && paciente.identificadorPaciente !== "NUEVO" ? (
+                  <ArchivosExpediente identificadorPaciente={paciente.identificadorPaciente} />
+                ) : (
+                  <div className="clinical-form-section" style={{ background: "#ffffff", borderRadius: "14px", border: "1px solid var(--border-light)", padding: "1.75rem", marginBottom: "1.5rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "1rem" }}>
+                      <div style={{
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "10px",
+                        background: "rgba(99, 102, 241, 0.1)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "var(--primary)"
+                      }}>
+                        <FaXRay size={18} />
+                      </div>
+                      <div>
+                        <h3 className="clinical-section-title" style={{ margin: 0 }}>Radiografías, Recetas y Estudios del Expediente</h3>
+                        <p style={{ margin: "2px 0 0", color: "var(--text-muted)", fontSize: "0.85rem" }}>
+                          Adjunta fotos de radiografías, recetas médicas, estudios previos o fotografías clínicas del paciente.
+                        </p>
+                      </div>
+                    </div>
 
+                    {/* Selector de Categoría para los archivos a agregar */}
+                    <div style={{ marginBottom: "1.25rem" }}>
+                      <label className="form-label" style={{ fontWeight: "700", marginBottom: "0.5rem", display: "block" }}>
+                        Tipo de archivo que vas a adjuntar:
+                      </label>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "0.5rem" }}>
+                        {[
+                          { id: "Radiografía", label: "Radiografía", icon: FaXRay, color: "#3b82f6" },
+                          { id: "Receta Médica", label: "Receta Médica", icon: FaPills, color: "#10b981" },
+                          { id: "Estudio de Laboratorio", label: "Estudio / Lab", icon: FaVial, color: "#f59e0b" },
+                          { id: "Foto Clínica / Lesión", label: "Foto Clínica", icon: FaCamera, color: "#8b5cf6" },
+                          { id: "Documento / Otro", label: "Otro / PDF", icon: FaFileMedical, color: "#64748b" }
+                        ].map(cat => {
+                          const isSelected = nuevaFotoCategoria === cat.id;
+                          const Icon = cat.icon;
+                          return (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => setNuevaFotoCategoria(cat.id)}
+                              style={{
+                                padding: "8px 10px",
+                                borderRadius: "10px",
+                                border: isSelected ? `2px solid ${cat.color}` : "1px solid #cbd5e1",
+                                background: isSelected ? "rgba(99, 102, 241, 0.08)" : "#f8fafc",
+                                color: isSelected ? cat.color : "#475569",
+                                fontWeight: isSelected ? "700" : "500",
+                                fontSize: "0.82rem",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                gap: "4px",
+                                cursor: "pointer",
+                                transition: "all 0.15s"
+                              }}
+                            >
+                              <Icon size={16} />
+                              <span>{cat.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Zona de Selección / Arrastre de Fotos */}
+                    <div style={{ marginBottom: "1.25rem" }}>
+                      <div
+                        onClick={() => fileFormInputRef.current?.click()}
+                        style={{
+                          border: "2px dashed var(--primary)",
+                          borderRadius: "14px",
+                          background: "rgba(99, 102, 241, 0.04)",
+                          padding: "1.75rem 1rem",
+                          textAlign: "center",
+                          cursor: "pointer",
+                          transition: "all 0.2s"
+                        }}
+                        className="hover-grow"
+                      >
+                        <input
+                          ref={fileFormInputRef}
+                          type="file"
+                          accept="image/*,application/pdf"
+                          multiple
+                          style={{ display: "none" }}
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files.length > 0) {
+                              handleFormFilesChosen(e.target.files);
+                            }
+                          }}
+                        />
+                        <FaCloudUploadAlt size={40} style={{ color: "var(--primary)", marginBottom: "8px" }} />
+                        <p style={{ margin: "0 0 4px", fontSize: "0.95rem", fontWeight: "700", color: "#1e1b4b" }}>
+                          Haz clic aquí para seleccionar una o varias fotos
+                        </p>
+                        <p style={{ margin: 0, fontSize: "0.8rem", color: "#64748b" }}>
+                          Soporta múltiples imágenes (JPG, PNG, WEBP) o documentos PDF. Puedes tomar la foto desde tu dispositivo.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Descripción opcional */}
+                    <div style={{ marginBottom: "1.25rem" }}>
+                      <label className="form-label" style={{ fontWeight: "600", fontSize: "0.85rem", marginBottom: "0.35rem" }}>
+                        Descripción de los archivos a adjuntar (Opcional):
+                      </label>
+                      <input
+                        type="text"
+                        className="input"
+                        placeholder="Ej: Radiografía de rodilla derecha AP/Lateral, Receta de analgésicos..."
+                        value={nuevaFotoDescripcion}
+                        onChange={(e) => setNuevaFotoDescripcion(e.target.value)}
+                      />
+                    </div>
+
+                    {/* Previsualización de archivos seleccionados */}
+                    {archivosExpedienteForm.length > 0 && (
+                      <div style={{ marginTop: "1rem" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                          <span style={{ fontWeight: "700", fontSize: "0.88rem", color: "var(--primary)", display: "flex", alignItems: "center", gap: "6px" }}>
+                            <FaCamera /> Archivos listos para guardarse ({archivosExpedienteForm.length}):
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setArchivosExpedienteForm([])}
+                            style={{ background: "none", border: "none", color: "#ef4444", fontSize: "0.78rem", cursor: "pointer", fontWeight: "600" }}
+                          >
+                            Quitar todos
+                          </button>
+                        </div>
+
+                        <div style={{
+                          display: "grid",
+                          gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
+                          gap: "0.75rem",
+                          padding: "0.75rem",
+                          background: "#f8fafc",
+                          borderRadius: "12px",
+                          border: "1px solid #e2e8f0"
+                        }}>
+                          {archivosExpedienteForm.map((item, idx) => (
+                            <div
+                              key={idx}
+                              style={{
+                                position: "relative",
+                                background: "#fff",
+                                borderRadius: "10px",
+                                overflow: "hidden",
+                                border: "1px solid #cbd5e1",
+                                height: "120px",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                boxShadow: "0 2px 6px rgba(0,0,0,0.05)"
+                              }}
+                            >
+                              {item.isPdf ? (
+                                <div style={{ textAlign: "center", color: "#ef4444" }}>
+                                  <FaFilePdf size={32} />
+                                  <span style={{ display: "block", fontSize: "0.7rem", maxWidth: "110px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    {item.name}
+                                  </span>
+                                </div>
+                              ) : (
+                                <img
+                                  src={item.preview}
+                                  alt={item.name}
+                                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                />
+                              )}
+
+                              <span style={{
+                                position: "absolute",
+                                bottom: "0",
+                                left: "0",
+                                right: "0",
+                                background: "rgba(15, 23, 42, 0.75)",
+                                color: "#fff",
+                                fontSize: "0.68rem",
+                                padding: "2px 4px",
+                                textAlign: "center",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis"
+                              }}>
+                                {item.categoria}
+                              </span>
+
+                              <button
+                                type="button"
+                                onClick={() => removeFormFile(idx)}
+                                style={{
+                                  position: "absolute",
+                                  top: "4px",
+                                  right: "4px",
+                                  background: "rgba(239, 68, 68, 0.9)",
+                                  color: "#fff",
+                                  border: "none",
+                                  borderRadius: "50%",
+                                  width: "22px",
+                                  height: "22px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  cursor: "pointer",
+                                  fontSize: "11px"
+                                }}
+                                title="Quitar foto"
+                              >
+                                <FaTimes />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "3rem", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "1.5rem" }}>
               <div>
@@ -2322,14 +2693,14 @@ const FormularioHistorial = () => {
                     type="button"
                     className="btn btn-outline"
                     onClick={() => {
-                      const tabs = ["datosPersonales", "AnaAnte", "evaluacion", "soap", "consentimiento"];
+                      const tabs = ["datosPersonales", "AnaAnte", "evaluacion", "soap", "archivos", "consentimiento"];
                       const prevIndex = tabs.indexOf(activeTab) - 1;
                       if (prevIndex >= 0) setActiveTab(tabs[prevIndex]);
                       window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
                     style={{ height: "46px", width: "auto", padding: "0 20px", display: "flex", alignItems: "center", gap: "6px" }}
                   >
-                    ⬅️ Anterior
+                    <FaArrowLeft /> Anterior
                   </button>
                 )}
               </div>
@@ -2340,18 +2711,18 @@ const FormularioHistorial = () => {
                     type="button"
                     className="btn btn-primary hover-grow"
                     onClick={() => {
-                      const tabs = ["datosPersonales", "AnaAnte", "evaluacion", "soap", "consentimiento"];
+                      const tabs = ["datosPersonales", "AnaAnte", "evaluacion", "soap", "archivos", "consentimiento"];
                       const nextIndex = tabs.indexOf(activeTab) + 1;
                       if (nextIndex < tabs.length) setActiveTab(tabs[nextIndex]);
                       window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
                     style={{ height: "46px", width: "auto", padding: "0 20px", display: "flex", alignItems: "center", gap: "6px" }}
                   >
-                    Siguiente ➡️
+                    Siguiente <FaArrowRight />
                   </button>
                 ) : (
                   <button type="submit" className="btn btn-primary btn-size-lg hover-grow glow-pulse-purple" disabled={loading} style={{ height: "46px", minWidth: "220px", fontSize: "1rem", display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
-                    {loading ? <LoadingSpinner size="small" color="#fff" /> : <>💾 Guardar expediente clínico</>}
+                    {loading ? <LoadingSpinner size="small" color="#fff" /> : <><FaSave /> Guardar expediente clínico</>}
                   </button>
                 )}
               </div>

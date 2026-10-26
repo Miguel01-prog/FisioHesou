@@ -6,6 +6,8 @@ import api from "../../api.js";
 import { showSuccess, showError } from "../../utils/alerts.js";
 import { useAuth } from "../../context/AuthContext";
 import { isHourPassed } from "../../utils/utils.js";
+import { FaStickyNote } from "react-icons/fa";
+import CalendarLegend from "./CalendarLegend.jsx";
 
 export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = null }) {
   const { user } = useAuth();
@@ -201,6 +203,8 @@ export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = n
           />
         </div>
 
+        <CalendarLegend showSundays={!!user?.client?.blockSundays} style={{ maxWidth: '440px', margin: '0 auto 1.5rem auto' }} />
+
         {showHours && selectedDate && (
           <div style={{ marginTop: "20px", textAlign: "center" }}>
             <h4 className="text-muted mb-2" style={{ fontSize: '1rem', fontWeight: 600 }}>
@@ -225,7 +229,7 @@ export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = n
                   gap: '0.4rem'
                 }}
               >
-                <span>📝</span>
+                <FaStickyNote size={14} style={{ color: "var(--primary)", flexShrink: 0 }} />
                 <span><strong>Nota:</strong> {blockedNotesAdmin[selectedDate]}</span>
               </div>
             )}

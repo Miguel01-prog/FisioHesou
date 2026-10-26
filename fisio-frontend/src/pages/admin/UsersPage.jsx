@@ -3,6 +3,7 @@ import api from "../../api.js";
 import LoadingSpinner from "../../components/layout/LoadingSpinner.jsx";
 import { showError, showSuccess } from "../../utils/alerts.js";
 import { FiPlus, FiX } from "react-icons/fi";
+import { FaExclamationTriangle } from "react-icons/fa";
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
@@ -203,8 +204,8 @@ export default function UsersPage() {
                 <div>
                   <label htmlFor="user-clinic" className="form-label" style={{ display: "block", marginBottom: "0.5rem" }}>Asociar a Clínica *</label>
                   {clinicas.length === 0 ? (
-                    <p style={{ color: "#ef4444", fontSize: "0.85rem", margin: 0 }}>
-                      ⚠️ Debes crear al menos una clínica en la sección "Clínicas SaaS" antes de poder registrar un especialista.
+                    <p style={{ color: "#ef4444", fontSize: "0.85rem", margin: 0, display: "flex", alignItems: "center", gap: "6px" }}>
+                      <FaExclamationTriangle size={12} /> Debes crear al menos una clínica en la sección "Clínicas SaaS" antes de poder registrar un especialista.
                     </p>
                   ) : (
                     <select

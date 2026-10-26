@@ -5,7 +5,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import api from "../../api";
 import LoadingSpinner from "../layout/LoadingSpinner";
 import { showError, showSuccess } from "../../utils/alerts";
-import { FaPlus, FaTrash, FaArrowLeft } from "react-icons/fa";
+import { FaPlus, FaTrash, FaArrowLeft, FaDumbbell } from "react-icons/fa";
 import { deobfuscateId } from "../../utils/utils.js";
 
 const ConstructorPlan = () => {
@@ -309,7 +309,7 @@ const ConstructorPlan = () => {
                         </div>
                       ) : (
                         <div style={{ width: '100%', height: '110px', background: 'rgba(139, 92, 246, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <span style={{ fontSize: '1.5rem' }}>🧘</span>
+                          <FaDumbbell size={24} style={{ color: 'var(--text-muted)' }} />
                         </div>
                       )}
                       <div style={{ padding: '0.85rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'space-between' }}>

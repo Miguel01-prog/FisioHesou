@@ -128,7 +128,7 @@ export const crearPaciente = async (req, res) => {
     }
 
     if (pacienteExiste) {
-      return res.status(409).json({ message: "El paciente ya se encuentra registrado con esos datos o correo electrónico" });
+      return res.status(409).json({ message: "El paciente ya se encuentra registrado con esos datos o correo electrónico", paciente: pacienteExiste });
     }
 
     const identificadorPaciente = crypto.randomBytes(6).toString("hex");

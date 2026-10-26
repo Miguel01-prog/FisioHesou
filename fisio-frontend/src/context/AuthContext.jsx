@@ -29,15 +29,16 @@ export const AuthProvider = ({ children }) => {
     fetchUser();
   }, []);
 
-  // 🏷️ Sincronización automática del título de la pestaña del navegador
+  // 🏷️ Sincronización automática del título de la pestaña del navegador y favicon
   useEffect(() => {
-    if (user?.client?.tabTitle) {
-      document.title = user.client.tabTitle;
-    } else if (user?.client?.name) {
-      document.title = `${user.client.name} - FisioHesou`;
-    } else {
-      document.title = "FisioHesou - Sistema de Gestión Clínica";
+    document.title = "HESOU";
+    let link = document.querySelector("link[rel~='icon']");
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "icon";
+      document.head.appendChild(link);
     }
+    link.href = "/hesou-logo.svg";
   }, [user]);
 
   // 🔐 Iniciar sesión

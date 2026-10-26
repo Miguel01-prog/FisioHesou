@@ -83,6 +83,8 @@ export const crearCita = async (req, res) => {
     const fechaCita = new Date(fechaCitaStr);
 
     const nuevaCita = new Cita({
+      especialistaId: especialistaId || undefined,
+      especialistaNombre: (especialistaNombre || "").trim(),
       nombres,
       apellidoPaterno,
       apellidoMaterno: apellidoMaterno || "",
@@ -93,6 +95,8 @@ export const crearCita = async (req, res) => {
       fechaCitaStr,
       horaCita,
       area,
+      especialistaId: especialistaId || undefined,
+      especialistaNombre: (especialistaNombre || "").trim(),
       identificadorPaciente,
       esNuevoPaciente,
       clientId
@@ -420,7 +424,7 @@ export const actualizarCita = async (req, res) => {
 export const crearCitaManualCompleta = async (req, res) => {
   console.log("- Crear cita manual completa...");
   try {
-    let { identificadorPaciente, nombres, apellidoPaterno, apellidoMaterno, edad, telefono, email, fechaCitaStr, horaCita, area } = req.body;
+    let { identificadorPaciente, nombres, apellidoPaterno, apellidoMaterno, edad, telefono, email, fechaCitaStr, horaCita, area, especialistaId, especialistaNombre } = req.body;
 
     if (!fechaCitaStr || !horaCita || !area) {
       return res.status(400).json({ message: "La fecha, hora y área de la cita son obligatorios" });

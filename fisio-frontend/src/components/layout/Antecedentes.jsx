@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FaEye, FaTrash } from "react-icons/fa";
+import { FaEye, FaTrash, FaPlus } from "react-icons/fa";
 import api from "../../api";
 import { IoIosAddCircle } from "react-icons/io";
 import { createPortal } from "react-dom";
@@ -140,7 +140,7 @@ const Antecedentes = () => {
                 onClick={inicializarCategorias}
                 style={{ width: "auto", margin: "0 auto", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
               >
-                ➕ Inicializar Categorías (Médicos y Familiares)
+                <FaPlus size={12} /> Inicializar Categorías (Médicos y Familiares)
               </button>
             </div>
           ) : (

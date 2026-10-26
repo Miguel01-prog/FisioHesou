@@ -1,4 +1,4 @@
-import express from "express";
+﻿import express from "express";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -16,6 +16,7 @@ import planesRoutes from "./routes/planes.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import clientRoutes from "./routes/client.routes.js";
 import moduleRoutes from "./routes/module.routes.js";
+import expedienteArchivosRoutes from "./routes/expediente-archivo.routes.js";
 import path from "path";
 
 const app = express();
@@ -99,6 +100,6 @@ app.use("/api/planes", planesRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/clients", clientRoutes);
 app.use("/api/modules", moduleRoutes);
-
+app.use("/api/expediente-archivos", expedienteArchivosRoutes);
 
 export default app;

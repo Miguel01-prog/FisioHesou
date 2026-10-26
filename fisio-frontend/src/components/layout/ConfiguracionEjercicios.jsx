@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import api from "../../api";
 import LoadingSpinner from "./LoadingSpinner";
 import { showError, showSuccess } from "../../utils/alerts";
-import { FaTrash } from "react-icons/fa";
+import { FaTrash, FaCloudUploadAlt, FaDumbbell } from "react-icons/fa";
 
 const ConfiguracionEjercicios = () => {
   const [ejercicios, setEjercicios] = useState([]);
@@ -157,7 +157,7 @@ const ConfiguracionEjercicios = () => {
                   transition: 'all 0.2s',
                   textAlign: 'center'
                 }} className="file-upload-zone">
-                  <span style={{ fontSize: '1.75rem', marginBottom: '8px' }}>📤</span>
+                  <FaCloudUploadAlt size={32} style={{ color: "var(--primary)", marginBottom: '8px' }} />
                   <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-main)' }}>
                     {imagen ? imagen.name : "Seleccionar archivo de imagen"}
                   </span>
@@ -249,7 +249,7 @@ const ConfiguracionEjercicios = () => {
                     </div>
                   ) : (
                     <div style={{ width: '100%', height: '160px', background: 'rgba(139, 92, 246, 0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '2rem' }}>🧘</span>
+                      <FaDumbbell size={32} style={{ color: "var(--text-muted)" }} />
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Sin imagen descriptiva</span>
                     </div>
                   )}

@@ -4,6 +4,7 @@ import api from "../../api.js";
 import LoadingSpinner from "../../components/layout/LoadingSpinner.jsx";
 import { showError, showSuccess } from "../../utils/alerts.js";
 import { FiInfo, FiTag, FiCpu, FiPlus, FiGrid, FiTrash2, FiArrowLeft, FiSliders, FiDroplet } from "react-icons/fi";
+import { FaCog, FaRocket } from "react-icons/fa";
 
 export default function CrearClinicaPage() {
   const { id } = useParams();
@@ -20,7 +21,7 @@ export default function CrearClinicaPage() {
   const [blockSundays, setBlockSundays] = useState(false);
 
   // Branding & Theme Fields
-  const [tabTitle, setTabTitle] = useState("FisioHesou - Sistema de Gestión Clínica");
+  const [tabTitle, setTabTitle] = useState("HESOU");
   const [sidebarName, setSidebarName] = useState("");
   const [sidebarSubtitle, setSidebarSubtitle] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#5e50a1");
@@ -37,7 +38,7 @@ export default function CrearClinicaPage() {
 
   // Dynamic Services
   const [services, setServices] = useState([
-    { name: "Fisioterapia", key: "fisioterapia", description: "Rehabilitación y terapia física", icon: "🦽" }
+    { name: "Fisioterapia", key: "fisioterapia", description: "Rehabilitación y terapia física", icon: "ri-wheelchair-line" }
   ]);
 
   // Sidebar Feature Flags / Modules
@@ -72,7 +73,7 @@ export default function CrearClinicaPage() {
             setNombre(match.name);
             setSubdominio(match.subdomain);
             setLogo(match.logo || "");
-            setTabTitle(match.tabTitle || "FisioHesou - Sistema de Gestión Clínica");
+            setTabTitle(match.tabTitle || "HESOU");
             setSidebarName(match.sidebarName || match.name || "");
             setSidebarSubtitle(match.sidebarSubtitle || "");
             if (match.theme) {
@@ -86,7 +87,7 @@ export default function CrearClinicaPage() {
             setPatientLabelPlural(match.patientLabelPlural || "Pacientes");
             setSpecialistLabelSingular(match.specialistLabelSingular || "Especialista");
             setSpecialistLabelPlural(match.specialistLabelPlural || "Especialistas");
-            setServices(match.services && match.services.length > 0 ? match.services : [{ name: "", key: "", description: "", icon: "📅" }]);
+            setServices(match.services && match.services.length > 0 ? match.services : [{ name: "", key: "", description: "", icon: "ri-calendar-line" }]);
             setModules(match.modules || ["agenda", "pacientes", "bloquear"]);
             setActivo(match.active !== undefined ? match.active : true);
             setBlockSundays(match.blockSundays || false);
@@ -108,7 +109,7 @@ export default function CrearClinicaPage() {
   const handleAddService = () => {
     setServices([
       ...services,
-      { name: "", key: "", description: "", icon: "📅" }
+      { name: "", key: "", description: "", icon: "ri-calendar-line" }
     ]);
   };
 
@@ -161,7 +162,7 @@ export default function CrearClinicaPage() {
       const payload = {
         name: nombre.trim(),
         subdomain: cleanSubdomain,
-        tabTitle: tabTitle.trim() || "FisioHesou - Sistema de Gestión Clínica",
+        tabTitle: tabTitle.trim() || "HESOU",
         sidebarName: sidebarName.trim() || nombre.trim(),
         sidebarSubtitle: sidebarSubtitle.trim(),
         theme: {
@@ -211,7 +212,7 @@ export default function CrearClinicaPage() {
     <div className="crear-clinica-container" style={{ padding: "1.5rem", maxWidth: "900px", margin: "0 auto" }}>
       <header style={{ marginBottom: "2rem" }}>
         <h1 style={{ color: "var(--primary)", fontSize: "1.8rem", fontWeight: "700" }}>
-          {id ? "⚙️ Editar negocio" : "🚀 Registrar nuevo negocio"}
+          {id ? <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}><FaCog /> Editar negocio</span> : <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}><FaRocket /> Registrar nuevo negocio</span>}
         </h1>
         <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
           Configura a tu gusto las opciones, terminología, servicios y accesos del sidebar.
@@ -416,7 +417,7 @@ export default function CrearClinicaPage() {
                     className="input"
                     value={tabTitle}
                     onChange={e => setTabTitle(e.target.value)}
-                    placeholder="Ej. FisioHesou - Sistema de Gestión Clínica"
+                    placeholder="Ej. HESOU"
                     disabled={guardando}
                   />
                   <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "block", marginTop: "3px" }}>

@@ -155,7 +155,8 @@
 .agenda-left {
   flex: 1 1 50%;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: stretch;
   min-width: 0;
 }
 
@@ -387,4 +388,96 @@
   background: rgba(13, 148, 136, 0.08) !important;
   color: var(--accent, #0d9488) !important;
   border: 1px solid rgba(13, 148, 136, 0.2) !important;
+}
+
+/* ==========================================================================
+   🎨 CALENDAR COLOR LEGEND
+   ========================================================================== */
+.calendar-legend-box {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 0.9rem 1.15rem;
+  box-shadow: var(--shadow-sm);
+  margin-top: 1rem;
+}
+
+[data-theme="dark"] .calendar-legend-box {
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.calendar-legend-title {
+  font-size: 0.775rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 0.65rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.calendar-legend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.5rem 0.85rem;
+}
+
+.calendar-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.825rem;
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.calendar-legend-badge {
+  width: 13px;
+  height: 13px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: inline-block;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.calendar-legend-badge.badge-selected {
+  background: var(--primary, #5e50a1);
+  border: 1px solid var(--primary, #5e50a1);
+  box-shadow: 0 2px 6px var(--primary-glow);
+}
+
+.calendar-legend-badge.badge-booked {
+  background: rgba(13, 148, 136, 0.2);
+  border: 1.5px solid rgb(13, 148, 136);
+}
+
+.calendar-legend-badge.badge-blocked {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1.5px solid var(--danger, #ef4444);
+}
+
+.calendar-legend-badge.badge-available {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--card-border, #cbd5e1);
+}
+
+[data-theme="dark"] .calendar-legend-badge.badge-available {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.calendar-legend-badge.badge-past {
+  background: rgba(148, 163, 184, 0.2);
+  border: 1px dashed rgba(148, 163, 184, 0.5);
+  opacity: 0.6;
+}
+
+.calendar-legend-badge.badge-sunday {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  opacity: 0.7;
 }

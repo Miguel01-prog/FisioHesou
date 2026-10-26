@@ -4,6 +4,7 @@ import api from "../../api.js";
 import LoadingSpinner from "../../components/layout/LoadingSpinner.jsx";
 import { showError } from "../../utils/alerts.js";
 import { FiPlus, FiSearch, FiEdit2, FiExternalLink, FiSettings } from "react-icons/fi";
+import { FaBuilding } from "react-icons/fa";
 
 export default function ClinicasPage() {
   const navigate = useNavigate();
@@ -40,8 +41,8 @@ export default function ClinicasPage() {
       {/* Cabecera */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap", marginBottom: "2rem" }}>
         <div>
-          <h1 style={{ color: "var(--primary)", fontSize: "1.8rem", fontWeight: "700", margin: 0 }}>
-            🏢 Directorio de Clínicas SaaS
+          <h1 style={{ color: "var(--primary)", fontSize: "1.8rem", fontWeight: "700", margin: 0, display: "flex", alignItems: "center", gap: "10px" }}>
+            <FaBuilding /> Directorio de Clínicas SaaS
           </h1>
           <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", margin: "5px 0 0 0" }}>
             Administra los consultorios independientes, sus módulos habilitados y sus etiquetas de marca blanca.
