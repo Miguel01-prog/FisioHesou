@@ -230,9 +230,9 @@ export default function Sidebar({
               />
             ) : (
               <img
-                src="/hesou-logo.svg"
+                src="/logo_hesou.svg"
                 alt="HESOU"
-                style={{ width: "36px", height: "36px", borderRadius: "8px", objectFit: "contain", flexShrink: 0 }}
+                style={{ width: "38px", height: "38px", objectFit: "contain", flexShrink: 0 }}
               />
             )}
             {!isCollapsed && (

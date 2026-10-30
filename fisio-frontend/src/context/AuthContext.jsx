@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
       link.rel = "icon";
       document.head.appendChild(link);
     }
-    link.href = "/hesou-logo.svg";
+    link.href = "/logo_hesou.svg";
   }, [user]);
 
   // 🔐 Iniciar sesión

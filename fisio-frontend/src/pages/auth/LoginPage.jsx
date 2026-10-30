@@ -46,10 +46,12 @@ export default function LoginPage() {
   return (
     <div className="auth-wrapper-public">
       <div className="auth-card" style={{ maxWidth: '420px', width: '90%' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-          <img src="/hesou-logo.svg" alt="HESOU" style={{ width: '56px', height: '56px', borderRadius: '14px', boxShadow: '0 6px 20px rgba(94, 80, 161, 0.25)' }} />
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem' }}>
+          <img src="/logo_hesou.svg" alt="Logo HESOU" style={{ width: '64px', height: '64px', objectFit: 'contain' }} />
         </div>
-        <h2 className="text-center mb-1" style={{ color: 'var(--primary)', fontWeight: '800', letterSpacing: '0.05em' }}>HESOU</h2>
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '-30px' }}>
+          <img src="/letras_hesou.svg" alt="HESOU" style={{ height: '56px', maxWidth: '120px', width: 'auto', objectFit: 'contain' }} />
+        </div>
         <p className="text-muted text-center mb-2">Ingresa tus credenciales para continuar</p>
 
         <form className="form" onSubmit={handleSubmit}>

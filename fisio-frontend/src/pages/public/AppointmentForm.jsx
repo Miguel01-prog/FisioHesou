@@ -253,7 +253,7 @@ export default function AppointmentForm() {
             {clinic.logo ? (
               <img src={clinic.logo} alt="Logo" style={{ maxHeight: "60px", marginBottom: "1rem" }} />
             ) : (
-              <img src="/hesou-logo.svg" alt="HESOU" style={{ width: "56px", height: "56px", borderRadius: "14px", margin: "0 auto 1rem auto", display: "block" }} />
+              <img src="/logo_hesou.svg" alt="HESOU" style={{ width: "64px", height: "64px", margin: "0 auto 1rem auto", display: "block", objectFit: "contain" }} />
             )}
             <h2 className="logo-agendar mb-1" style={{ color: "var(--primary)" }}>{clinic.name}</h2>
             <p className="text-muted">Completa tus datos para agendar tu consulta</p>

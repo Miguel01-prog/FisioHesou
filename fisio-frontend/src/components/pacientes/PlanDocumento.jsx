@@ -218,7 +218,7 @@ const PlanDocumento = () => {
         {/* Encabezado Profesional */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '3px solid #42133B', paddingBottom: '20px', marginBottom: '30px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <img src="/hesou-logo.svg" alt="HESOU" style={{ width: '48px', height: '48px', borderRadius: '10px' }} />
+            <img src="/logo_hesou.svg" alt="HESOU" style={{ width: '52px', height: '52px', objectFit: 'contain' }} />
             <div>
               <h1 style={{ color: '#42133B', margin: '0 0 5px 0', fontSize: '28px', fontWeight: 'bold' }}>HESOU</h1>
               <p style={{ margin: '0', fontSize: '14px', color: '#666' }}>Clínica de Fisioterapia y Rehabilitación</p>
