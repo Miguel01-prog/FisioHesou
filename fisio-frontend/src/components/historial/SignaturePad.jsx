@@ -115,7 +115,7 @@ const SignaturePad = ({
         transition: "all 0.25s ease"
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.4rem", marginBottom: "0.5rem" }}>
         <label className="form-label" style={{ fontWeight: "700", color: "var(--primary)", margin: 0, display: "flex", alignItems: "center", gap: "6px" }}>
           {icon} {label}
         </label>

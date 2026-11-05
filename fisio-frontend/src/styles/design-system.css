@@ -2957,3 +2957,235 @@ tr:hover .patient-list-avatar-circle {
     print-color-adjust: exact !important;
   }
 }
+
+
+/* ==========================================================================
+   📱 RESPONSIVE CLINICAL HISTORY (VISTA & FORMULARIO HISTORIAL)
+   ========================================================================== */
+.historial-main-card {
+  padding: 2.5rem;
+}
+
+.consentimiento-card {
+  padding: 2.5rem;
+}
+
+.signatures-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 2rem;
+}
+
+.lesion-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pain-zone-add-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 2fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.clinical-grid-3 .col,
+.clinical-grid-2 .col,
+.clinical-grid-1 .col,
+.soap-grid .col {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .historial-main-card {
+    padding: 1.75rem;
+  }
+
+  .consentimiento-card {
+    padding: 1.5rem;
+  }
+
+  .pain-zone-add-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .historial-main-card {
+    padding: 1rem;
+  }
+
+  .clinical-form-section {
+    padding: 1.1rem;
+  }
+
+  .consentimiento-card {
+    padding: 1.15rem;
+  }
+
+  .clinical-grid-3,
+  .clinical-grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .col-span-2,
+  .col-span-3 {
+    grid-column: span 1 !important;
+  }
+
+  .lesion-row-grid {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .pain-zone-add-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pain-zone-add-grid button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .signatures-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .historial-header-actions {
+    width: 100%;
+  }
+
+  .historial-header-actions button {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .historial-footer-nav {
+    flex-direction: column-reverse;
+    align-items: stretch !important;
+  }
+
+  .historial-footer-nav > div,
+  .historial-footer-nav button {
+    width: 100% !important;
+    justify-content: center;
+  }
+}
+
+
+/* ==========================================================================
+   📱 RESPONSIVE CLINICAL HISTORY (VISTA & FORMULARIO HISTORIAL)
+   ========================================================================== */
+.historial-main-card {
+  padding: 2.5rem;
+}
+
+.consentimiento-card {
+  padding: 2.5rem;
+}
+
+.signatures-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 2rem;
+}
+
+.lesion-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pain-zone-add-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 2fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.clinical-grid-3 .col,
+.clinical-grid-2 .col,
+.clinical-grid-1 .col,
+.soap-grid .col {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .historial-main-card {
+    padding: 1.75rem;
+  }
+
+  .consentimiento-card {
+    padding: 1.5rem;
+  }
+
+  .pain-zone-add-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .historial-main-card {
+    padding: 1rem;
+  }
+
+  .clinical-form-section {
+    padding: 1.1rem;
+  }
+
+  .consentimiento-card {
+    padding: 1.15rem;
+  }
+
+  .clinical-grid-3,
+  .clinical-grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .col-span-2,
+  .col-span-3 {
+    grid-column: span 1 !important;
+  }
+
+  .lesion-row-grid {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .pain-zone-add-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pain-zone-add-grid button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .signatures-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .historial-header-actions {
+    width: 100%;
+  }
+
+  .historial-header-actions button {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .historial-footer-nav {
+    flex-direction: column-reverse;
+    align-items: stretch !important;
+  }
+
+  .historial-footer-nav > div,
+  .historial-footer-nav button {
+    width: 100% !important;
+    justify-content: center;
+  }
+}

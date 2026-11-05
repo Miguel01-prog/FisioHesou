@@ -378,11 +378,11 @@ const VistaHistorial = () => {
       <div className="cards-column" style={{ width: "100%", maxWidth: "1000px", margin: "0 auto" }}>
 
 
-        <div className="auth-card auth-card-detail" style={{ marginTop: "1rem", padding: "2.5rem" }}>
+        <div className="auth-card auth-card-detail historial-main-card" style={{ marginTop: "1rem" }}>
 
           {/* Header con Candado / Botón de Edición */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: "1rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
               <h2 className="title_card" style={{ margin: 0 }}>Historial Clínico</h2>
               {isEditing ? (
                 <span style={{
@@ -421,7 +421,7 @@ const VistaHistorial = () => {
             </div>
 
             {/* Acciones de Edición */}
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div className="historial-header-actions" style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
               {!isEditing ? (
                 <button
                   type="button"
@@ -542,7 +542,7 @@ const VistaHistorial = () => {
                   <div className="clinical-form-section">
                     <h3 className="clinical-section-title"><FaClipboardList style={{ marginRight: "8px" }} /> Anamnesis y Datos Generales</h3>
                     <div className="clinical-grid-3">
-                      <div className="col" style={{ gridColumn: "span 2" }}>
+                      <div className="col col-span-2">
                         <label className="form-label">Nombre completo</label>
                         <input type="text" className="input" value={`${paciente.nombres || ""} ${paciente.apellidos || ""}`.replace(/\s+/g, ' ').trim()} disabled />
                       </div>
@@ -604,7 +604,7 @@ const VistaHistorial = () => {
                         <label className="form-label">Teléfono</label>
                         <input type="text" className="input" value={paciente.telefono || ""} disabled />
                       </div>
-                      <div className="col" style={{ gridColumn: "span 2" }}>
+                      <div className="col col-span-2">
                         <label className="form-label">Dirección particular</label>
                         <input
                           type="text"
@@ -626,7 +626,7 @@ const VistaHistorial = () => {
                           disabled={!isEditing}
                         />
                       </div>
-                      <div className="col" style={{ gridColumn: "span 3" }}>
+                      <div className="col col-span-3">
                         <label className="form-label">Correo electrónico</label>
                         <input
                           type="email"
@@ -1039,7 +1039,7 @@ const VistaHistorial = () => {
                       )}
                     </div>
 
-                    <div className="col" style={{ gridColumn: "span 2" }}>
+                    <div className="col col-span-2">
                       <label className="form-label">Adicciones y sustancias</label>
                       <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.6rem", flexWrap: "wrap", alignItems: "center" }}>
                         <label className="checkbox-label-modern" style={{ cursor: isEditing ? "pointer" : "default" }}>
@@ -1113,7 +1113,7 @@ const VistaHistorial = () => {
                           { key: "fractura", label: "Fracturas previas" },
                           { key: "otro", label: "Otras lesiones" }
                         ].map(({ key, label }) => (
-                          <div key={key} style={{ display: "grid", gridTemplateColumns: "1fr 2fr", alignItems: "center", gap: "1rem" }}>
+                          <div key={key} className="lesion-row-grid">
                             <label className="checkbox-label-modern" style={{ cursor: isEditing ? "pointer" : "default" }}>
                               <input
                                 type="checkbox"
@@ -1243,7 +1243,7 @@ const VistaHistorial = () => {
                     <div className="col">
                       <label className="form-label">Escala EVA (0 - 10)</label>
                       {isEditing ? (
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <div className="historial-header-actions" style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                           <input
                             type="range"
                             min="0"
@@ -1350,7 +1350,7 @@ const VistaHistorial = () => {
                         <span style={{ fontSize: "0.82rem", fontWeight: "700", color: "var(--primary)", display: "block", marginBottom: "0.5rem" }}>
                           Añadir nueva zona de dolor:
                         </span>
-                        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 2fr auto", gap: "10px", alignItems: "center" }}>
+                        <div className="pain-zone-add-grid">
                           <input
                             type="text"
                             className="input"
@@ -1431,7 +1431,7 @@ const VistaHistorial = () => {
                                 justifyContent: "space-between"
                               }}
                             >
-                              <div style={{ display: "flex", alignItems: "center", gap: "1rem", flex: 1 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flex: 1, flexWrap: "wrap" }}>
                                 <span style={{ fontWeight: "700", fontSize: "0.9rem", color: "var(--text-main)", display: "flex", alignItems: "center", gap: "6px" }}>
                                   <FaMapMarkerAlt style={{ color: "var(--primary)" }} /> {dz.zona}
                                 </span>
@@ -1613,7 +1613,7 @@ const VistaHistorial = () => {
             {/* ==================== TAB: CONSENTIMIENTO INFORMADO (CON FIRMAS) ==================== */}
             {activeTab === "consentimiento" && (
               <div className="tab-content">
-                <div className="clinical-form-section" style={{ background: "#ffffff", border: "1px solid var(--border-light)", boxShadow: "var(--shadow-md)", padding: "2.5rem", borderRadius: "16px", color: "#1e293b", fontFamily: "var(--font-family-display, inherit)", lineHeight: "1.6" }}>
+                <div className="clinical-form-section consentimiento-card" style={{ background: "#ffffff", border: "1px solid var(--border-light)", boxShadow: "var(--shadow-md)", borderRadius: "16px", color: "#1e293b", fontFamily: "var(--font-family-display, inherit)", lineHeight: "1.6" }}>
                   <div style={{ textAlign: "center", marginBottom: "2.5rem", borderBottom: "2px double var(--primary-light)", paddingBottom: "1.5rem" }}>
                     <h2 style={{ textTransform: "uppercase", fontSize: "1.4rem", letterSpacing: "1px", fontWeight: "900", color: "var(--primary)", margin: "0 0 5px 0" }}>Consentimiento Informado</h2>
                     <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: "600" }}>SERVICIO DE FISIOTERAPIA - HESOU</span>
@@ -1688,7 +1688,7 @@ const VistaHistorial = () => {
                   </div>
 
                   {/* Firmas Digitales con SignaturePad Interactivo */}
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "2rem", borderTop: "1px dashed var(--border-light)", paddingTop: "2rem" }}>
+                  <div className="signatures-grid" style={{ borderTop: "1px dashed var(--border-light)", paddingTop: "2rem" }}>
 
                     {/* Firma Paciente */}
                     <SignaturePad

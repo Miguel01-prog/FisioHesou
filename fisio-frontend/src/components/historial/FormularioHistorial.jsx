@@ -11,14 +11,14 @@ import { useAuth } from "../../context/AuthContext";
 import LoadingSpinner from "../layout/LoadingSpinner";
 import { useNavigate } from "react-router-dom";
 import ArchivosExpediente from "../expediente/ArchivosExpediente";
-import { 
-  FaCloudUploadAlt, 
-  FaTimes, 
-  FaXRay, 
-  FaFilePdf, 
-  FaPills, 
-  FaVial, 
-  FaCamera, 
+import {
+  FaCloudUploadAlt,
+  FaTimes,
+  FaXRay,
+  FaFilePdf,
+  FaPills,
+  FaVial,
+  FaCamera,
   FaFileMedical,
   FaUser,
   FaHospital,
@@ -1239,7 +1239,7 @@ const FormularioHistorial = () => {
       <div className="cards-column" style={{ width: "100%", maxWidth: "1000px", margin: "0 auto" }}>
 
 
-        <div className="auth-card auth-card-detail" style={{ marginTop: "1rem", padding: "2.5rem" }}>
+        <div className="auth-card auth-card-detail historial-main-card" style={{ marginTop: "1rem" }}>
           <div className="card-header-split" style={{ marginBottom: "1.5rem" }}>
             <h2 className="title_card" style={{ margin: 0 }}>Crear Historial Clínico</h2>
           </div>
@@ -1256,9 +1256,9 @@ const FormularioHistorial = () => {
               marginBottom: "1.5rem",
               display: "flex",
               alignItems: "center",
-              justifyContent: "space-between"
+              justifyContent: "space-between", flexWrap: "wrap", gap: "0.75rem"
             }}>
-              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
                 <FaExclamationTriangle style={{ color: "#f59e0b" }} /> <strong>Borrador local cargado:</strong> Tienes cambios sin guardar localmente en este navegador. Recuerda presionar "Guardar Historial" al final para registrarlos en el servidor.
               </span>
               <button
@@ -1451,7 +1451,7 @@ const FormularioHistorial = () => {
 
             {activeTab === "consentimiento" && paciente && (
               <div className="tab-content">
-                <div className="clinical-form-section" style={{ background: "#ffffff", border: "1px solid var(--border-light)", boxShadow: "var(--shadow-md)", padding: "2.5rem", borderRadius: "16px", color: "#1e293b", fontFamily: "var(--font-family-display, inherit)", lineHeight: "1.6" }}>
+                <div className="clinical-form-section consentimiento-card" style={{ background: "#ffffff", border: "1px solid var(--border-light)", boxShadow: "var(--shadow-md)", borderRadius: "16px", color: "#1e293b", fontFamily: "var(--font-family-display, inherit)", lineHeight: "1.6" }}>
 
                   <div style={{ textAlign: "center", marginBottom: "2.5rem", borderBottom: "2px double var(--primary-light)", paddingBottom: "1.5rem" }}>
                     <h2 style={{ textTransform: "uppercase", fontSize: "1.4rem", letterSpacing: "1px", fontWeight: "900", color: "var(--primary)", margin: "0 0 5px 0" }}>Consentimiento Informado</h2>
@@ -1526,7 +1526,7 @@ const FormularioHistorial = () => {
                     </ul>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "2rem", borderTop: "1px dashed var(--border-light)", paddingTop: "2rem" }}>
+                  <div className="signatures-grid" style={{ borderTop: "1px dashed var(--border-light)", paddingTop: "2rem" }}>
                     <SignaturePad
                       icon={<FaFileSignature />}
                       label="Firma del Paciente"
@@ -1807,7 +1807,7 @@ const FormularioHistorial = () => {
                               style={{
                                 display: "flex",
                                 alignItems: "center",
-                                justifyContent: "space-between",
+                                justifyContent: "space-between", flexWrap: "wrap", gap: "0.75rem",
                                 background: "rgba(255, 255, 255, 0.02)",
                                 border: "1px solid var(--border-light)",
                                 borderRadius: "8px",
@@ -1815,7 +1815,7 @@ const FormularioHistorial = () => {
                                 gap: "1rem"
                               }}
                             >
-                              <div style={{ display: "flex", alignItems: "center", gap: "1rem", flex: 1 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flex: 1, flexWrap: "wrap" }}>
                                 <span style={{ fontWeight: "700", fontSize: "0.9rem", color: "var(--text-main)", display: "flex", alignItems: "center", gap: "6px" }}>
                                   <FaMapMarkerAlt style={{ color: "var(--primary)" }} /> {dz.zona}
                                 </span>
@@ -1898,7 +1898,7 @@ const FormularioHistorial = () => {
                           onChange={(e) => toggleAplicaFam(e.target.checked)}
                           style={{ width: "16px", height: "16px", accentColor: "var(--primary)" }}
                         />
-                        <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><FaUsers /> ¿Aplica antecedentes familiares?</span>
+                        <span style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}><FaUsers /> ¿Aplica antecedentes familiares?</span>
                       </label>
 
                       {aplicaFam && (
@@ -1916,7 +1916,7 @@ const FormularioHistorial = () => {
                                 <option key={item._id} value={item._id}>{item.valor}</option>
                               ))}
                             </select>
-                            
+
                             <select
                               className="input"
                               value={familiarSeleccionado}
@@ -2018,7 +2018,7 @@ const FormularioHistorial = () => {
                           onChange={(e) => toggleAplicaMed(e.target.checked)}
                           style={{ width: "16px", height: "16px", accentColor: "var(--primary)" }}
                         />
-                        <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><FaHospital /> ¿Aplica antecedentes médicos?</span>
+                        <span style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}><FaHospital /> ¿Aplica antecedentes médicos?</span>
                       </label>
 
                       {aplicaMed && (
@@ -2124,7 +2124,7 @@ const FormularioHistorial = () => {
                     </div>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1.5rem" }}>
+                  <div className="clinical-grid-2">
                     <div className="col" style={{ background: "rgba(255,255,255,0.01)", padding: "1.25rem", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.05)", margin: 0 }}>
                       <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", fontWeight: "700", fontSize: "0.95rem", color: "var(--primary)", margin: "0 0 1rem 0" }}>
                         <input
@@ -2133,7 +2133,7 @@ const FormularioHistorial = () => {
                           onChange={(e) => toggleAplicaMedActual(e.target.checked)}
                           style={{ width: "16px", height: "16px", accentColor: "var(--primary)" }}
                         />
-                        <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><FaPills /> ¿Lleva medicación actual?</span>
+                        <span style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}><FaPills /> ¿Lleva medicación actual?</span>
                       </label>
 
                       {aplicaMedActual && (
@@ -2157,7 +2157,7 @@ const FormularioHistorial = () => {
                             }}
                             style={{ width: "16px", height: "16px", accentColor: "var(--primary)" }}
                           />
-                          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><FaCut /> ¿Tiene antecedentes quirúrgicos?</span>
+                          <span style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}><FaCut /> ¿Tiene antecedentes quirúrgicos?</span>
                         </label>
                         {aplicaQuirurgico && (
                           <button
@@ -2281,7 +2281,7 @@ const FormularioHistorial = () => {
                         <option value="nada">Nada</option>
                       </select>
                     </div>
-                    <div className="col" style={{ gridColumn: "span 2" }}>
+                    <div className="col col-span-2">
                       <label className="form-label">Adicciones y sustancias</label>
                       <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.6rem", flexWrap: "wrap", alignItems: "center" }}>
                         <label className="checkbox-label-modern">
@@ -2331,7 +2331,7 @@ const FormularioHistorial = () => {
                           { key: "fractura", label: "Fracturas previas" },
                           { key: "otro", label: "Otras lesiones" }
                         ].map(({ key, label }) => (
-                          <div key={key} style={{ display: "grid", gridTemplateColumns: "1fr 2fr", alignItems: "center", gap: "1rem" }}>
+                          <div key={key} className="lesion-row-grid">
                             <label className="checkbox-label-modern">
                               <input type="checkbox" checked={lesiones[key].activo} onChange={() => toggleLesion(key)} />
                               <span>{label}</span>
@@ -2686,7 +2686,7 @@ const FormularioHistorial = () => {
               </div>
             )}
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "3rem", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "1.5rem" }}>
+            <div className="historial-footer-nav" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem", marginTop: "3rem", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "1.5rem" }}>
               <div>
                 {activeTab !== "datosPersonales" && (
                   <button
