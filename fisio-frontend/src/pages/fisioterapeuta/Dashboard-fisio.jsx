@@ -445,7 +445,7 @@ export default function DashboardFisio() {
           <button
             className="btn btn-secondary"
             style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "40px", padding: "0 14px", fontSize: "0.85rem" }}
-            onClick={() => navigate('/fisioterapeuta/bloquear-horario')}
+            onClick={() => navigate('/fisioterapeuta/bloquear')}
           >
             <FiLock /> Bloquear Horario
           </button>
@@ -860,7 +860,7 @@ export default function DashboardFisio() {
                 <button
                   className="btn btn-secondary w-100"
                   style={{ justifyContent: "flex-start", padding: "0 14px", height: "42px", fontSize: "0.875rem", gap: "10px" }}
-                  onClick={() => navigate('/fisioterapeuta/planes')}
+                  onClick={() => navigate('/fisioterapeuta/ejercicios')}
                 >
                   <FiZap /> Planes & Ejercicios
                 </button>

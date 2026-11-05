@@ -248,7 +248,7 @@ export default function ArchivosExpediente({ identificadorPaciente, readOnly = f
             <p>Paciente: ${identificadorPaciente} | Fecha: ${new Date(lightboxFile.fechaSubida).toLocaleDateString()}</p>
             ${lightboxFile.descripcion ? `<p style="font-style: italic; margin-top: 4px;">"${lightboxFile.descripcion}"</p>` : ""}
           </div>
-          <img src="${fileUrl}" onload="window.print(); window.close();" />
+          <img src="${fileUrl}" onload="window.print(); window.close();" onerror="window.print(); window.close();" />
         </body>
       </html>
     `);
@@ -263,59 +263,6 @@ export default function ArchivosExpediente({ identificadorPaciente, readOnly = f
 
   return (
     <div className="archivos-expediente-container" style={{ width: "100%", marginTop: "1rem" }}>
-      {/* Barra de cabecera con filtros y acción */}
-      <div className="archivos-header-bar">
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <div style={{
-              width: "36px",
-              height: "36px",
-              borderRadius: "10px",
-              background: "rgba(99, 102, 241, 0.1)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "var(--primary)",
-              flexShrink: 0
-            }}>
-              <FaXRay size={18} />
-            </div>
-            <div>
-              <h4 style={{ margin: 0, fontSize: "1.05rem", fontWeight: "700", color: "#1e1b4b" }}>
-                Radiografías y Recetas Médicas
-              </h4>
-              <span style={{ fontSize: "0.8rem", color: "#64748b" }}>
-                {archivos.length} {archivos.length === 1 ? "archivo guardado" : "archivos guardados en el expediente"}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {!readOnly && (
-          <button
-            type="button"
-            className="btn btn-primary hover-grow"
-            onClick={() => setShowUploadModal(true)}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "0.55rem 1.15rem",
-              fontSize: "0.88rem",
-              fontWeight: "600",
-              borderRadius: "10px",
-              background: "linear-gradient(135deg, var(--primary) 0%, #4338ca 100%)",
-              boxShadow: "0 4px 12px var(--primary-glow)",
-              color: "#fff",
-              cursor: "pointer",
-              border: "none"
-            }}
-          >
-            <FaPlus size={13} /> Agregar Foto o Receta
-          </button>
-        )}
-      </div>
-
       {/* Píldoras de filtro por categoría */}
       <div className="archivos-filtros-bar">
         <button

@@ -4,7 +4,7 @@ import { IoCaretDown } from "react-icons/io5";
 import { IoCaretUp } from "react-icons/io5";
 import { useState, useEffect, useRef } from "react";
 import { TiDelete } from "react-icons/ti";
-import InformacionClinica from "../layout/InformacionClinica";
+
 import api from "../../api";
 import { showError, showSuccess } from "../../utils/alerts";
 import { useAuth } from "../../context/AuthContext";
@@ -1237,7 +1237,7 @@ const FormularioHistorial = () => {
   return (
     <div className="auth-wrapper-content fade-in-up">
       <div className="cards-column" style={{ width: "100%", maxWidth: "1000px", margin: "0 auto" }}>
-        {paciente && !isNewPatient && <InformacionClinica paciente={paciente} />}
+
 
         <div className="auth-card auth-card-detail" style={{ marginTop: "1rem", padding: "2.5rem" }}>
           <div className="card-header-split" style={{ marginBottom: "1.5rem" }}>

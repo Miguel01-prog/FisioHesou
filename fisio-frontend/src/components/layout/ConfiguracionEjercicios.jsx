@@ -3,10 +3,12 @@ import api from "../../api";
 import LoadingSpinner from "./LoadingSpinner";
 import { showError, showSuccess } from "../../utils/alerts";
 import { FaTrash, FaCloudUploadAlt, FaDumbbell } from "react-icons/fa";
+import { resolveImageUrl, compressImageToBase64 } from "../../utils/utils";
 
 const ConfiguracionEjercicios = () => {
   const [ejercicios, setEjercicios] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [failedImages, setFailedImages] = useState({});
   
   // Estado para el formulario
   const [nombre, setNombre] = useState("");
@@ -52,6 +54,13 @@ const ConfiguracionEjercicios = () => {
     formData.append("descripcion", descripcion);
     if (imagen) {
       formData.append("imagen", imagen);
+      try {
+        const base64DataUrl = await compressImageToBase64(imagen);
+        formData.append("imagenBase64", base64DataUrl);
+        formData.append("imagenUrl", base64DataUrl);
+      } catch (compressErr) {
+        console.warn("No se pudo convertir imagen a base64:", compressErr);
+      }
     }
 
     try {
@@ -85,7 +94,7 @@ const ConfiguracionEjercicios = () => {
       console.error(err);
       showError("Error", "No se pudo eliminar el ejercicio.");
     }
-  };  const backendUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/api$/, "");
+  };
 
   const customStyles = `
     .exercise-card:hover {
@@ -193,77 +202,83 @@ const ConfiguracionEjercicios = () => {
             <p className="text-muted">No hay ejercicios en el catálogo. Agrega uno arriba.</p>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', marginTop: '15px' }}>
-              {ejercicios.map((ej) => (
-                <div
-                  key={ej._id}
-                  className="exercise-card"
-                  style={{
-                    background: "var(--card-bg, rgba(255,255,255,0.02))",
-                    border: "1px solid var(--border-light, rgba(255,255,255,0.08))",
-                    borderRadius: "12px",
-                    overflow: "hidden",
-                    position: "relative",
-                    display: "flex",
-                    flexDirection: "column",
-                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                    boxShadow: "var(--shadow-sm)"
-                  }}
-                >
-                  <button 
-                    onClick={() => {
-                        if(window.confirm("¿Seguro que deseas eliminar este ejercicio?")) {
-                            eliminarEjercicio(ej._id);
-                        }
-                    }}
+              {ejercicios.map((ej) => {
+                const imgSrc = resolveImageUrl(ej.imagenBase64 || ej.imagenUrl);
+                const hasValidImage = Boolean(imgSrc) && !failedImages[ej._id];
+
+                return (
+                  <div
+                    key={ej._id}
+                    className="exercise-card"
                     style={{
-                      position: 'absolute',
-                      top: '12px',
-                      right: '12px',
-                      background: 'rgba(239, 68, 68, 0.1)',
-                      border: 'none',
-                      color: '#ef4444',
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      zIndex: 10,
-                      transition: 'all 0.2s'
+                      background: "var(--card-bg, rgba(255,255,255,0.02))",
+                      border: "1px solid var(--border-light, rgba(255,255,255,0.08))",
+                      borderRadius: "12px",
+                      overflow: "hidden",
+                      position: "relative",
+                      display: "flex",
+                      flexDirection: "column",
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      boxShadow: "var(--shadow-sm)"
                     }}
-                    className="delete-exercise-btn"
-                    title="Eliminar del catálogo"
                   >
-                    <FaTrash size={12} />
-                  </button>
+                    <button 
+                      onClick={() => {
+                          if(window.confirm("¿Seguro que deseas eliminar este ejercicio?")) {
+                              eliminarEjercicio(ej._id);
+                          }
+                      }}
+                      style={{
+                        position: 'absolute',
+                        top: '12px',
+                        right: '12px',
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: 'none',
+                        color: '#ef4444',
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        zIndex: 10,
+                        transition: 'all 0.2s'
+                      }}
+                      className="delete-exercise-btn"
+                      title="Eliminar del catálogo"
+                    >
+                      <FaTrash size={12} />
+                    </button>
 
-                  {ej.imagenUrl ? (
-                    <div style={{ position: 'relative', width: '100%', height: '160px', overflow: 'hidden', background: '#000' }}>
-                      <img 
-                        src={`${backendUrl}${ej.imagenUrl}`} 
-                        alt={ej.nombre} 
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s' }} 
-                        className="exercise-card-img"
-                      />
-                    </div>
-                  ) : (
-                    <div style={{ width: '100%', height: '160px', background: 'rgba(139, 92, 246, 0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                      <FaDumbbell size={32} style={{ color: "var(--text-muted)" }} />
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Sin imagen descriptiva</span>
-                    </div>
-                  )}
-
-                  <div style={{ padding: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <h4 style={{ margin: '0', color: 'var(--primary)', fontWeight: '700', fontSize: '1.05rem', lineHeight: '1.4' }}>{ej.nombre}</h4>
-                    {ej.descripcion && (
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0', lineHeight: '1.5', textAlign: 'justify', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                        {ej.descripcion}
-                      </p>
+                    {hasValidImage ? (
+                      <div style={{ position: 'relative', width: '100%', height: '160px', overflow: 'hidden', background: 'rgba(139, 92, 246, 0.05)' }}>
+                        <img 
+                          src={imgSrc} 
+                          alt={ej.nombre} 
+                          onError={() => setFailedImages((prev) => ({ ...prev, [ej._id]: true }))}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s' }} 
+                          className="exercise-card-img"
+                        />
+                      </div>
+                    ) : (
+                      <div style={{ width: '100%', height: '160px', background: 'rgba(139, 92, 246, 0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                        <FaDumbbell size={32} style={{ color: "var(--text-muted)" }} />
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Sin imagen descriptiva</span>
+                      </div>
                     )}
+
+                    <div style={{ padding: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <h4 style={{ margin: '0', color: 'var(--primary)', fontWeight: '700', fontSize: '1.05rem', lineHeight: '1.4' }}>{ej.nombre}</h4>
+                      {ej.descripcion && (
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0', lineHeight: '1.5', textAlign: 'justify', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {ej.descripcion}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

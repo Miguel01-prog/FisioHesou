@@ -20,7 +20,7 @@ export default function ListaPacientes() {
   const [citaParaReagendar, setCitaParaReagendar] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const recordsPerPage = 5;
+  const recordsPerPage = 6;
   const { user } = useAuth();
   const navigate = useNavigate();
   const [citasPaciente, setCitasPaciente] = useState([]);
@@ -172,6 +172,14 @@ export default function ListaPacientes() {
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
   const currentRecords = filteredPacientes.slice(indexOfFirstRecord, indexOfLastRecord);
   const totalPages = Math.ceil(filteredPacientes.length / recordsPerPage);
+  const visiblePages =
+    totalPages <= 5
+      ? Array.from({ length: totalPages }, (_, i) => i + 1)
+      : currentPage <= 3
+      ? [1, 2, 3, 4, "...", totalPages]
+      : currentPage >= totalPages - 2
+      ? [1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages]
+      : [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -303,7 +311,12 @@ export default function ListaPacientes() {
                       Ant.
                     </button>
 
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    {visiblePages.map((page, idx) =>
+                      page === "..." ? (
+                        <span key={`ellipsis-${idx}`} className="pagination-ellipsis">
+                          ...
+                        </span>
+                      ) : (
                       <button
                         key={page}
                         type="button"

@@ -6,7 +6,7 @@ import api from "../../api";
 import LoadingSpinner from "../layout/LoadingSpinner";
 import { showError, showSuccess } from "../../utils/alerts";
 import { FaPlus, FaTrash, FaArrowLeft, FaDumbbell } from "react-icons/fa";
-import { deobfuscateId } from "../../utils/utils.js";
+import { deobfuscateId, resolveImageUrl } from "../../utils/utils.js";
 
 const ConstructorPlan = () => {
   const { id: rawId, idPlan } = useParams();
@@ -16,13 +16,13 @@ const ConstructorPlan = () => {
   const [ejerciciosCatalogo, setEjerciciosCatalogo] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [pacienteIdState, setPacienteIdState] = useState(id || "");
+  const [failedImages, setFailedImages] = useState({});
   
   // Estado del Plan
   const [notasGenerales, setNotasGenerales] = useState("");
   const [ejerciciosPlan, setEjerciciosPlan] = useState([]);
   const [guardando, setGuardando] = useState(false);
   const [mostrarModal, setMostrarModal] = useState(false);
-  const backendUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/api$/, "");
 
   const customStyles = `
     .plan-exercise-card {
@@ -229,46 +229,61 @@ const ConstructorPlan = () => {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {ejerciciosPlan.map((item, idx) => (
-                <div key={idx} style={{ border: '1px solid var(--border-light)', borderRadius: '12px', padding: '16px', position: 'relative', background: 'rgba(255, 255, 255, 0.01)' }}>
-                  <button 
-                    onClick={() => quitarEjercicio(idx)}
-                    style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', color: 'var(--danger, #ef4444)', cursor: 'pointer', fontSize: '1rem' }}
-                    title="Eliminar ejercicio del plan"
-                  >
-                    <FaTrash />
-                  </button>
-                  
-                  <div style={{ display: 'flex', gap: '15px', marginBottom: '15px', flexWrap: 'wrap' }}>
-                    {item.ejercicio.imagenUrl && (
-                        <img src={`${backendUrl}${item.ejercicio.imagenUrl}`} alt={item.ejercicio.nombre} style={{ width: '90px', height: '90px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-light)' }} />
-                    )}
-                    <div style={{ flex: '1 1 200px' }}>
-                        <h4 style={{ margin: '0 0 5px 0', color: 'var(--primary)', fontWeight: '700' }}>{item.ejercicio.nombre}</h4>
-                        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>{item.ejercicio.descripcion}</p>
+              {ejerciciosPlan.map((item, idx) => {
+                const ejId = item.ejercicio?._id || `plan-${idx}`;
+                const imgSrc = resolveImageUrl(item.ejercicio?.imagenBase64 || item.ejercicio?.imagenUrl);
+                const hasValidImage = Boolean(imgSrc) && !failedImages[ejId];
+
+                return (
+                  <div key={idx} style={{ border: '1px solid var(--border-light)', borderRadius: '12px', padding: '16px', position: 'relative', background: 'rgba(255, 255, 255, 0.01)' }}>
+                    <button 
+                      onClick={() => quitarEjercicio(idx)}
+                      style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', color: 'var(--danger, #ef4444)', cursor: 'pointer', fontSize: '1rem' }}
+                      title="Eliminar ejercicio del plan"
+                    >
+                      <FaTrash />
+                    </button>
+                    
+                    <div style={{ display: 'flex', gap: '15px', marginBottom: '15px', flexWrap: 'wrap' }}>
+                      {hasValidImage ? (
+                        <img
+                          src={imgSrc}
+                          alt={item.ejercicio?.nombre}
+                          onError={() => setFailedImages((prev) => ({ ...prev, [ejId]: true }))}
+                          style={{ width: '90px', height: '90px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-light)' }}
+                        />
+                      ) : (
+                        <div style={{ width: '90px', height: '90px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.05)', border: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <FaDumbbell size={22} style={{ color: 'var(--text-muted)' }} />
+                        </div>
+                      )}
+                      <div style={{ flex: '1 1 200px' }}>
+                          <h4 style={{ margin: '0 0 5px 0', color: 'var(--primary)', fontWeight: '700' }}>{item.ejercicio?.nombre}</h4>
+                          <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>{item.ejercicio?.descripcion}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="form-row" style={{ gap: '10px', flexWrap: 'wrap' }}>
+                      <div className="form-col" style={{ flex: '1 1 80px' }}>
+                        <label className="form-label" style={{fontSize: '12px'}}>Series:</label>
+                        <input type="text" className="input" placeholder="Ej. 3" value={item.series} onChange={(e) => handleChangeIndicaciones(idx, "series", e.target.value)} />
+                      </div>
+                      <div className="form-col" style={{ flex: '1 1 80px' }}>
+                        <label className="form-label" style={{fontSize: '12px'}}>Reps:</label>
+                        <input type="text" className="input" placeholder="Ej. 10" value={item.repeticiones} onChange={(e) => handleChangeIndicaciones(idx, "repeticiones", e.target.value)} />
+                      </div>
+                      <div className="form-col" style={{ flex: '1 1 120px' }}>
+                        <label className="form-label" style={{fontSize: '12px'}}>Frecuencia:</label>
+                        <input type="text" className="input" placeholder="Ej. 2 veces al día" value={item.frecuencia} onChange={(e) => handleChangeIndicaciones(idx, "frecuencia", e.target.value)} />
+                      </div>
+                      <div className="form-col" style={{ flex: '2 1 200px' }}>
+                        <label className="form-label" style={{fontSize: '12px'}}>Notas específicas:</label>
+                        <input type="text" className="input" placeholder="Ej. Mantener 5 segundos..." value={item.notas || item.notes || ""} onChange={(e) => handleChangeIndicaciones(idx, "notas", e.target.value)} />
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="form-row" style={{ gap: '10px', flexWrap: 'wrap' }}>
-                    <div className="form-col" style={{ flex: '1 1 80px' }}>
-                      <label className="form-label" style={{fontSize: '12px'}}>Series:</label>
-                      <input type="text" className="input" placeholder="Ej. 3" value={item.series} onChange={(e) => handleChangeIndicaciones(idx, "series", e.target.value)} />
-                    </div>
-                    <div className="form-col" style={{ flex: '1 1 80px' }}>
-                      <label className="form-label" style={{fontSize: '12px'}}>Reps:</label>
-                      <input type="text" className="input" placeholder="Ej. 10" value={item.repeticiones} onChange={(e) => handleChangeIndicaciones(idx, "repeticiones", e.target.value)} />
-                    </div>
-                    <div className="form-col" style={{ flex: '1 1 120px' }}>
-                      <label className="form-label" style={{fontSize: '12px'}}>Frecuencia:</label>
-                      <input type="text" className="input" placeholder="Ej. 2 veces al día" value={item.frecuencia} onChange={(e) => handleChangeIndicaciones(idx, "frecuencia", e.target.value)} />
-                    </div>
-                    <div className="form-col" style={{ flex: '2 1 200px' }}>
-                      <label className="form-label" style={{fontSize: '12px'}}>Notas específicas:</label>
-                      <input type="text" className="input" placeholder="Ej. Mantener 5 segundos..." value={item.notas || item.notes || ""} onChange={(e) => handleChangeIndicaciones(idx, "notas", e.target.value)} />
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -293,52 +308,58 @@ const ConstructorPlan = () => {
                 <p className="text-muted">No hay ejercicios en el catálogo.</p>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '15px' }}>
-                  {ejerciciosCatalogo.map((ej) => (
-                    <div
-                      key={ej._id}
-                      className="plan-exercise-card"
-                    >
-                      {ej.imagenUrl ? (
-                        <div style={{ width: '100%', height: '110px', overflow: 'hidden', position: 'relative', background: '#000' }}>
-                          <img
-                            src={`${backendUrl}${ej.imagenUrl}`}
-                            alt={ej.nombre}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s' }}
-                            className="exercise-img"
-                          />
+                  {ejerciciosCatalogo.map((ej) => {
+                    const imgSrc = resolveImageUrl(ej.imagenBase64 || ej.imagenUrl);
+                    const hasValidImage = Boolean(imgSrc) && !failedImages[ej._id];
+
+                    return (
+                      <div
+                        key={ej._id}
+                        className="plan-exercise-card"
+                      >
+                        {hasValidImage ? (
+                          <div style={{ width: '100%', height: '110px', overflow: 'hidden', position: 'relative', background: 'rgba(139, 92, 246, 0.05)' }}>
+                            <img
+                              src={imgSrc}
+                              alt={ej.nombre}
+                              onError={() => setFailedImages((prev) => ({ ...prev, [ej._id]: true }))}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s' }}
+                              className="exercise-img"
+                            />
+                          </div>
+                        ) : (
+                          <div style={{ width: '100%', height: '110px', background: 'rgba(139, 92, 246, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <FaDumbbell size={24} style={{ color: 'var(--text-muted)' }} />
+                          </div>
+                        )}
+                        <div style={{ padding: '0.85rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'space-between' }}>
+                          <h4 style={{ margin: '0', fontSize: '0.9rem', color: 'var(--primary)', fontWeight: '700', textAlign: 'center', lineHeight: '1.3' }}>{ej.nombre}</h4>
+                          <button 
+                            onClick={() => agregarEjercicioAlPlan(ej)}
+                            style={{
+                              background: 'var(--primary)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              padding: '6px 12px',
+                              width: '100%',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '6px',
+                              fontSize: '0.8rem',
+                              fontWeight: '600',
+                              transition: 'all 0.2s'
+                            }}
+                            className="add-to-plan-btn"
+                          >
+                            <FaPlus size={8}/> Agregar al plan
+                          </button>
                         </div>
-                      ) : (
-                        <div style={{ width: '100%', height: '110px', background: 'rgba(139, 92, 246, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <FaDumbbell size={24} style={{ color: 'var(--text-muted)' }} />
-                        </div>
-                      )}
-                      <div style={{ padding: '0.85rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'space-between' }}>
-                        <h4 style={{ margin: '0', fontSize: '0.9rem', color: 'var(--primary)', fontWeight: '700', textAlign: 'center', lineHeight: '1.3' }}>{ej.nombre}</h4>
-                        <button 
-                          onClick={() => agregarEjercicioAlPlan(ej)}
-                          style={{
-                            background: 'var(--primary)',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            padding: '6px 12px',
-                            width: '100%',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '6px',
-                            fontSize: '0.8rem',
-                            fontWeight: '600',
-                            transition: 'all 0.2s'
-                          }}
-                          className="add-to-plan-btn"
-                        >
-                          <FaPlus size={8}/> Agregar al plan
-                        </button>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

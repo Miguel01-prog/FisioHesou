@@ -36,7 +36,7 @@ import Notas from '../components/notas/NuevaNota.jsx';
 import NotaDetalle from '../components/notas/DetalleNota.jsx';
 
 // Información clínica
-import InformacionClinica from '../components/layout/InformacionClinica.jsx';
+
 
 
 //configuraciones 
@@ -83,6 +83,7 @@ export default function AppRouter() {
         <Route index element={<DashboardFisio />} />
         <Route path="agenda" element={<AgendaCitas/>} />
         <Route path="bloquear" element={<BloquearHorarioFisio/>} />
+        <Route path="bloquear-horario" element={<BloquearHorarioFisio/>} />
         <Route path="paciente/:id" element={<PacienteDetalle/>} />
         <Route path="pacientes" element={<ListaPacientes/>} />
         <Route path="planes-paciente/:id" element={<ListaPlanesPaciente/>} />
@@ -93,9 +94,10 @@ export default function AppRouter() {
         <Route path="historial-detalle/:id" element={<VistaHistorial/>} />
         <Route path="notas" element={<Notas/>} />
         <Route path="nota-detalle/:id" element={<NotaDetalle/>} />
-        <Route path="informacion-clinica" element={<InformacionClinica/>}/>
+
         <Route path="antecedentes" element={<Antecedentes/>}/>
         <Route path="ejercicios" element={<ConfiguracionEjercicios/>}/>
+        <Route path="planes" element={<ConfiguracionEjercicios/>}/>
         <Route path="perfil" element={<ProfilePage />} />
       </Route>
 
@@ -110,8 +112,21 @@ export default function AppRouter() {
         <Route index element={<DashboardNutri />} />
         <Route path="agenda" element={<AgendaCitas />} />
         <Route path="bloquear" element={<BloquearHorarioNutri />} />
+        <Route path="bloquear-horario" element={<BloquearHorarioNutri />} />
         <Route path="paciente/:id" element={<PacienteDetalle />} />
         <Route path="pacientes" element={<ListaPacientes/>} />
+        <Route path="planes-paciente/:id" element={<ListaPlanesPaciente/>} />
+        <Route path="crear-plan/:id" element={<ConstructorPlan/>} />
+        <Route path="editar-plan/:idPlan" element={<ConstructorPlan/>} />
+        <Route path="plan-documento/:id" element={<PlanDocumento/>} />
+        <Route path="creacion-historial" element={<FormularioHistorial/>} />
+        <Route path="historial-detalle/:id" element={<VistaHistorial/>} />
+        <Route path="notas" element={<Notas/>} />
+        <Route path="nota-detalle/:id" element={<NotaDetalle/>} />
+
+        <Route path="antecedentes" element={<Antecedentes/>}/>
+        <Route path="ejercicios" element={<ConfiguracionEjercicios/>}/>
+        <Route path="planes" element={<ConfiguracionEjercicios/>}/>
         <Route path="perfil" element={<ProfilePage />} />
       </Route>
 

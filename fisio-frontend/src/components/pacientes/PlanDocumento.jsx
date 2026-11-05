@@ -4,9 +4,8 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import api from "../../api";
 import LoadingSpinner from "../layout/LoadingSpinner";
 import { showError } from "../../utils/alerts";
-import { useReactToPrint } from "react-to-print";
 import { FaPrint, FaArrowLeft, FaWhatsapp, FaEnvelope, FaEdit } from "react-icons/fa";
-import { formatDateDDMMYYYY, deobfuscateId } from "../../utils/utils";
+import { formatDateDDMMYYYY, deobfuscateId, resolveImageUrl } from "../../utils/utils";
 
 const PlanDocumento = () => {
   const { id: rawId } = useParams();
@@ -16,14 +15,18 @@ const PlanDocumento = () => {
   const [plan, setPlan] = useState(null);
   const [paciente, setPaciente] = useState(null);
   const [cargando, setCargando] = useState(true);
+  const [failedImages, setFailedImages] = useState({});
 
   const componentRef = useRef(null);
-  const backendUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/api$/, "");
 
-  const handlePrint = useReactToPrint({
-    contentRef: componentRef,
-    documentTitle: `Plan_Ejercicios_${paciente ? paciente.nombres : "Paciente"}`,
-  });
+  const handlePrint = () => {
+    const prevTitle = document.title;
+    document.title = `Plan_Ejercicios_${paciente ? paciente.nombres : "Paciente"}`;
+    window.print();
+    setTimeout(() => {
+      document.title = prevTitle;
+    }, 500);
+  };
 
   const handleShareWhatsApp = () => {
     const text = `Hola ${paciente ? paciente.nombres : ""}, te envío tu plan de ejercicios y rehabilitación. Por favor, revisa el archivo PDF que te adjuntaré a continuación.`;
@@ -177,6 +180,7 @@ const PlanDocumento = () => {
         <div style={{ width: '1px', height: '24px', background: 'rgba(255,255,255,0.2)', margin: '0 2px' }}></div>
 
         <button
+          type="button"
           onClick={handlePrint}
           style={{
             border: 'none',
@@ -203,6 +207,7 @@ const PlanDocumento = () => {
       {/* DOCUMENTO A IMPRIMIR */}
       <div
         ref={componentRef}
+        className="plan-printable-sheet"
         style={{
           background: 'white',
           width: '100%',
@@ -240,53 +245,60 @@ const PlanDocumento = () => {
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-          {plan.ejercicios.map((item, index) => (
-            <div key={index} style={{ display: 'flex', gap: '20px', borderBottom: '1px solid #eee', paddingBottom: '20px' }}>
-              {item.ejercicio?.imagenUrl ? (
-                <img
-                  src={`${backendUrl}${item.ejercicio.imagenUrl}`}
-                  alt={item.ejercicio.nombre}
-                  style={{ width: '180px', height: '180px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }}
-                />
-              ) : (
-                <div style={{ width: '180px', height: '180px', background: '#f0f0f0', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
-                  Sin imagen
-                </div>
-              )}
+          {plan.ejercicios.map((item, index) => {
+            const ejKey = item.ejercicio?._id || `doc-${index}`;
+            const imgSrc = resolveImageUrl(item.ejercicio?.imagenBase64 || item.ejercicio?.imagenUrl);
+            const hasValidImage = Boolean(imgSrc) && !failedImages[ejKey];
 
-              <div style={{ flex: 1 }}>
-                <h3 style={{ margin: '0 0 10px 0', color: '#42133B', fontSize: '18px' }}>
-                  {index + 1}. {item.ejercicio?.nombre || "Ejercicio Desconocido"}
-                </h3>
-
-                <p style={{ margin: '0 0 15px 0', fontSize: '14px', color: '#555', lineHeight: '1.5' }}>
-                  {item.ejercicio?.descripcion}
-                </p>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', background: '#f8f9fa', padding: '15px', borderRadius: '6px' }}>
-                  <div>
-                    <span style={{ display: 'block', fontSize: '11px', color: '#888', textTransform: 'uppercase' }}>Series</span>
-                    <strong style={{ fontSize: '15px' }}>{item.series || "-"}</strong>
+            return (
+              <div key={index} style={{ display: 'flex', gap: '20px', borderBottom: '1px solid #eee', paddingBottom: '20px', breakInside: 'avoid' }}>
+                {hasValidImage ? (
+                  <img
+                    src={imgSrc}
+                    alt={item.ejercicio?.nombre}
+                    onError={() => setFailedImages((prev) => ({ ...prev, [ejKey]: true }))}
+                    style={{ width: '180px', height: '180px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }}
+                  />
+                ) : (
+                  <div style={{ width: '180px', height: '180px', background: '#f0f0f0', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
+                    Sin imagen
                   </div>
-                  <div>
-                    <span style={{ display: 'block', fontSize: '11px', color: '#888', textTransform: 'uppercase' }}>Repeticiones</span>
-                    <strong style={{ fontSize: '15px' }}>{item.repeticiones || "-"}</strong>
-                  </div>
-                  <div>
-                    <span style={{ display: 'block', fontSize: '11px', color: '#888', textTransform: 'uppercase' }}>Frecuencia</span>
-                    <strong style={{ fontSize: '15px' }}>{item.frecuencia || "-"}</strong>
-                  </div>
+                )}
 
-                  {item.notas && (
-                    <div style={{ gridColumn: '1 / -1', marginTop: '10px', borderTop: '1px solid #ddd', paddingTop: '10px' }}>
-                      <span style={{ display: 'block', fontSize: '11px', color: '#888', textTransform: 'uppercase' }}>Nota específica</span>
-                      <span style={{ fontSize: '13px', color: '#444' }}>{item.notas}</span>
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ margin: '0 0 10px 0', color: '#42133B', fontSize: '18px' }}>
+                    {index + 1}. {item.ejercicio?.nombre || "Ejercicio Desconocido"}
+                  </h3>
+
+                  <p style={{ margin: '0 0 15px 0', fontSize: '14px', color: '#555', lineHeight: '1.5' }}>
+                    {item.ejercicio?.descripcion}
+                  </p>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', background: '#f8f9fa', padding: '15px', borderRadius: '6px' }}>
+                    <div>
+                      <span style={{ display: 'block', fontSize: '11px', color: '#888', textTransform: 'uppercase' }}>Series</span>
+                      <strong style={{ fontSize: '15px' }}>{item.series || "-"}</strong>
                     </div>
-                  )}
+                    <div>
+                      <span style={{ display: 'block', fontSize: '11px', color: '#888', textTransform: 'uppercase' }}>Repeticiones</span>
+                      <strong style={{ fontSize: '15px' }}>{item.repeticiones || "-"}</strong>
+                    </div>
+                    <div>
+                      <span style={{ display: 'block', fontSize: '11px', color: '#888', textTransform: 'uppercase' }}>Frecuencia</span>
+                      <strong style={{ fontSize: '15px' }}>{item.frecuencia || "-"}</strong>
+                    </div>
+
+                    {item.notas && (
+                      <div style={{ gridColumn: '1 / -1', marginTop: '10px', borderTop: '1px solid #ddd', paddingTop: '10px' }}>
+                        <span style={{ display: 'block', fontSize: '11px', color: '#888', textTransform: 'uppercase' }}>Nota específica</span>
+                        <span style={{ fontSize: '13px', color: '#444' }}>{item.notas}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div style={{ marginTop: '50px', textAlign: 'center', color: '#888', fontSize: '12px' }}>

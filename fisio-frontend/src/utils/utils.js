@@ -74,3 +74,52 @@ export function isHourPassed(hourStr, isoDate) {
   return horaCita <= ahora;
 }
 
+export function resolveImageUrl(imagenUrl) {
+  if (!imagenUrl || typeof imagenUrl !== "string") return "";
+  const trimmed = imagenUrl.trim();
+  if (!trimmed) return "";
+
+  if (
+    trimmed.startsWith("data:") ||
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("blob:")
+  ) {
+    return trimmed;
+  }
+
+  const rawApiUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").trim();
+  const backendOrigin = rawApiUrl.replace(/\/+$/, "").replace(/\/api$/i, "");
+  const cleanPath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+
+  return `${backendOrigin}${cleanPath}`;
+}
+
+export function compressImageToBase64(file, maxWidth = 600, quality = 0.8) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = (err) => reject(err);
+      img.src = event.target.result;
+    };
+    reader.onerror = (err) => reject(err);
+    reader.readAsDataURL(file);
+  });
+}

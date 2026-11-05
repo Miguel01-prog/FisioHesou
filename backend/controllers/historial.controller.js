@@ -129,3 +129,103 @@ export const obtenerHistorialPorPaciente = async (req, res) => {
     res.status(500).json({ ok: false, error: error.message });
   }
 };
+
+// Actualizar historial clínico (y opcionalmente su nota SOAP) por ID o identificadorPaciente
+export const actualizarHistorial = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { id } = req.params;
+    const { historialData, notaData } = req.body;
+
+    const isObjectId = mongoose.Types.ObjectId.isValid(id);
+    const matchConditions = [
+      { identificadorPaciente: id },
+      ...(isObjectId ? [{ _id: id }] : [])
+    ];
+    const filter = req.user.role === 'superadmin' 
+      ? { $or: matchConditions } 
+      : { clientId: req.user.clientId, $or: matchConditions };
+
+    const historialExistente = await Historial.findOne(filter);
+    if (!historialExistente) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ ok: false, msg: 'Historial no encontrado' });
+    }
+
+    // Datos a actualizar
+    const dataToUpdate = historialData ? { ...historialData } : { ...req.body };
+    delete dataToUpdate._id;
+    delete dataToUpdate.clientId;
+    if (dataToUpdate.soapFK && typeof dataToUpdate.soapFK === 'object') {
+      delete dataToUpdate.soapFK;
+    }
+
+    Object.assign(historialExistente, dataToUpdate);
+    await historialExistente.save({ session });
+
+    // Actualizar edad del paciente si se especifica
+    const finalPacienteId = dataToUpdate.identificadorPaciente || historialExistente.identificadorPaciente;
+    if (finalPacienteId && (dataToUpdate.edad || req.body.edad)) {
+      const edadActualizada = Number(dataToUpdate.edad || req.body.edad);
+      if (!isNaN(edadActualizada)) {
+        await Paciente.updateOne(
+          { identificadorPaciente: finalPacienteId, clientId: req.user.clientId },
+          { $set: { edad: edadActualizada } },
+          { session }
+        );
+      }
+    }
+
+    // Actualizar nota SOAP si viene notaData o soapData
+    const datosNota = notaData || req.body.soapData || null;
+    if (datosNota) {
+      if (historialExistente.soapFK) {
+        await Nota.findByIdAndUpdate(
+          historialExistente.soapFK,
+          {
+            ...datosNota,
+            clientId: req.user.clientId
+          },
+          { session }
+        );
+      } else {
+        const tieneContenidoNota = Boolean(
+          (datosNota.contenidoNota && datosNota.contenidoNota.trim()) ||
+          (datosNota.S && datosNota.S.trim()) ||
+          (datosNota.O && datosNota.O.trim()) ||
+          (datosNota.A && datosNota.A.trim()) ||
+          (datosNota.P && datosNota.P.trim())
+        );
+        if (tieneContenidoNota) {
+          const nuevaNota = new Nota({
+            ...datosNota,
+            identificadorPaciente: finalPacienteId,
+            clientId: req.user.clientId
+          });
+          const notaGuardada = await nuevaNota.save({ session });
+          historialExistente.soapFK = notaGuardada._id;
+          await historialExistente.save({ session });
+        }
+      }
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+
+    const historialActualizado = await Historial.findById(historialExistente._id).populate('soapFK');
+
+    res.json({
+      ok: true,
+      msg: 'Historial actualizado correctamente',
+      historial: historialActualizado
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error('Error al actualizar historial:', error);
+    res.status(500).json({ ok: false, error: error.message });
+  }
+};

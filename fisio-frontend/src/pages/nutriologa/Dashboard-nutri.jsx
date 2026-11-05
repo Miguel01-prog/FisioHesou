@@ -431,7 +431,7 @@ export default function DashboardNutri() {
           <button
             className="btn btn-secondary"
             style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "40px", padding: "0 14px", fontSize: "0.85rem" }}
-            onClick={() => navigate('/nutriologa/bloquear-horario')}
+            onClick={() => navigate('/nutriologa/bloquear')}
           >
             <FiLock /> Bloquear Horario
           </button>
@@ -846,7 +846,7 @@ export default function DashboardNutri() {
                 <button
                   className="btn btn-secondary w-100"
                   style={{ justifyContent: "flex-start", padding: "0 14px", height: "42px", fontSize: "0.875rem", gap: "10px" }}
-                  onClick={() => navigate('/nutriologa/planes')}
+                  onClick={() => navigate('/nutriologa/ejercicios')}
                 >
                   <FiPieChart /> Planes Nutricionales & Dietas
                 </button>
