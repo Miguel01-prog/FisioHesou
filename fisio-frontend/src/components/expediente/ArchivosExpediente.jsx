@@ -229,7 +229,7 @@ export default function ArchivosExpediente({ identificadorPaciente, readOnly = f
   const handlePrint = () => {
     if (!lightboxFile) return;
     const printWindow = window.open("", "_blank");
-    const fileUrl = `${SERVER_URL}${lightboxFile.url}`;
+    const fileUrl = lightboxFile.url?.startsWith("data:") || lightboxFile.url?.startsWith("http") ? lightboxFile.url : `${SERVER_URL}${lightboxFile.url}`;
     printWindow.document.write(`
       <html>
         <head>
@@ -370,7 +370,7 @@ export default function ArchivosExpediente({ identificadorPaciente, readOnly = f
           {archivosFiltrados.map((archivo) => {
             const meta = getCategoryMeta(archivo.categoria);
             const Icon = meta.icon;
-            const fileUrl = `${SERVER_URL}${archivo.url}`;
+            const fileUrl = archivo.url?.startsWith("data:") || archivo.url?.startsWith("http") ? archivo.url : `${SERVER_URL}${archivo.url}`;
             const isImage = !archivo.mimetype?.includes("pdf") && !archivo.url.endsWith(".pdf");
 
             return (
@@ -956,7 +956,7 @@ export default function ArchivosExpediente({ identificadorPaciente, readOnly = f
               </button>
 
               <a
-                href={`${SERVER_URL}${lightboxFile.url}`}
+                href={lightboxFile.url?.startsWith("data:") || lightboxFile.url?.startsWith("http") ? lightboxFile.url : `${SERVER_URL}${lightboxFile.url}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 download={lightboxFile.nombreOriginal}
@@ -986,7 +986,7 @@ export default function ArchivosExpediente({ identificadorPaciente, readOnly = f
           <div className="archivos-lightbox-body">
             {lightboxFile.mimetype?.includes("pdf") || lightboxFile.url.endsWith(".pdf") ? (
               <iframe
-                src={`${SERVER_URL}${lightboxFile.url}`}
+                src={lightboxFile.url?.startsWith("data:") || lightboxFile.url?.startsWith("http") ? lightboxFile.url : `${SERVER_URL}${lightboxFile.url}`}
                 title={lightboxFile.nombreOriginal}
                 style={{
                   width: "95%",
@@ -998,7 +998,7 @@ export default function ArchivosExpediente({ identificadorPaciente, readOnly = f
               />
             ) : (
               <img
-                src={`${SERVER_URL}${lightboxFile.url}`}
+                src={lightboxFile.url?.startsWith("data:") || lightboxFile.url?.startsWith("http") ? lightboxFile.url : `${SERVER_URL}${lightboxFile.url}`}
                 alt={lightboxFile.descripcion || lightboxFile.categoria}
                 style={{
                   maxWidth: "92%",

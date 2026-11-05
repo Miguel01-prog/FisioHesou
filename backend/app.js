@@ -1,4 +1,4 @@
-﻿import express from "express";
+import express from "express";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -25,7 +25,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 
 if (process.env.NODE_ENV === "production") {
-  app.use(helmet());
+  app.use(helmet({ crossOriginResourcePolicy: false }));
 } else {
   // Relaxed development security to allow cross-origin assets and images
   app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false }));
@@ -77,7 +77,8 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: "15mb" }));
+app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 app.use((req, res, next) => {
   if (req.body) mongoSanitize.sanitize(req.body);
   if (req.params) mongoSanitize.sanitize(req.params);

@@ -2,7 +2,7 @@ import express from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { crearEjercicio, obtenerEjercicios, eliminarEjercicio } from "../controllers/ejercicio.controller.js";
+import { crearEjercicio, actualizarEjercicio, obtenerEjercicios, eliminarEjercicio } from "../controllers/ejercicio.controller.js";
 import { verifyToken } from "../libs/auth.middleware.js";
 
 const router = express.Router();
@@ -26,6 +26,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 router.post("/", upload.single("imagen"), crearEjercicio);
+router.put("/:id", upload.single("imagen"), actualizarEjercicio);
 router.get("/", obtenerEjercicios);
 router.delete("/:id", eliminarEjercicio);
 

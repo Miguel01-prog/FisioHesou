@@ -95,10 +95,65 @@ export function resolveImageUrl(imagenUrl) {
   return `${backendOrigin}${cleanPath}`;
 }
 
-export function compressImageToBase64(file, maxWidth = 600, quality = 0.8) {
+export function saveExerciseImageCache(ejercicioOrName, base64DataUrl) {
+  if (!base64DataUrl || typeof window === "undefined") return;
+  try {
+    if (typeof ejercicioOrName === "string") {
+      const cleanName = ejercicioOrName.trim().toLowerCase();
+      if (cleanName) localStorage.setItem(`hesou_ej_name_${cleanName}`, base64DataUrl);
+      return;
+    }
+    if (ejercicioOrName?._id) {
+      localStorage.setItem(`hesou_ej_id_${ejercicioOrName._id}`, base64DataUrl);
+    }
+    if (ejercicioOrName?.nombre) {
+      const cleanName = ejercicioOrName.nombre.trim().toLowerCase();
+      if (cleanName) localStorage.setItem(`hesou_ej_name_${cleanName}`, base64DataUrl);
+    }
+  } catch (e) {
+    console.warn("No se pudo guardar la imagen en caché local:", e);
+  }
+}
+
+export function getExerciseImageCache(ejercicio) {
+  if (!ejercicio || typeof window === "undefined") return "";
+  try {
+    if (ejercicio._id) {
+      const byId = localStorage.getItem(`hesou_ej_id_${ejercicio._id}`);
+      if (byId) return byId;
+    }
+    if (ejercicio.nombre) {
+      const cleanName = ejercicio.nombre.trim().toLowerCase();
+      const byName = localStorage.getItem(`hesou_ej_name_${cleanName}`);
+      if (byName) return byName;
+    }
+  } catch (e) {
+    // ignore storage errors
+  }
+  return "";
+}
+
+export function resolveExerciseImage(ejercicio) {
+  if (!ejercicio) return "";
+  const raw = ejercicio.imagenBase64 || ejercicio.imagenUrl || "";
+  if (typeof raw === "string" && (raw.startsWith("data:") || raw.startsWith("blob:"))) {
+    return raw;
+  }
+  const cached = getExerciseImageCache(ejercicio);
+  if (cached) return cached;
+  return resolveImageUrl(raw);
+}
+
+export function compressImageToBase64(file, maxWidth = 600, quality = 0.82) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (event) => {
+      const dataUrl = event.target.result;
+      // Preserve animated GIFs directly as Data URL
+      if (file.type === "image/gif") {
+        resolve(dataUrl);
+        return;
+      }
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement("canvas");
@@ -116,8 +171,8 @@ export function compressImageToBase64(file, maxWidth = 600, quality = 0.8) {
         ctx.drawImage(img, 0, 0, width, height);
         resolve(canvas.toDataURL("image/jpeg", quality));
       };
-      img.onerror = (err) => reject(err);
-      img.src = event.target.result;
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
     };
     reader.onerror = (err) => reject(err);
     reader.readAsDataURL(file);

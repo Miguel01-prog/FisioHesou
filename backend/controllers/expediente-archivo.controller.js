@@ -1,4 +1,4 @@
-﻿import ExpedienteArchivo from "../models/expediente-archivo.model.js";
+import ExpedienteArchivo from "../models/expediente-archivo.model.js";
 import Historial from "../models/historial-pacientes.model.js";
 import fs from "fs";
 import path from "path";
@@ -21,7 +21,15 @@ export const subirArchivosExpediente = async (req, res) => {
 
     for (let i = 0; i < req.files.length; i++) {
       const file = req.files[i];
-      const url = `/uploads/expedientes/${file.filename}`;
+      let url = `/uploads/expedientes/${file.filename}`;
+      try {
+        if (file.path && fs.existsSync(file.path)) {
+          const buf = fs.readFileSync(file.path);
+          url = `data:${file.mimetype || "image/jpeg"};base64,${buf.toString("base64")}`;
+        }
+      } catch (readErr) {
+        console.warn("No se pudo convertir archivo de expediente a Base64:", readErr.message);
+      }
 
       // Si categoria o descripcion fueron enviadas como arreglos por archivo o individual
       let cat = categoria;

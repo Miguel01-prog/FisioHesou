@@ -1,12 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
 import api from "../../api";
 import LoadingSpinner from "../layout/LoadingSpinner";
 import { showError, showSuccess } from "../../utils/alerts";
-import { FaPlus, FaTrash, FaArrowLeft, FaDumbbell } from "react-icons/fa";
-import { deobfuscateId, resolveImageUrl } from "../../utils/utils.js";
+import { FaPlus, FaTrash, FaDumbbell, FaCamera } from "react-icons/fa";
+import {
+  deobfuscateId,
+  resolveExerciseImage,
+  compressImageToBase64,
+  saveExerciseImageCache,
+  getExerciseImageCache
+} from "../../utils/utils.js";
 
 const ConstructorPlan = () => {
   const { id: rawId, idPlan } = useParams();
@@ -17,6 +23,8 @@ const ConstructorPlan = () => {
   const [cargando, setCargando] = useState(true);
   const [pacienteIdState, setPacienteIdState] = useState(id || "");
   const [failedImages, setFailedImages] = useState({});
+  const replaceInputRef = useRef(null);
+  const [ejercicioParaImagen, setEjercicioParaImagen] = useState(null);
   
   // Estado del Plan
   const [notasGenerales, setNotasGenerales] = useState("");
@@ -56,11 +64,9 @@ const ConstructorPlan = () => {
   const cargarDatos = async () => {
     setCargando(true);
     try {
-      // 1. Cargar catálogo
       const resCat = await api.get("/ejercicios");
       setEjerciciosCatalogo(resCat.data.ejercicios || []);
 
-      // 2. Si estamos editando, cargar plan existente
       if (idPlan) {
         const resPlan = await api.get(`/planes/${idPlan}`);
         const plan = resPlan.data.plan;
@@ -70,9 +76,8 @@ const ConstructorPlan = () => {
           setPacienteIdState(plan.identificadorPaciente);
         }
         
-        // Mapear los ejercicios del plan al formato del estado
         const ejerciciosCargados = plan.ejercicios.map(e => ({
-          ejercicio: e.ejercicio, // El populate ya trae el objeto completo
+          ejercicio: e.ejercicio,
           series: e.series || "",
           repeticiones: e.repeticiones || "",
           frecuencia: e.frecuencia || "",
@@ -88,8 +93,66 @@ const ConstructorPlan = () => {
     }
   };
 
+  const handleTriggerImagen = (ej) => {
+    if (!ej) return;
+    setEjercicioParaImagen(ej);
+    if (replaceInputRef.current) {
+      replaceInputRef.current.value = "";
+      replaceInputRef.current.click();
+    }
+  };
+
+  const handleReemplazarImagen = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !ejercicioParaImagen) return;
+
+    const targetEj = ejercicioParaImagen;
+    try {
+      const base64DataUrl = await compressImageToBase64(file);
+      saveExerciseImageCache(targetEj, base64DataUrl);
+
+      setEjerciciosPlan((prev) =>
+        prev.map((item) =>
+          item.ejercicio?._id === targetEj._id
+            ? { ...item, ejercicio: { ...item.ejercicio, imagenUrl: base64DataUrl, imagenBase64: base64DataUrl } }
+            : item
+        )
+      );
+      setEjerciciosCatalogo((prev) =>
+        prev.map((item) =>
+          item._id === targetEj._id
+            ? { ...item, imagenUrl: base64DataUrl, imagenBase64: base64DataUrl }
+            : item
+        )
+      );
+      setFailedImages((prev) => ({ ...prev, [targetEj._id]: false }));
+
+      if (targetEj._id) {
+        const formData = new FormData();
+        formData.append("nombre", targetEj.nombre || "");
+        formData.append("descripcion", targetEj.descripcion || "");
+        formData.append("imagen", file);
+        formData.append("imagenBase64", base64DataUrl);
+        formData.append("imagenUrl", base64DataUrl);
+        try {
+          await api.put(`/ejercicios/${targetEj._id}`, formData, {
+            headers: { "Content-Type": "multipart/form-data" }
+          });
+        } catch (putErr) {
+          console.warn("Imagen guardada en caché local:", putErr);
+        }
+      }
+
+      showSuccess("Imagen actualizada", `Se asignó la imagen a "${targetEj.nombre}".`);
+    } catch (err) {
+      console.error(err);
+      showError("Error", "No se pudo cargar la imagen.");
+    } finally {
+      setEjercicioParaImagen(null);
+    }
+  };
+
   const agregarEjercicioAlPlan = (ejercicio) => {
-    // Verificar si ya está
     if (ejerciciosPlan.find(e => e.ejercicio._id === ejercicio._id)) {
         showError("Aviso", "Este ejercicio ya está en el plan.");
         return;
@@ -144,11 +207,9 @@ const ConstructorPlan = () => {
       let res;
       const rolePath = user?.role || 'fisioterapeuta';
       if (idPlan) {
-        // Actualizar plan existente
         res = await api.put(`/planes/${idPlan}`, payload);
         showSuccess("¡Plan Actualizado!", "Los cambios han sido guardados.");
       } else {
-        // Crear plan nuevo
         res = await api.post("/planes", payload);
         showSuccess("¡Plan Creado!", "El plan de tratamiento ha sido guardado.");
       }
@@ -162,25 +223,15 @@ const ConstructorPlan = () => {
     }
   };
 
-  const handleVolver = () => {
-    const rolePath = user?.role || user?.rol || 'fisioterapeuta';
-    const finalId = id || pacienteIdState || (() => {
-      try {
-        const p = JSON.parse(localStorage.getItem("dataPaciente"));
-        return p?.identificadorPaciente || p?._id;
-      } catch (e) {
-        return null;
-      }
-    })();
-    if (finalId) {
-      navigate(`/${rolePath}/paciente/${finalId}`);
-    } else {
-      navigate(`/${rolePath}/pacientes`);
-    }
-  };
-
   return (
     <div className="auth-wrapper-content">
+      <input
+        ref={replaceInputRef}
+        type="file"
+        accept="image/png, image/jpeg, image/jpg, image/webp, image/gif"
+        style={{ display: "none" }}
+        onChange={handleReemplazarImagen}
+      />
       
       <div className="cards-column">
         <div className="auth-card auth-card-detail">
@@ -231,8 +282,9 @@ const ConstructorPlan = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {ejerciciosPlan.map((item, idx) => {
                 const ejId = item.ejercicio?._id || `plan-${idx}`;
-                const imgSrc = resolveImageUrl(item.ejercicio?.imagenBase64 || item.ejercicio?.imagenUrl);
-                const hasValidImage = Boolean(imgSrc) && !failedImages[ejId];
+                const cached = getExerciseImageCache(item.ejercicio);
+                const imgSrc = cached || resolveExerciseImage(item.ejercicio);
+                const hasValidImage = Boolean(imgSrc) && (!failedImages[ejId] || Boolean(cached));
 
                 return (
                   <div key={idx} style={{ border: '1px solid var(--border-light)', borderRadius: '12px', padding: '16px', position: 'relative', background: 'rgba(255, 255, 255, 0.01)' }}>
@@ -246,15 +298,41 @@ const ConstructorPlan = () => {
                     
                     <div style={{ display: 'flex', gap: '15px', marginBottom: '15px', flexWrap: 'wrap' }}>
                       {hasValidImage ? (
-                        <img
-                          src={imgSrc}
-                          alt={item.ejercicio?.nombre}
-                          onError={() => setFailedImages((prev) => ({ ...prev, [ejId]: true }))}
-                          style={{ width: '90px', height: '90px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-light)' }}
-                        />
+                        <div style={{ position: 'relative', width: '90px', height: '90px' }}>
+                          <img
+                            src={imgSrc}
+                            alt={item.ejercicio?.nombre}
+                            onError={() => setFailedImages((prev) => ({ ...prev, [ejId]: true }))}
+                            style={{ width: '90px', height: '90px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-light)' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleTriggerImagen(item.ejercicio)}
+                            style={{
+                              position: 'absolute',
+                              bottom: '3px',
+                              right: '3px',
+                              background: 'rgba(15, 23, 42, 0.78)',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '4px',
+                              padding: '2px 5px',
+                              fontSize: '0.65rem',
+                              cursor: 'pointer'
+                            }}
+                            title="Cambiar imagen"
+                          >
+                            <FaCamera size={10} />
+                          </button>
+                        </div>
                       ) : (
-                        <div style={{ width: '90px', height: '90px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.05)', border: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <FaDumbbell size={22} style={{ color: 'var(--text-muted)' }} />
+                        <div
+                          onClick={() => handleTriggerImagen(item.ejercicio)}
+                          style={{ width: '90px', height: '90px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.05)', border: '1px dashed var(--primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', cursor: 'pointer' }}
+                          title="Subir imagen para este ejercicio"
+                        >
+                          <FaCamera size={18} style={{ color: 'var(--primary)' }} />
+                          <span style={{ fontSize: '0.68rem', color: 'var(--primary)', fontWeight: '600', textAlign: 'center' }}>Subir foto</span>
                         </div>
                       )}
                       <div style={{ flex: '1 1 200px' }}>
@@ -309,8 +387,9 @@ const ConstructorPlan = () => {
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '15px' }}>
                   {ejerciciosCatalogo.map((ej) => {
-                    const imgSrc = resolveImageUrl(ej.imagenBase64 || ej.imagenUrl);
-                    const hasValidImage = Boolean(imgSrc) && !failedImages[ej._id];
+                    const cached = getExerciseImageCache(ej);
+                    const imgSrc = cached || resolveExerciseImage(ej);
+                    const hasValidImage = Boolean(imgSrc) && (!failedImages[ej._id] || Boolean(cached));
 
                     return (
                       <div
@@ -328,8 +407,13 @@ const ConstructorPlan = () => {
                             />
                           </div>
                         ) : (
-                          <div style={{ width: '100%', height: '110px', background: 'rgba(139, 92, 246, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <FaDumbbell size={24} style={{ color: 'var(--text-muted)' }} />
+                          <div
+                            onClick={() => handleTriggerImagen(ej)}
+                            style={{ width: '100%', height: '110px', background: 'rgba(139, 92, 246, 0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', cursor: 'pointer' }}
+                            title="Haz clic para subir imagen"
+                          >
+                            <FaDumbbell size={22} style={{ color: 'var(--text-muted)' }} />
+                            <span style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: '600' }}>Subir foto</span>
                           </div>
                         )}
                         <div style={{ padding: '0.85rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'space-between' }}>

@@ -3,9 +3,16 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
 import api from "../../api";
 import LoadingSpinner from "../layout/LoadingSpinner";
-import { showError } from "../../utils/alerts";
-import { FaPrint, FaArrowLeft, FaWhatsapp, FaEnvelope, FaEdit } from "react-icons/fa";
-import { formatDateDDMMYYYY, deobfuscateId, resolveImageUrl } from "../../utils/utils";
+import { showError, showSuccess } from "../../utils/alerts";
+import { FaPrint, FaWhatsapp, FaEnvelope, FaEdit, FaCamera } from "react-icons/fa";
+import {
+  formatDateDDMMYYYY,
+  deobfuscateId,
+  resolveExerciseImage,
+  compressImageToBase64,
+  saveExerciseImageCache,
+  getExerciseImageCache
+} from "../../utils/utils";
 
 const PlanDocumento = () => {
   const { id: rawId } = useParams();
@@ -16,6 +23,8 @@ const PlanDocumento = () => {
   const [paciente, setPaciente] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [failedImages, setFailedImages] = useState({});
+  const replaceInputRef = useRef(null);
+  const [ejercicioParaImagen, setEjercicioParaImagen] = useState(null);
 
   const componentRef = useRef(null);
 
@@ -39,13 +48,59 @@ const PlanDocumento = () => {
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
   };
 
-  const handleVolver = () => {
-    const rolePath = user?.role || user?.rol || 'fisioterapeuta';
-    const targetId = plan?.identificadorPaciente || paciente?.identificadorPaciente || paciente?._id;
-    if (targetId) {
-      navigate(`/${rolePath}/paciente/${targetId}`);
-    } else {
-      navigate(`/${rolePath}/pacientes`);
+  const handleTriggerImagen = (ej) => {
+    if (!ej) return;
+    setEjercicioParaImagen(ej);
+    if (replaceInputRef.current) {
+      replaceInputRef.current.value = "";
+      replaceInputRef.current.click();
+    }
+  };
+
+  const handleReemplazarImagen = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !ejercicioParaImagen) return;
+
+    const targetEj = ejercicioParaImagen;
+    try {
+      const base64DataUrl = await compressImageToBase64(file);
+      saveExerciseImageCache(targetEj, base64DataUrl);
+
+      setPlan((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          ejercicios: prev.ejercicios.map((item) =>
+            item.ejercicio?._id === targetEj._id
+              ? { ...item, ejercicio: { ...item.ejercicio, imagenUrl: base64DataUrl, imagenBase64: base64DataUrl } }
+              : item
+          )
+        };
+      });
+      setFailedImages((prev) => ({ ...prev, [targetEj._id]: false }));
+
+      if (targetEj._id) {
+        const formData = new FormData();
+        formData.append("nombre", targetEj.nombre || "");
+        formData.append("descripcion", targetEj.descripcion || "");
+        formData.append("imagen", file);
+        formData.append("imagenBase64", base64DataUrl);
+        formData.append("imagenUrl", base64DataUrl);
+        try {
+          await api.put(`/ejercicios/${targetEj._id}`, formData, {
+            headers: { "Content-Type": "multipart/form-data" }
+          });
+        } catch (putErr) {
+          console.warn("Imagen guardada en caché local:", putErr);
+        }
+      }
+
+      showSuccess("Imagen cargada", `Se actualizó la imagen de "${targetEj.nombre}".`);
+    } catch (err) {
+      console.error(err);
+      showError("Error", "No se pudo procesar la imagen seleccionada.");
+    } finally {
+      setEjercicioParaImagen(null);
     }
   };
 
@@ -55,17 +110,14 @@ const PlanDocumento = () => {
 
   const cargarDatos = async () => {
     try {
-      // Obtener el plan
       const resPlan = await api.get(`/planes/${id}`);
       const planData = resPlan.data.plan;
       setPlan(planData);
 
-      // Obtener detalles del paciente
       const resPaciente = await api.get(`/citas/detalles-paciente/${planData.identificadorPaciente}`);
       if (resPaciente.data.historial && resPaciente.data.historial.length > 0) {
         setPaciente(resPaciente.data.historial[0]);
       } else {
-        // Fallback local storage
         const localData = JSON.parse(localStorage.getItem("dataPaciente"));
         if (localData && localData.identificadorPaciente === planData.identificadorPaciente) {
           setPaciente(localData);
@@ -93,6 +145,13 @@ const PlanDocumento = () => {
 
   return (
     <div className="auth-wrapper-content" style={{ padding: '20px 20px 120px 20px', flexDirection: 'column', alignItems: 'center' }}>
+      <input
+        ref={replaceInputRef}
+        type="file"
+        accept="image/png, image/jpeg, image/jpg, image/webp, image/gif"
+        style={{ display: "none" }}
+        onChange={handleReemplazarImagen}
+      />
 
       {/* BOTÓN SUPERIOR EDITAR PLAN (NO SE IMPRIME) */}
       <div className="no-print" style={{ width: '100%', maxWidth: '800px', marginBottom: '1.25rem', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
@@ -217,7 +276,7 @@ const PlanDocumento = () => {
           borderRadius: '12px',
           boxShadow: '0 8px 30px rgba(0,0,0,0.1)',
           color: '#333',
-          minHeight: '1056px' /* Tamaño aproximado A4 para darle aspecto de hoja real */
+          minHeight: '1056px'
         }}
       >
         {/* Encabezado Profesional */}
@@ -247,21 +306,71 @@ const PlanDocumento = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
           {plan.ejercicios.map((item, index) => {
             const ejKey = item.ejercicio?._id || `doc-${index}`;
-            const imgSrc = resolveImageUrl(item.ejercicio?.imagenBase64 || item.ejercicio?.imagenUrl);
-            const hasValidImage = Boolean(imgSrc) && !failedImages[ejKey];
+            const cached = getExerciseImageCache(item.ejercicio);
+            const imgSrc = cached || resolveExerciseImage(item.ejercicio);
+            const hasValidImage = Boolean(imgSrc) && (!failedImages[ejKey] || Boolean(cached));
 
             return (
               <div key={index} style={{ display: 'flex', gap: '20px', borderBottom: '1px solid #eee', paddingBottom: '20px', breakInside: 'avoid' }}>
                 {hasValidImage ? (
-                  <img
-                    src={imgSrc}
-                    alt={item.ejercicio?.nombre}
-                    onError={() => setFailedImages((prev) => ({ ...prev, [ejKey]: true }))}
-                    style={{ width: '180px', height: '180px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }}
-                  />
+                  <div style={{ position: 'relative', width: '180px', height: '180px', flexShrink: 0 }}>
+                    <img
+                      src={imgSrc}
+                      alt={item.ejercicio?.nombre}
+                      onError={() => setFailedImages((prev) => ({ ...prev, [ejKey]: true }))}
+                      style={{ width: '180px', height: '180px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }}
+                    />
+                    <button
+                      type="button"
+                      className="no-print"
+                      onClick={() => handleTriggerImagen(item.ejercicio)}
+                      style={{
+                        position: 'absolute',
+                        bottom: '6px',
+                        right: '6px',
+                        background: 'rgba(15, 23, 42, 0.78)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '4px 8px',
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                      title="Cambiar imagen"
+                    >
+                      <FaCamera size={10} /> Cambiar
+                    </button>
+                  </div>
                 ) : (
-                  <div style={{ width: '180px', height: '180px', background: '#f0f0f0', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
-                    Sin imagen
+                  <div
+                    onClick={() => handleTriggerImagen(item.ejercicio)}
+                    style={{ width: '180px', height: '180px', background: '#f0f0f0', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#999', gap: '8px', cursor: 'pointer', flexShrink: 0 }}
+                    title="Haz clic para subir la imagen de este ejercicio"
+                  >
+                    <span>Sin imagen</span>
+                    <button
+                      type="button"
+                      className="no-print"
+                      style={{
+                        background: '#6366f1',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '5px 10px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px'
+                      }}
+                    >
+                      <FaCamera size={11} /> Subir imagen
+                    </button>
                   </div>
                 )}
 
