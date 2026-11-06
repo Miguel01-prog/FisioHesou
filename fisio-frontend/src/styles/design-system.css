@@ -2840,7 +2840,8 @@ tr:hover .patient-list-avatar-circle {
    ========================================================================== */
 @media print {
   @page {
-    margin: 12mm;
+    size: letter portrait;
+    margin: 0mm !important;
   }
 
   html,
@@ -2883,9 +2884,94 @@ tr:hover .patient-list-avatar-circle {
     box-shadow: none !important;
   }
 
+  html,
+  body,
+  #root,
+  .layout-app-wrapper,
+  .layout-main-panel,
+  .layout-content-view,
+  .auth-wrapper-content,
+  .plan-documento-page {
+    display: block !important;
+    position: static !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .plan-exercises-list {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .plan-exercise-item,
+  .plan-header-block,
+  .plan-notes-block,
+  .plan-footer-block {
+    display: block !important;
+    width: 100% !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-column-break-inside: avoid !important;
+  }
+
+  .plan-exercise-item {
+    margin-bottom: 16px !important;
+    padding-bottom: 14px !important;
+    padding-top: 4px !important;
+  }
+
+  .plan-exercise-item-inner {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    gap: 18px !important;
+    width: 100% !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .plan-exercise-img-box {
+    width: 148px !important;
+    height: 148px !important;
+    padding: 6px !important;
+    flex-shrink: 0 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .plan-exercise-img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+  }
+
   .plan-printable-sheet {
+    display: block !important;
+    border: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
     box-shadow: none !important;
-    padding: 20px !important;
+    padding: 0 15mm !important;
+  }
+
+  .plan-print-layout-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  .plan-print-margin-thead {
+    display: table-header-group !important;
+  }
+
+  .plan-print-margin-tfoot {
+    display: table-footer-group !important;
+  }
+
+  .plan-print-top-spacer,
+  .plan-print-bottom-spacer {
+    height: 14mm !important;
+    width: 100% !important;
     max-width: 100% !important;
     min-height: auto !important;
   }
@@ -2902,7 +2988,8 @@ tr:hover .patient-list-avatar-circle {
    ========================================================================== */
 @media print {
   @page {
-    margin: 12mm;
+    size: letter portrait;
+    margin: 0mm !important;
   }
 
   html,
@@ -2945,9 +3032,94 @@ tr:hover .patient-list-avatar-circle {
     box-shadow: none !important;
   }
 
+  html,
+  body,
+  #root,
+  .layout-app-wrapper,
+  .layout-main-panel,
+  .layout-content-view,
+  .auth-wrapper-content,
+  .plan-documento-page {
+    display: block !important;
+    position: static !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .plan-exercises-list {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .plan-exercise-item,
+  .plan-header-block,
+  .plan-notes-block,
+  .plan-footer-block {
+    display: block !important;
+    width: 100% !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-column-break-inside: avoid !important;
+  }
+
+  .plan-exercise-item {
+    margin-bottom: 16px !important;
+    padding-bottom: 14px !important;
+    padding-top: 4px !important;
+  }
+
+  .plan-exercise-item-inner {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    gap: 18px !important;
+    width: 100% !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .plan-exercise-img-box {
+    width: 148px !important;
+    height: 148px !important;
+    padding: 6px !important;
+    flex-shrink: 0 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .plan-exercise-img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+  }
+
   .plan-printable-sheet {
+    display: block !important;
+    border: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
     box-shadow: none !important;
-    padding: 20px !important;
+    padding: 0 15mm !important;
+  }
+
+  .plan-print-layout-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  .plan-print-margin-thead {
+    display: table-header-group !important;
+  }
+
+  .plan-print-margin-tfoot {
+    display: table-footer-group !important;
+  }
+
+  .plan-print-top-spacer,
+  .plan-print-bottom-spacer {
+    height: 14mm !important;
+    width: 100% !important;
     max-width: 100% !important;
     min-height: auto !important;
   }

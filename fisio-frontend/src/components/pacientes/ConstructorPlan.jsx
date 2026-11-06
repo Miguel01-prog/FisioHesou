@@ -20,11 +20,13 @@ const ConstructorPlan = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [ejerciciosCatalogo, setEjerciciosCatalogo] = useState([]);
-  const [cargando, setCargando] = useState(true);
+  const [cargandoCatalogo, setCargandoCatalogo] = useState(true);
+  const [cargandoPlan, setCargandoPlan] = useState(Boolean(idPlan));
   const [pacienteIdState, setPacienteIdState] = useState(id || "");
   const [failedImages, setFailedImages] = useState({});
   const replaceInputRef = useRef(null);
   const [ejercicioParaImagen, setEjercicioParaImagen] = useState(null);
+  const [subiendoImagenId, setSubiendoImagenId] = useState(null);
   
   // Estado del Plan
   const [notasGenerales, setNotasGenerales] = useState("");
@@ -62,35 +64,54 @@ const ConstructorPlan = () => {
   }, [idPlan]);
 
   const cargarDatos = async () => {
-    setCargando(true);
-    try {
-      const resCat = await api.get("/ejercicios");
-      setEjerciciosCatalogo(resCat.data.ejercicios || []);
-
-      if (idPlan) {
-        const resPlan = await api.get(`/planes/${idPlan}`);
-        const plan = resPlan.data.plan;
-        
-        setNotasGenerales(plan.notasGenerales || "");
-        if (plan.identificadorPaciente) {
-          setPacienteIdState(plan.identificadorPaciente);
-        }
-        
-        const ejerciciosCargados = plan.ejercicios.map(e => ({
-          ejercicio: e.ejercicio,
-          series: e.series || "",
-          repeticiones: e.repeticiones || "",
-          frecuencia: e.frecuencia || "",
-          notas: e.notas || ""
-        }));
-        setEjerciciosPlan(ejerciciosCargados);
-      }
-    } catch (err) {
-      console.error(err);
-      showError("Error", "No se pudo cargar la información necesaria.");
-    } finally {
-      setCargando(false);
+    setCargandoCatalogo(true);
+    if (idPlan) {
+      setCargandoPlan(true);
     }
+
+    // Cargar plan y catálogo en paralelo para no bloquear Ejercicios Asignados
+    const promCatalogo = api
+      .get("/ejercicios")
+      .then((resCat) => {
+        setEjerciciosCatalogo(resCat.data.ejercicios || []);
+      })
+      .catch((err) => {
+        console.error(err);
+        showError("Error", "No se pudo cargar el catálogo de ejercicios.");
+      })
+      .finally(() => {
+        setCargandoCatalogo(false);
+      });
+
+    const promPlan = idPlan
+      ? api
+          .get(`/planes/${idPlan}`)
+          .then((resPlan) => {
+            const plan = resPlan.data.plan;
+            setNotasGenerales(plan.notasGenerales || "");
+            if (plan.identificadorPaciente) {
+              setPacienteIdState(plan.identificadorPaciente);
+            }
+
+            const ejerciciosCargados = (plan.ejercicios || []).map((e) => ({
+              ejercicio: e.ejercicio,
+              series: e.series || "",
+              repeticiones: e.repeticiones || "",
+              frecuencia: e.frecuencia || "",
+              notas: e.notas || ""
+            }));
+            setEjerciciosPlan(ejerciciosCargados);
+          })
+          .catch((err) => {
+            console.error(err);
+            showError("Error", "No se pudieron cargar los ejercicios asignados del plan.");
+          })
+          .finally(() => {
+            setCargandoPlan(false);
+          })
+      : Promise.resolve();
+
+    await Promise.all([promPlan, promCatalogo]);
   };
 
   const handleTriggerImagen = (ej) => {
@@ -107,6 +128,7 @@ const ConstructorPlan = () => {
     if (!file || !ejercicioParaImagen) return;
 
     const targetEj = ejercicioParaImagen;
+    setSubiendoImagenId(targetEj._id);
     try {
       const base64DataUrl = await compressImageToBase64(file);
       saveExerciseImageCache(targetEj, base64DataUrl);
@@ -148,6 +170,7 @@ const ConstructorPlan = () => {
       console.error(err);
       showError("Error", "No se pudo cargar la imagen.");
     } finally {
+      setSubiendoImagenId(null);
       setEjercicioParaImagen(null);
     }
   };
@@ -251,7 +274,7 @@ const ConstructorPlan = () => {
               <button 
                 className="btn btn-primary glow-pulse-purple" 
                 onClick={guardarPlan} 
-                disabled={guardando} 
+                disabled={guardando || cargandoPlan} 
                 style={{ minWidth: '140px' }}
               >
                 {guardando ? <LoadingSpinner size="small" color="#fff" /> : "Guardar y Ver"}
@@ -272,9 +295,18 @@ const ConstructorPlan = () => {
             </div>
           </div>
 
-          <h3 className="title_card" style={{ fontSize: '1rem', marginTop: '20px' }}>Ejercicios Asignados ({ejerciciosPlan.length})</h3>
+          <h3 className="title_card" style={{ fontSize: '1rem', marginTop: '20px' }}>
+            Ejercicios Asignados {!cargandoPlan && `(${ejerciciosPlan.length})`}
+          </h3>
           
-          {ejerciciosPlan.length === 0 ? (
+          {cargandoPlan ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '48px 20px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '12px', border: '1px dashed var(--border-light)' }}>
+              <LoadingSpinner size="large" color="#42133B" />
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: '500' }}>
+                Cargando ejercicios asignados...
+              </span>
+            </div>
+          ) : ejerciciosPlan.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '12px', border: '1px dashed var(--border-light)', color: 'var(--text-muted)' }}>
               Presiona <strong>"+ Añadir Ejercicio"</strong> para seleccionar los ejercicios del catálogo y armar el plan.
             </div>
@@ -285,6 +317,7 @@ const ConstructorPlan = () => {
                 const cached = getExerciseImageCache(item.ejercicio);
                 const imgSrc = cached || resolveExerciseImage(item.ejercicio);
                 const hasValidImage = Boolean(imgSrc) && (!failedImages[ejId] || Boolean(cached));
+                const isUploadingThis = subiendoImagenId && subiendoImagenId === item.ejercicio?._id;
 
                 return (
                   <div key={idx} style={{ border: '1px solid var(--border-light)', borderRadius: '12px', padding: '16px', position: 'relative', background: 'rgba(255, 255, 255, 0.01)' }}>
@@ -297,7 +330,11 @@ const ConstructorPlan = () => {
                     </button>
                     
                     <div style={{ display: 'flex', gap: '15px', marginBottom: '15px', flexWrap: 'wrap' }}>
-                      {hasValidImage ? (
+                      {isUploadingThis ? (
+                        <div style={{ width: '90px', height: '90px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.06)', border: '1px dashed var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <LoadingSpinner size="small" color="#42133B" />
+                        </div>
+                      ) : hasValidImage ? (
                         <div style={{ position: 'relative', width: '90px', height: '90px' }}>
                           <img
                             src={imgSrc}
@@ -378,7 +415,7 @@ const ConstructorPlan = () => {
             </div>
             
             <div style={{ overflowY: 'auto', flex: 1, paddingRight: '10px' }}>
-              {cargando ? (
+              {cargandoCatalogo ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
                   <LoadingSpinner size="large" color="#42133B"/>
                 </div>
