@@ -136,7 +136,34 @@ export default function ListaPacientes() {
     navigate(`/${user?.role || 'fisioterapeuta'}/creacion-historial`);
   };
 
-  const handleEliminarPaciente = async (identificadorPaciente) => {
+  const handleEliminarPaciente = async (pacienteTarget) => {
+    const p = typeof pacienteTarget === "object" && pacienteTarget !== null ? pacienteTarget : selectedPaciente;
+    const targetId = (typeof pacienteTarget === "string" ? pacienteTarget : p?.identificadorPaciente || p?._id);
+    if (!targetId) {
+      showError("Error", "No se encontró el identificador del paciente.");
+      return;
+    }
+    const nombreCompleto = p ? `${capitalizeWords(p.nombres || "")} ${capitalizeWords(p.apellidos || "")}`.trim() : "este paciente";
+    const confirmado = await showConfirm(
+      `¿Eliminar a ${nombreCompleto}?`,
+      `Esta acción es irreversible y eliminará el expediente de ${nombreCompleto} junto con su historial clínico, citas, notas SOAP y planes de ejercicios.`
+    );
+    if (!confirmado) return;
+
+    try {
+      setCargando(true);
+      await api.delete(`/pacientes/${targetId}`);
+      localStorage.removeItem("dataPaciente");
+      showSuccess("Paciente eliminado", `El expediente de ${nombreCompleto} fue eliminado correctamente.`);
+      setSelectedPaciente(null);
+      await obtenerPacientes();
+    } catch (err) {
+      console.error("Error al eliminar paciente:", err);
+      showError("Error", "No se pudo eliminar el paciente.");
+      setCargando(false);
+    }
+  };
+  const _unusedHandleEliminarOld = async (identificadorPaciente) => {
     const seguro = await showConfirm(
       "¿Eliminar Paciente?",
       "Esta acción es irreversible y eliminará al paciente junto con todas sus citas, notas SOAP, historial clínico y planes de tratamiento."
@@ -468,6 +495,33 @@ export default function ListaPacientes() {
                       style={{ margin: 0, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", cursor: "pointer" }}
                     >
                       <FaFolderOpen /> Gestionar Paciente
+                    </button>
+                    <button
+                      type="button"
+                      className="patient-detail-action-btn hover-grow"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleEliminarPaciente(selectedPaciente);
+                      }}
+                      style={{
+                        marginTop: "0.65rem",
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "0.5rem",
+                        cursor: "pointer",
+                        background: "rgba(239, 68, 68, 0.08)",
+                        color: "#ef4444",
+                        border: "1px solid rgba(239, 68, 68, 0.25)",
+                        padding: "0.7rem 1rem",
+                        borderRadius: "10px",
+                        fontWeight: "600",
+                        fontSize: "0.9rem"
+                      }}
+                    >
+                      <FaTrashAlt size={13} /> Eliminar Paciente
                     </button>
                   </div>
                 </>

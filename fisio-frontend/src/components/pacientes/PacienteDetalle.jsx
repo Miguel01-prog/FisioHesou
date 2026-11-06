@@ -3,12 +3,12 @@ import CardPaciente from "../pacientes/CardPaciente.jsx";
 import { useNavigate, useParams } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import api from "../../api.js";
-import { FaEye, FaFolderOpen, FaNotesMedical, FaPlus, FaCalendarAlt } from "react-icons/fa";
+import { FaEye, FaFolderOpen, FaNotesMedical, FaPlus, FaCalendarAlt, FaTrashAlt } from "react-icons/fa";
 import LoadingSpinner from "../layout/LoadingSpinner.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import ModalAgendarCita from "../layout/ModalAgendarCita.jsx";
 import ModalHistorialCitas from "../layout/ModalHistorialCitas.jsx";
-import { showSuccess, showError } from "../../utils/alerts.js";
+import { showSuccess, showError, showConfirm } from "../../utils/alerts.js";
 
 export default function PacienteDetalle() {
   const { id: rawId } = useParams();
@@ -27,6 +27,35 @@ export default function PacienteDetalle() {
 
 
   const rolePath = user?.role || user?.rol || 'fisioterapeuta';
+
+  const handleEliminarPaciente = async () => {
+    const targetId = paciente?.identificadorPaciente || id;
+    if (!targetId) {
+      showError("Error", "No se encontró el identificador del paciente.");
+      return;
+    }
+    const nombreCompleto = paciente
+      ? `${capitalizeWords(paciente.nombres || "")} ${capitalizeWords(paciente.apellidos || "")}`.trim()
+      : "este paciente";
+
+    const confirmado = await showConfirm(
+      `¿Eliminar a ${nombreCompleto}?`,
+      `Esta acción es irreversible y eliminará el expediente de ${nombreCompleto} junto con su historial clínico, citas, notas SOAP y planes de ejercicios.`
+    );
+    if (!confirmado) return;
+
+    try {
+      setCargando(true);
+      await api.delete(`/pacientes/${targetId}`);
+      localStorage.removeItem("dataPaciente");
+      showSuccess("Paciente eliminado", `El expediente de ${nombreCompleto} fue eliminado correctamente.`);
+      navigate(`/${rolePath}/pacientes`);
+    } catch (err) {
+      console.error("Error al eliminar paciente:", err);
+      showError("Error", "No se pudo eliminar el paciente.");
+      setCargando(false);
+    }
+  };
 
   const cargarCitasPaciente = async () => {
     try {
@@ -104,7 +133,7 @@ export default function PacienteDetalle() {
         ) : (
           <>
             {/* Tarjeta del paciente */}
-            {paciente && <CardPaciente paciente={paciente} />}
+            {paciente && <CardPaciente paciente={paciente} onDelete={handleEliminarPaciente} />}
 
             <div className="auth-card auth-card-detail" style={{ marginTop: 0 }}>
               <div className="profile-actions-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
