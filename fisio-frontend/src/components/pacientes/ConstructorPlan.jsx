@@ -301,7 +301,7 @@ const ConstructorPlan = () => {
           
           {cargandoPlan ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '48px 20px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '12px', border: '1px dashed var(--border-light)' }}>
-              <LoadingSpinner size="large" color="#42133B" />
+              <LoadingSpinner size="large" />
               <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: '500' }}>
                 Cargando ejercicios asignados...
               </span>
@@ -332,7 +332,7 @@ const ConstructorPlan = () => {
                     <div style={{ display: 'flex', gap: '15px', marginBottom: '15px', flexWrap: 'wrap' }}>
                       {isUploadingThis ? (
                         <div style={{ width: '90px', height: '90px', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.06)', border: '1px dashed var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <LoadingSpinner size="small" color="#42133B" />
+                          <LoadingSpinner size="small" />
                         </div>
                       ) : hasValidImage ? (
                         <div style={{ position: 'relative', width: '90px', height: '90px' }}>
@@ -417,7 +417,7 @@ const ConstructorPlan = () => {
             <div style={{ overflowY: 'auto', flex: 1, paddingRight: '10px' }}>
               {cargandoCatalogo ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
-                  <LoadingSpinner size="large" color="#42133B"/>
+                  <LoadingSpinner size="large" />
                 </div>
               ) : ejerciciosCatalogo.length === 0 ? (
                 <p className="text-muted">No hay ejercicios en el catálogo.</p>

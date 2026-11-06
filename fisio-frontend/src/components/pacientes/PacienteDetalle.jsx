@@ -128,7 +128,7 @@ export default function PacienteDetalle() {
 
         {cargando ? (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-            <LoadingSpinner size="large" color="#42133B" />
+            <LoadingSpinner size="large" />
           </div>
         ) : (
           <>

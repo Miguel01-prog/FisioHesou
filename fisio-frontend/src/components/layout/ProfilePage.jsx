@@ -276,9 +276,11 @@ export default function ProfilePage() {
                 type="email"
                 className="input"
                 value={email}
-                readOnly
-                style={{ background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255,255,255,0.08)", cursor: "not-allowed", color: "var(--text-muted)" }}
-                title="El correo de inicio de sesión no se puede modificar"
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={saving}
+                readOnly={false}
+                placeholder="Ingresa tu correo electrónico"
+                required
               />
             </div>
 
@@ -291,7 +293,8 @@ export default function ProfilePage() {
                 type="text"
                 className="input"
                 value={capitalizeWords(role)}
-                readOnly
+                disabled
+                readOnly={false}
                 style={{ background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255,255,255,0.08)", cursor: "not-allowed", color: "var(--text-muted)", fontWeight: "600" }}
               />
             </div>

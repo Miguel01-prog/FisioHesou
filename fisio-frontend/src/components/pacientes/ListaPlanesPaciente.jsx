@@ -61,7 +61,7 @@ const ListaPlanesPaciente = () => {
 
           {cargando ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
-              <LoadingSpinner size="large" color="#42133B" />
+              <LoadingSpinner size="large" />
             </div>
           ) : planes.length === 0 ? (
             <p>No hay planes de tratamiento registrados para este paciente.</p>

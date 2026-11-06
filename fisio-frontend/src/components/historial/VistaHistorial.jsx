@@ -209,36 +209,51 @@ const VistaHistorial = () => {
           };
           setAntecedentesNoPatologicos(npData);
 
-          // Guardar copia de seguridad para revertir al cancelar
-          backupRef.current = {
-            formData: JSON.parse(JSON.stringify(hData)),
-            lesiones: JSON.parse(JSON.stringify(lData)),
-            obser: JSON.parse(JSON.stringify(oData)),
-            antecedentesNoPatologicos: JSON.parse(JSON.stringify(npData))
-          };
-
           // Intentar obtener el paciente desde localStorage
+          let resolvedPaciente = null;
           const datosPaciente = JSON.parse(localStorage.getItem("dataPaciente"));
           if (datosPaciente && datosPaciente.identificadorPaciente === hData.identificadorPaciente) {
-            setPaciente(datosPaciente);
+            resolvedPaciente = datosPaciente;
           } else {
             // Intentar cargarlo desde la API si no existe localmente
             try {
               const resPac = await api.get(`/pacientes`);
               const foundPac = resPac.data.find(p => p.identificadorPaciente === hData.identificadorPaciente);
               if (foundPac) {
-                setPaciente({
-                  nombres: foundPac.nombres,
-                  apellidos: `${foundPac.apellidoPaterno || ""} ${foundPac.apellidoMaterno || ""}`.trim(),
-                  edad: foundPac.edad,
-                  telefono: foundPac.telefono,
+                resolvedPaciente = {
+                  ...foundPac,
+                  nombres: foundPac.nombres || "",
+                  apellidos: foundPac.apellidos || `${foundPac.apellidoPaterno || ""} ${foundPac.apellidoMaterno || ""}`.trim(),
+                  edad: foundPac.edad ?? hData.edad ?? "",
+                  telefono: foundPac.telefono ?? hData.telefono ?? "",
                   identificadorPaciente: foundPac.identificadorPaciente
-                });
+                };
               }
             } catch (err) {
               console.error("Error al obtener paciente de la API:", err);
             }
           }
+
+          if (!resolvedPaciente) {
+            resolvedPaciente = {
+              nombres: hData.nombres || "",
+              apellidos: hData.apellidos || "",
+              edad: hData.edad ?? "",
+              telefono: hData.telefono || "",
+              identificadorPaciente: hData.identificadorPaciente || ""
+            };
+          }
+
+          setPaciente(resolvedPaciente);
+
+          // Guardar copia de seguridad para revertir al cancelar
+          backupRef.current = {
+            formData: JSON.parse(JSON.stringify(hData)),
+            lesiones: JSON.parse(JSON.stringify(lData)),
+            obser: JSON.parse(JSON.stringify(oData)),
+            antecedentesNoPatologicos: JSON.parse(JSON.stringify(npData)),
+            paciente: JSON.parse(JSON.stringify(resolvedPaciente))
+          };
         }
       } catch (error) {
         console.error("Error al obtener historial:", error);
@@ -256,6 +271,10 @@ const VistaHistorial = () => {
 
       const historialDataLimpio = {
         ...formData,
+        nombres: paciente?.nombres ?? formData.nombres,
+        apellidos: paciente?.apellidos ?? formData.apellidos,
+        edad: paciente?.edad !== undefined && paciente?.edad !== "" ? Number(paciente.edad) : formData.edad,
+        telefono: paciente?.telefono ?? formData.telefono,
         lesiones,
         obser,
         antecedentesNoPatologicos
@@ -267,6 +286,44 @@ const VistaHistorial = () => {
       });
 
       if (res.data && res.data.ok) {
+        // Sincronizar datos del paciente en localStorage y en el backend si aplica
+        if (paciente) {
+          const apellidosParts = (paciente.apellidos || "").trim().split(/\s+/);
+          const apellidoPaterno = apellidosParts[0] || "";
+          const apellidoMaterno = apellidosParts.slice(1).join(" ") || "";
+          const updatedPac = {
+            ...paciente,
+            apellidoPaterno,
+            apellidoMaterno,
+            edad: paciente.edad !== undefined && paciente.edad !== "" ? Number(paciente.edad) : paciente.edad
+          };
+          setPaciente(updatedPac);
+          try {
+            const currentLocal = JSON.parse(localStorage.getItem("dataPaciente"));
+            if (!currentLocal || currentLocal.identificadorPaciente === updatedPac.identificadorPaciente) {
+              localStorage.setItem("dataPaciente", JSON.stringify(updatedPac));
+            }
+          } catch (e) {
+            console.warn("No se pudo sincronizar dataPaciente en localStorage:", e);
+          }
+
+          if (updatedPac.identificadorPaciente) {
+            try {
+              await api.put(`/pacientes/${updatedPac.identificadorPaciente}`, {
+                nombres: updatedPac.nombres,
+                apellidos: updatedPac.apellidos,
+                apellidoPaterno,
+                apellidoMaterno,
+                edad: updatedPac.edad,
+                telefono: updatedPac.telefono,
+                email: formData.correoElectronico || updatedPac.email
+              });
+            } catch (pacErr) {
+              console.warn("Aviso al sincronizar entidad paciente:", pacErr);
+            }
+          }
+        }
+
         showSuccess("¡Historial Actualizado!", "Los datos del historial se guardaron correctamente.");
         const updatedHistorial = res.data.historial || historialDataLimpio;
         setFormData(updatedHistorial);
@@ -278,7 +335,8 @@ const VistaHistorial = () => {
           formData: JSON.parse(JSON.stringify(updatedHistorial)),
           lesiones: JSON.parse(JSON.stringify(updatedHistorial.lesiones || lesiones)),
           obser: JSON.parse(JSON.stringify(updatedHistorial.obser || obser)),
-          antecedentesNoPatologicos: JSON.parse(JSON.stringify(updatedHistorial.antecedentesNoPatologicos || antecedentesNoPatologicos))
+          antecedentesNoPatologicos: JSON.parse(JSON.stringify(updatedHistorial.antecedentesNoPatologicos || antecedentesNoPatologicos)),
+          paciente: paciente ? JSON.parse(JSON.stringify(paciente)) : null
         };
 
         setIsEditing(false);
@@ -300,6 +358,9 @@ const VistaHistorial = () => {
       setLesiones(JSON.parse(JSON.stringify(backupRef.current.lesiones)));
       setObser(JSON.parse(JSON.stringify(backupRef.current.obser)));
       setAntecedentesNoPatologicos(JSON.parse(JSON.stringify(backupRef.current.antecedentesNoPatologicos)));
+      if (backupRef.current.paciente) {
+        setPaciente(JSON.parse(JSON.stringify(backupRef.current.paciente)));
+      }
     }
     setIsEditing(false);
   };
@@ -542,13 +603,58 @@ const VistaHistorial = () => {
                   <div className="clinical-form-section">
                     <h3 className="clinical-section-title"><FaClipboardList style={{ marginRight: "8px" }} /> Anamnesis y Datos Generales</h3>
                     <div className="clinical-grid-3">
-                      <div className="col col-span-2">
-                        <label className="form-label">Nombre completo</label>
-                        <input type="text" className="input" value={`${paciente.nombres || ""} ${paciente.apellidos || ""}`.replace(/\s+/g, ' ').trim()} disabled />
-                      </div>
+                      {isEditing ? (
+                        <>
+                          <div className="col">
+                            <label className="form-label">Nombre(s)</label>
+                            <input
+                              type="text"
+                              className="input"
+                              value={paciente.nombres ?? ""}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setPaciente(prev => ({ ...(prev || {}), nombres: val }));
+                                setFormData(prev => ({ ...prev, nombres: val }));
+                              }}
+                              placeholder="Nombre(s) del paciente"
+                            />
+                          </div>
+                          <div className="col">
+                            <label className="form-label">Apellidos</label>
+                            <input
+                              type="text"
+                              className="input"
+                              value={paciente.apellidos ?? ""}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setPaciente(prev => ({ ...(prev || {}), apellidos: val }));
+                                setFormData(prev => ({ ...prev, apellidos: val }));
+                              }}
+                              placeholder="Apellidos del paciente"
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <div className="col col-span-2">
+                          <label className="form-label">Nombre completo</label>
+                          <input type="text" className="input" value={`${paciente.nombres || ""} ${paciente.apellidos || ""}`.replace(/\s+/g, ' ').trim()} disabled />
+                        </div>
+                      )}
                       <div className="col">
                         <label className="form-label">Edad (Años)</label>
-                        <input type="text" className="input" value={paciente.edad || ""} disabled />
+                        <input
+                          type={isEditing ? "number" : "text"}
+                          className="input"
+                          value={paciente.edad ?? formData.edad ?? ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setPaciente(prev => ({ ...(prev || {}), edad: val }));
+                            setFormData(prev => ({ ...prev, edad: val }));
+                          }}
+                          disabled={!isEditing}
+                          placeholder={isEditing ? "Ej. 30" : "Sin especificar"}
+                          min="0"
+                        />
                       </div>
                       <div className="col">
                         <label className="form-label">Fecha de nacimiento</label>
@@ -570,6 +676,8 @@ const VistaHistorial = () => {
                             onChange={(e) => setFormData({ ...formData, sexo: e.target.value })}
                           >
                             <option value="">Sin especificar</option>
+                            <option value="Hombre">Hombre</option>
+                            <option value="Mujer">Mujer</option>
                             <option value="Masculino">Masculino</option>
                             <option value="Femenino">Femenino</option>
                             <option value="Otro">Otro</option>
@@ -602,7 +710,18 @@ const VistaHistorial = () => {
                       </div>
                       <div className="col">
                         <label className="form-label">Teléfono</label>
-                        <input type="text" className="input" value={paciente.telefono || ""} disabled />
+                        <input
+                          type="text"
+                          className="input"
+                          value={paciente.telefono ?? formData.telefono ?? ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setPaciente(prev => ({ ...(prev || {}), telefono: val }));
+                            setFormData(prev => ({ ...prev, telefono: val }));
+                          }}
+                          disabled={!isEditing}
+                          placeholder={isEditing ? "Ej. 5512345678" : "Sin especificar"}
+                        />
                       </div>
                       <div className="col col-span-2">
                         <label className="form-label">Dirección particular</label>
@@ -1273,26 +1392,40 @@ const VistaHistorial = () => {
                     <div className="col">
                       <label className="form-label">Tipo de dolor</label>
                       {isEditing ? (
-                        <select
-                          className="input"
-                          value={formData.tipo || ""}
-                          onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
-                        >
-                          <option value="">Sin registrar</option>
-                          <option value="ardon">Ardor</option>
-                          <option value="quemante">Quemante</option>
-                          <option value="punzante">Punzante</option>
-                          <option value="pellizco">Pellizco</option>
-                          <option value="muscular">Muscular</option>
-                          <option value="otra">Otra</option>
-                        </select>
+                        <>
+                          <select
+                            className="input"
+                            value={formData.tipo || ""}
+                            onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+                          >
+                            <option value="">Sin registrar</option>
+                            <option value="ardon">Ardor</option>
+                            <option value="quemante">Quemante</option>
+                            <option value="punzante">Punzante</option>
+                            <option value="pellizco">Pellizco</option>
+                            <option value="muscular">Muscular</option>
+                            <option value="otra">Otra</option>
+                          </select>
+                          {formData.tipo === "otra" && (
+                            <input
+                              type="text"
+                              className="input"
+                              value={formData.tipoOtra || ""}
+                              onChange={(e) => setFormData({ ...formData, tipoOtra: e.target.value })}
+                              placeholder="Especifique tipo de dolor..."
+                              style={{ marginTop: "8px" }}
+                            />
+                          )}
+                        </>
                       ) : (
                         <input
                           type="text"
                           className="input"
                           value={
-                            { ardon: "Ardor", quemante: "Quemante", punzante: "Punzante", pellizco: "Pellizco", muscular: "Muscular", otra: "Otra" }[formData.tipo] ||
-                            formData.tipo || "Ninguno registrado"
+                            formData.tipo === "otra" && formData.tipoOtra
+                              ? `Otra (${formData.tipoOtra})`
+                              : ({ ardon: "Ardor", quemante: "Quemante", punzante: "Punzante", pellizco: "Pellizco", muscular: "Muscular", otra: "Otra" }[formData.tipo] ||
+                                formData.tipo || "Ninguno registrado")
                           }
                           disabled
                         />
@@ -1428,33 +1561,77 @@ const VistaHistorial = () => {
                                 borderRadius: "8px",
                                 padding: "0.6rem 1rem",
                                 gap: "1rem",
-                                justifyContent: "space-between"
+                                justifyContent: "space-between",
+                                flexWrap: "wrap"
                               }}
                             >
-                              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flex: 1, flexWrap: "wrap" }}>
-                                <span style={{ fontWeight: "700", fontSize: "0.9rem", color: "var(--text-main)", display: "flex", alignItems: "center", gap: "6px" }}>
-                                  <FaMapMarkerAlt style={{ color: "var(--primary)" }} /> {dz.zona}
-                                </span>
-                                <span
-                                  style={{
-                                    background: getEvaColor(dz.eva),
-                                    color: getEvaTextColor(dz.eva),
-                                    fontWeight: "800",
-                                    fontSize: "0.75rem",
-                                    padding: "3px 8px",
-                                    borderRadius: "12px",
-                                    minWidth: "75px",
-                                    textAlign: "center"
-                                  }}
-                                >
-                                  EVA: {dz.eva} ({getEvaTextDescription(dz.eva)})
-                                </span>
-                                {dz.comentario && (
-                                  <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontStyle: "italic", borderLeft: "2px solid rgba(139, 92, 246, 0.2)", paddingLeft: "10px" }}>
-                                    {dz.comentario}
+                              {isEditing ? (
+                                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flex: 1, flexWrap: "wrap" }}>
+                                  <input
+                                    type="text"
+                                    className="input"
+                                    value={dz.zona || ""}
+                                    onChange={(e) => {
+                                      const updated = [...formData.dolorZonas];
+                                      updated[idx] = { ...updated[idx], zona: e.target.value };
+                                      setFormData({ ...formData, dolorZonas: updated });
+                                    }}
+                                    placeholder="Zona corporal"
+                                    style={{ flex: "1 1 150px", margin: 0, padding: "0.4rem 0.65rem", fontSize: "0.85rem" }}
+                                  />
+                                  <select
+                                    className="input"
+                                    value={dz.eva ?? 0}
+                                    onChange={(e) => {
+                                      const updated = [...formData.dolorZonas];
+                                      updated[idx] = { ...updated[idx], eva: Number(e.target.value) };
+                                      setFormData({ ...formData, dolorZonas: updated });
+                                    }}
+                                    style={{ flex: "0 0 110px", margin: 0, padding: "0.4rem 0.65rem", fontSize: "0.85rem" }}
+                                  >
+                                    {[...Array(11).keys()].map(n => (
+                                      <option key={n} value={n}>EVA {n}</option>
+                                    ))}
+                                  </select>
+                                  <input
+                                    type="text"
+                                    className="input"
+                                    value={dz.comentario || ""}
+                                    onChange={(e) => {
+                                      const updated = [...formData.dolorZonas];
+                                      updated[idx] = { ...updated[idx], comentario: e.target.value };
+                                      setFormData({ ...formData, dolorZonas: updated });
+                                    }}
+                                    placeholder="Comentario o irradiación..."
+                                    style={{ flex: "2 1 200px", margin: 0, padding: "0.4rem 0.65rem", fontSize: "0.85rem" }}
+                                  />
+                                </div>
+                              ) : (
+                                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flex: 1, flexWrap: "wrap" }}>
+                                  <span style={{ fontWeight: "700", fontSize: "0.9rem", color: "var(--text-main)", display: "flex", alignItems: "center", gap: "6px" }}>
+                                    <FaMapMarkerAlt style={{ color: "var(--primary)" }} /> {dz.zona}
                                   </span>
-                                )}
-                              </div>
+                                  <span
+                                    style={{
+                                      background: getEvaColor(dz.eva),
+                                      color: getEvaTextColor(dz.eva),
+                                      fontWeight: "800",
+                                      fontSize: "0.75rem",
+                                      padding: "3px 8px",
+                                      borderRadius: "12px",
+                                      minWidth: "75px",
+                                      textAlign: "center"
+                                    }}
+                                  >
+                                    EVA: {dz.eva} ({getEvaTextDescription(dz.eva)})
+                                  </span>
+                                  {dz.comentario && (
+                                    <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontStyle: "italic", borderLeft: "2px solid rgba(139, 92, 246, 0.2)", paddingLeft: "10px" }}>
+                                      {dz.comentario}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
 
                               {isEditing && (
                                 <button
@@ -1508,7 +1685,19 @@ const VistaHistorial = () => {
                       <div className="clinical-grid-3" style={{ marginBottom: "1rem" }}>
                         <div className="col">
                           <label className="form-label">ID Nota asignado</label>
-                          <input type="text" className="input" value={formData.soapFK?.idHistoricoFk || formData.idHistorial || "Sin registrar"} disabled style={{ fontWeight: "600" }} />
+                          <input
+                            type="text"
+                            className="input"
+                            value={formData.soapFK?.idHistoricoFk ?? formData.idHistorial ?? (isEditing ? "" : "Sin registrar")}
+                            onChange={(e) => setFormData({
+                              ...formData,
+                              idHistorial: e.target.value,
+                              soapFK: { ...(formData.soapFK || {}), idHistoricoFk: e.target.value }
+                            })}
+                            disabled={!isEditing}
+                            placeholder={isEditing ? "ID de la nota..." : "Sin registrar"}
+                            style={{ fontWeight: "600" }}
+                          />
                         </div>
                         <div className="col">
                           <label className="form-label">Mes-Año de atención</label>

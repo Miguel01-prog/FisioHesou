@@ -418,7 +418,7 @@ const ConfiguracionEjercicios = () => {
           
           {cargando ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
-              <LoadingSpinner size="large" color="#42133B"/>
+              <LoadingSpinner size="large" />
             </div>
           ) : ejercicios.length === 0 ? (
             <p className="text-muted">No hay ejercicios en el catálogo. Agrega uno arriba.</p>

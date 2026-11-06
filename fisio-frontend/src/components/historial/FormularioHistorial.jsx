@@ -204,7 +204,7 @@ const SignaturePad = ({ icon, label, value, onChange, placeholderName, nameValue
             placeholder={placeholderName}
             value={nameValue}
             onChange={(e) => !readOnly && onNameChange(e.target.value)}
-            readOnly={true}
+            readOnly={readOnly}
           />
         </div>
         <div>
@@ -215,7 +215,7 @@ const SignaturePad = ({ icon, label, value, onChange, placeholderName, nameValue
             style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem", background: "rgba(226, 232, 240, 0.45)", fontWeight: "600" }}
             value={dateValue}
             onChange={(e) => !readOnly && onDateChange(e.target.value)}
-            readOnly={true}
+            readOnly={readOnly}
           />
         </div>
       </div>
@@ -1370,7 +1370,18 @@ const FormularioHistorial = () => {
                       <>
                         <div className="col col-span-2">
                           <label className="form-label">Nombre completo</label>
-                          <input type="text" className="input" value={`${paciente.nombres || ""} ${paciente.apellidos || ""}`.replace(/\s+/g, ' ').trim()} readOnly style={{ background: "rgba(226, 232, 240, 0.4)" }} />
+                          <input
+                            type="text"
+                            className="input"
+                            value={`${paciente.nombres || ""} ${paciente.apellidos || ""}`.replace(/\s+/g, ' ')}
+                            onChange={(e) => {
+                              const parts = e.target.value.split(" ");
+                              const nombres = parts[0] || "";
+                              const apellidos = parts.slice(1).join(" ");
+                              setPaciente(prev => ({ ...prev, nombres, apellidos }));
+                            }}
+                            placeholder="Nombre completo del paciente"
+                          />
                         </div>
                         <div className="col">
                           <label className="form-label">Edad (Años)</label>
@@ -1384,7 +1395,17 @@ const FormularioHistorial = () => {
                               min="1"
                             />
                           ) : (
-                            <input type="text" className="input" value={paciente.edad} readOnly style={{ background: "rgba(226, 232, 240, 0.4)" }} />
+                            <input
+                              type="number"
+                              className="input"
+                              value={edadEditable !== "" ? edadEditable : (paciente.edad ?? "")}
+                              onChange={(e) => {
+                                setEdadEditable(e.target.value);
+                                setPaciente(prev => ({ ...prev, edad: e.target.value }));
+                              }}
+                              placeholder="Ej. 30"
+                              min="1"
+                            />
                           )}
                         </div>
                       </>
@@ -1429,7 +1450,14 @@ const FormularioHistorial = () => {
                           placeholder="Ej. 5512345678 (10 dígitos)"
                         />
                       ) : (
-                        <input type="text" className="input" value={paciente.telefono} readOnly style={{ background: "rgba(226, 232, 240, 0.4)" }} />
+                        <input
+                          type="tel"
+                          className="input"
+                          value={paciente.telefono || ""}
+                          onChange={(e) => setPaciente(prev => ({ ...prev, telefono: e.target.value }))}
+                          maxLength={10}
+                          placeholder="Ej. 5512345678"
+                        />
                       )}
                     </div>
                     <div className="col col-span-2">
@@ -1549,7 +1577,7 @@ const FormularioHistorial = () => {
                       onNameChange={(val) => updateSignature("nombreProfesionalFirma", val)}
                       dateValue={formData.fechaFirmaProfesional}
                       onDateChange={(val) => updateSignature("fechaFirmaProfesional", val)}
-                      readOnly={true}
+                      readOnly={false}
                     />
                   </div>
 
@@ -2418,11 +2446,11 @@ const FormularioHistorial = () => {
                   <div className="clinical-grid-3" style={{ marginBottom: "1rem" }}>
                     <div className="col">
                       <label className="form-label">ID Nota asignado</label>
-                      <input type="text" className="input" value={formData.idHistoricoFk} readOnly style={{ background: "rgba(226, 232, 240, 0.4)", fontWeight: "600" }} />
+                      <input type="text" name="idHistoricoFk" className="input" value={formData.idHistoricoFk || ""} onChange={handleInputChange} style={{ fontWeight: "600" }} />
                     </div>
                     <div className="col">
                       <label className="form-label">Mes-Año de atención</label>
-                      <input type="text" className="input" value={formData.mesAñoNota} readOnly style={{ background: "rgba(226, 232, 240, 0.4)", fontWeight: "600" }} />
+                      <input type="text" name="mesAñoNota" className="input" value={formData.mesAñoNota || ""} onChange={handleInputChange} style={{ fontWeight: "600" }} />
                     </div>
                   </div>
                   <div className="clinical-grid-1">

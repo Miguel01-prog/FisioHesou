@@ -7,6 +7,18 @@
   padding: 1rem;
 }
 
+/* Compact inline spinner for small size and inside buttons so buttons never grow */
+.spinner-container.small,
+button .spinner-container,
+.btn .spinner-container,
+.save-btn .spinner-container {
+  flex-direction: row;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+}
+
 /* 🔵 CLASSIC TRAILING DOT RING SPINNER (EXACT MATCH TO REFERENCE GIF) */
 .spinner-dot-ring {
   position: relative;
@@ -15,6 +27,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .dot-holder {
@@ -58,9 +71,29 @@
 .dot-8 .ring-dot { animation-delay: -0.10625s; }
 
 /* 📏 SIZES */
-.spinner-container.small .spinner-dot-ring { width: 28px; height: 28px; }
-.spinner-container.small .dot-holder { width: 6px; margin-left: -3px; }
-.spinner-container.small .ring-dot { width: 5.5px; height: 5.5px; }
+.spinner-container.small .spinner-dot-ring,
+button .spinner-container .spinner-dot-ring,
+.btn .spinner-container .spinner-dot-ring,
+.save-btn .spinner-container .spinner-dot-ring {
+  width: 18px;
+  height: 18px;
+}
+
+.spinner-container.small .dot-holder,
+button .spinner-container .dot-holder,
+.btn .spinner-container .dot-holder,
+.save-btn .spinner-container .dot-holder {
+  width: 4px;
+  margin-left: -2px;
+}
+
+.spinner-container.small .ring-dot,
+button .spinner-container .ring-dot,
+.btn .spinner-container .ring-dot,
+.save-btn .spinner-container .ring-dot {
+  width: 4px;
+  height: 4px;
+}
 
 .spinner-container.large .spinner-dot-ring { width: 72px; height: 72px; }
 .spinner-container.large .dot-holder { width: 14px; margin-left: -7px; }
