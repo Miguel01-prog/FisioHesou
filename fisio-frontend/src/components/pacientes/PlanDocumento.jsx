@@ -3,8 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
 import api from "../../api";
 import LoadingSpinner from "../layout/LoadingSpinner";
-import { showError } from "../../utils/alerts";
+import { showError, showSuccess } from "../../utils/alerts";
 import { FaPrint, FaWhatsapp, FaEnvelope, FaEdit } from "react-icons/fa";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 import {
   formatDateDDMMYYYY,
   deobfuscateId,
@@ -20,9 +22,142 @@ const PlanDocumento = () => {
   const [plan, setPlan] = useState(null);
   const [paciente, setPaciente] = useState(null);
   const [cargando, setCargando] = useState(true);
+  const [generandoPdf, setGenerandoPdf] = useState(null); // 'whatsapp' | 'email' | null
   const [failedImages, setFailedImages] = useState({});
 
   const componentRef = useRef(null);
+
+  const getPdfFileName = () => {
+    const rawName = paciente
+      ? `${paciente.nombres || ""}_${paciente.apellidos || ""}`.trim()
+      : "Paciente";
+    const safeName =
+      rawName
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9_-]+/g, "_")
+        .replace(/^_+|_+$/g, "") || "Paciente";
+    return `Plan_Ejercicios_${safeName}.pdf`;
+  };
+
+  const renderElementToCanvasSafe = async (el) => {
+    try {
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: "#ffffff",
+        logging: false
+      });
+      // Verificar que toDataURL no falle por imágenes externas sin CORS
+      canvas.toDataURL("image/jpeg", 0.95);
+      return canvas;
+    } catch {
+      return await html2canvas(el, {
+        scale: 2,
+        useCORS: false,
+        allowTaint: false,
+        backgroundColor: "#ffffff",
+        logging: false,
+        ignoreElements: (node) =>
+          node.tagName === "IMG" &&
+          node.src &&
+          !node.src.startsWith("data:") &&
+          !node.src.startsWith(window.location.origin)
+      });
+    }
+  };
+
+  const generarArchivoPDF = async () => {
+    const sheet = componentRef.current;
+    if (!sheet) throw new Error("No se encontró el documento para generar el PDF.");
+
+    const fileName = getPdfFileName();
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+      compress: true
+    });
+
+    const pageWidth = pdf.internal.pageSize.getWidth(); // 210 mm
+    const pageHeight = pdf.internal.pageSize.getHeight(); // 297 mm
+    const marginX = 14;
+    const marginTop = 14;
+    const marginBottom = 14;
+    const contentWidthMm = pageWidth - marginX * 2;
+    const maxY = pageHeight - marginBottom;
+
+    const blocks = Array.from(
+      sheet.querySelectorAll(
+        ".plan-header-block, .plan-title-heading, .plan-notes-block, .plan-exercise-item, .plan-footer-block"
+      )
+    );
+
+    let currentY = marginTop;
+
+    if (blocks.length > 0) {
+      for (let i = 0; i < blocks.length; i++) {
+        const block = blocks[i];
+        const canvas = await renderElementToCanvasSafe(block);
+        const imgData = canvas.toDataURL("image/jpeg", 0.95);
+        const blockHeightMm = (canvas.height * contentWidthMm) / canvas.width;
+
+        if (currentY > marginTop && currentY + blockHeightMm > maxY) {
+          pdf.addPage();
+          currentY = marginTop;
+        }
+
+        pdf.addImage(imgData, "JPEG", marginX, currentY, contentWidthMm, blockHeightMm);
+        currentY += blockHeightMm + 4;
+      }
+    } else {
+      const canvas = await renderElementToCanvasSafe(sheet);
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const imgHeightMm = (canvas.height * contentWidthMm) / canvas.width;
+      pdf.addImage(imgData, "JPEG", marginX, marginTop, contentWidthMm, imgHeightMm);
+    }
+
+    const arrayBuffer = pdf.output("arraybuffer");
+    const pdfBlob = new Blob([arrayBuffer], { type: "application/pdf" });
+    const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
+
+    return { pdf, pdfBlob, pdfFile, fileName };
+  };
+
+  const copiarImagenAlPortapapeles = async () => {
+    try {
+      const sheet = componentRef.current;
+      if (!sheet || !navigator.clipboard || typeof ClipboardItem === "undefined") return false;
+      const fullCanvas = await renderElementToCanvasSafe(sheet);
+      const pngBlob = await new Promise((resolve) => fullCanvas.toBlob(resolve, "image/png"));
+      if (!pngBlob) return false;
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": pngBlob })]);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const descargarPdfBinario = (pdfBlob, fileName) => {
+    const blobUrl = URL.createObjectURL(pdfBlob);
+    const a = document.createElement("a");
+    a.style.display = "none";
+    a.href = blobUrl;
+    a.download = fileName.endsWith(".pdf") ? fileName : `${fileName}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    }, 8000);
+  };
+
+  const isMobileOrTabletDevice = () => {
+    const ua = navigator.userAgent || "";
+    const isTouchMac = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) || isTouchMac;
+  };
 
   const handlePrint = () => {
     const prevTitle = document.title;
@@ -50,15 +185,92 @@ const PlanDocumento = () => {
     setTimeout(restoreUrlAndTitle, 1200);
   };
 
-  const handleShareWhatsApp = () => {
-    const text = `Hola ${paciente ? paciente.nombres : ""}, te envío tu plan de ejercicios y rehabilitación. Por favor, revisa el archivo PDF que te adjuntaré a continuación.`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+  const handleShareWhatsApp = async () => {
+    if (generandoPdf) return;
+    const nombrePac = paciente ? paciente.nombres : "";
+    const text = `Hola ${nombrePac}, te comparto tu Plan de Ejercicios y Rehabilitación de Clínica HESOU.`;
+
+    try {
+      setGenerandoPdf("whatsapp");
+      const { pdfBlob, pdfFile, fileName } = await generarArchivoPDF();
+
+      // En celular o tablet (iOS / Android / iPad), abre el menú nativo con el PDF ya adjunto
+      if (isMobileOrTabletDevice() && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        await navigator.share({
+          files: [pdfFile],
+          title: "Plan de Ejercicios - HESOU",
+          text
+        });
+        return;
+      }
+
+      // En PC:
+      // 1) Copiar el documento como imagen al portapapeles para poder pegarlo con Ctrl + V directo en WhatsApp
+      const copiadoPortapapeles = await copiarImagenAlPortapapeles();
+      // 2) Descargar el archivo PDF binario (.pdf)
+      descargarPdfBinario(pdfBlob, fileName);
+
+      const rawPhone = (paciente?.telefono || "").replace(/\D/g, "");
+      const waPhone = rawPhone.length === 10 ? `52${rawPhone}` : rawPhone;
+      const waUrl = waPhone
+        ? `https://wa.me/${waPhone}?text=${encodeURIComponent(text)}`
+        : `https://wa.me/?text=${encodeURIComponent(text)}`;
+
+      await showSuccess(
+        "¡Plan listo para enviar!",
+        copiadoPortapapeles
+          ? `Se descargó "${fileName}" y además se copió el plan al portapapeles: al abrirse WhatsApp solo presiona Ctrl + V (Pegar) en el chat o arrastra el PDF descargado.`
+          : `Se descargó "${fileName}" en tu carpeta de Descargas. Al abrirse WhatsApp, arrastra el archivo PDF descargado al chat.`
+      );
+
+      window.open(waUrl, "_blank");
+    } catch (err) {
+      if (err?.name === "AbortError") return;
+      console.error("Error al compartir por WhatsApp:", err);
+      showError("Error", "No se pudo generar el archivo PDF para compartir.");
+    } finally {
+      setGenerandoPdf(null);
+    }
   };
 
-  const handleShareEmail = () => {
+  const handleShareEmail = async () => {
+    if (generandoPdf) return;
     const subject = `Tu Plan de Ejercicios - HESOU`;
-    const body = `Hola ${paciente ? paciente.nombres : ""},\n\nTe envío tu plan de ejercicios y rehabilitación. Por favor, revisa el archivo PDF adjunto.\n\nSaludos,\nHESOU`;
-    window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+    const body = `Hola ${paciente ? paciente.nombres : ""},\n\nTe envío tu plan de ejercicios y rehabilitación en el archivo PDF adjunto.\n\nSaludos,\nHESOU`;
+
+    try {
+      setGenerandoPdf("email");
+      const { pdfBlob, pdfFile, fileName } = await generarArchivoPDF();
+
+      // En celular o tablet, abre el menú nativo con el PDF ya adjunto
+      if (isMobileOrTabletDevice() && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        await navigator.share({
+          files: [pdfFile],
+          title: subject,
+          text: body
+        });
+        return;
+      }
+
+      // En PC: descargar el archivo PDF binario (.pdf)
+      descargarPdfBinario(pdfBlob, fileName);
+
+      const destEmail = paciente?.email || paciente?.correoElectronico || "";
+      const mailtoUrl = `mailto:${encodeURIComponent(destEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+      await showSuccess(
+        "PDF descargado listo para adjuntar",
+        `Se descargó "${fileName}" automáticamente. A continuación se abrirá tu correo para que adjuntes el archivo.`
+      );
+
+      window.location.href = mailtoUrl;
+    } catch (err) {
+      if (err?.name === "AbortError") return;
+      console.error("Error al compartir por correo:", err);
+      showError("Error", "No se pudo generar el archivo PDF para enviar por correo.");
+    } finally {
+      setGenerandoPdf(null);
+    }
   };
 
   useEffect(() => {
@@ -71,14 +283,36 @@ const PlanDocumento = () => {
       const planData = resPlan.data.plan;
       setPlan(planData);
 
-      const resPaciente = await api.get(`/citas/detalles-paciente/${planData.identificadorPaciente}`);
-      if (resPaciente.data.historial && resPaciente.data.historial.length > 0) {
-        setPaciente(resPaciente.data.historial[0]);
-      } else {
+      let resolvedPaciente = null;
+      try {
+        const resPac = await api.get(`/pacientes/${planData.identificadorPaciente}`);
+        if (resPac.data && resPac.data.nombres) {
+          resolvedPaciente = resPac.data;
+        }
+      } catch {
+        // continuar con fallback
+      }
+
+      if (!resolvedPaciente) {
+        try {
+          const resPaciente = await api.get(`/citas/detalles-paciente/${planData.identificadorPaciente}`);
+          if (resPaciente.data.historial && resPaciente.data.historial.length > 0) {
+            resolvedPaciente = resPaciente.data.historial[0];
+          }
+        } catch {
+          // continuar con fallback localStorage
+        }
+      }
+
+      if (!resolvedPaciente) {
         const localData = JSON.parse(localStorage.getItem("dataPaciente"));
         if (localData && localData.identificadorPaciente === planData.identificadorPaciente) {
-          setPaciente(localData);
+          resolvedPaciente = localData;
         }
+      }
+
+      if (resolvedPaciente) {
+        setPaciente(resolvedPaciente);
       }
     } catch (err) {
       console.error(err);
@@ -136,12 +370,14 @@ const PlanDocumento = () => {
       >
 
         <button
+          type="button"
           onClick={handleShareWhatsApp}
+          disabled={Boolean(generandoPdf)}
           style={{
             border: 'none',
             padding: '10px 18px',
             borderRadius: '30px',
-            cursor: 'pointer',
+            cursor: generandoPdf ? 'wait' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
@@ -150,23 +386,35 @@ const PlanDocumento = () => {
             fontWeight: '600',
             fontSize: '13px',
             boxShadow: '0 4px 12px rgba(37, 211, 102, 0.3)',
-            transition: 'all 0.2s ease'
+            transition: 'all 0.2s ease',
+            opacity: generandoPdf && generandoPdf !== 'whatsapp' ? 0.65 : 1
           }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-          title="Compartir por WhatsApp"
+          onMouseEnter={(e) => !generandoPdf && (e.currentTarget.style.transform = 'translateY(-2px)')}
+          onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
+          title="Descargar PDF y compartir por WhatsApp"
         >
-          <FaWhatsapp size={18} />
-          <span>WhatsApp</span>
+          {generandoPdf === "whatsapp" ? (
+            <>
+              <LoadingSpinner size="small" />
+              <span>Generando PDF...</span>
+            </>
+          ) : (
+            <>
+              <FaWhatsapp size={18} />
+              <span>WhatsApp</span>
+            </>
+          )}
         </button>
 
         <button
+          type="button"
           onClick={handleShareEmail}
+          disabled={Boolean(generandoPdf)}
           style={{
             border: 'none',
             padding: '10px 18px',
             borderRadius: '30px',
-            cursor: 'pointer',
+            cursor: generandoPdf ? 'wait' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
@@ -175,14 +423,24 @@ const PlanDocumento = () => {
             fontWeight: '600',
             fontSize: '13px',
             boxShadow: '0 4px 12px rgba(234, 67, 53, 0.3)',
-            transition: 'all 0.2s ease'
+            transition: 'all 0.2s ease',
+            opacity: generandoPdf && generandoPdf !== 'email' ? 0.65 : 1
           }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-          title="Compartir por Correo"
+          onMouseEnter={(e) => !generandoPdf && (e.currentTarget.style.transform = 'translateY(-2px)')}
+          onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
+          title="Descargar PDF y compartir por Correo"
         >
-          <FaEnvelope size={16} />
-          <span>Correo</span>
+          {generandoPdf === "email" ? (
+            <>
+              <LoadingSpinner size="small" />
+              <span>Generando PDF...</span>
+            </>
+          ) : (
+            <>
+              <FaEnvelope size={16} />
+              <span>Correo</span>
+            </>
+          )}
         </button>
 
         <div style={{ width: '1px', height: '24px', background: 'rgba(255,255,255,0.2)', margin: '0 2px' }}></div>
