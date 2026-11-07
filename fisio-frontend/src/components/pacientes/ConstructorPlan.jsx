@@ -176,7 +176,7 @@ const ConstructorPlan = () => {
   };
 
   const agregarEjercicioAlPlan = (ejercicio) => {
-    if (ejerciciosPlan.find(e => e.ejercicio._id === ejercicio._id)) {
+    if (ejerciciosPlan.find(e => e.ejercicio?._id === ejercicio._id)) {
         showError("Aviso", "Este ejercicio ya está en el plan.");
         return;
     }
@@ -191,6 +191,7 @@ const ConstructorPlan = () => {
         notas: ""
       }
     ]);
+    setMostrarModal(false);
   };
 
   const quitarEjercicio = (index) => {

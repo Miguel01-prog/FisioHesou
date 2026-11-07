@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import api, { SERVER_URL } from "../../api";
 import { showError, showSuccess } from "../../utils/alerts";
+import { formatDateDDMMYYYY } from "../../utils/utils";
 import Swal from "sweetalert2";
 import {
   FaPlus,
@@ -245,7 +246,7 @@ export default function ArchivosExpediente({ identificadorPaciente, readOnly = f
         <body>
           <div class="header">
             <h2>${lightboxFile.categoria}</h2>
-            <p>Paciente: ${identificadorPaciente} | Fecha: ${new Date(lightboxFile.fechaSubida).toLocaleDateString()}</p>
+            <p>Paciente: ${identificadorPaciente} | Fecha: ${formatDateDDMMYYYY(lightboxFile.fechaSubida)}</p>
             ${lightboxFile.descripcion ? `<p style="font-style: italic; margin-top: 4px;">"${lightboxFile.descripcion}"</p>` : ""}
           </div>
           <img src="${fileUrl}" onload="window.print(); window.close();" onerror="window.print(); window.close();" />
@@ -495,7 +496,7 @@ export default function ArchivosExpediente({ identificadorPaciente, readOnly = f
                     )}
 
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.74rem", color: "#94a3b8", marginTop: "4px" }}>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><FaCalendarAlt size={10} /> {new Date(archivo.fechaSubida).toLocaleDateString()}</span>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><FaCalendarAlt size={10} /> {formatDateDDMMYYYY(archivo.fechaSubida)}</span>
                       {archivo.tamano > 0 && <span>{formatFileSize(archivo.tamano)}</span>}
                     </div>
                   </div>
@@ -1034,7 +1035,7 @@ export default function ArchivosExpediente({ identificadorPaciente, readOnly = f
               <div style={{ fontSize: "0.78rem", color: "#94a3b8", flexShrink: 0 }}>
                 <span>Subido por: <strong>{lightboxFile.subidoPor || "Especialista"}</strong></span>
                 <span style={{ margin: "0 8px" }}>•</span>
-                <span>{new Date(lightboxFile.fechaSubida).toLocaleString()}</span>
+                <span>{formatDateDDMMYYYY(lightboxFile.fechaSubida)}</span>
               </div>
             </div>
           )}

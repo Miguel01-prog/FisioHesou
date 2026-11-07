@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 
 import api from "../../api";
 import LoadingSpinner from "../layout/LoadingSpinner";
-import { deobfuscateId } from "../../utils/utils";
+import { deobfuscateId, formatDateDDMMYYYY } from "../../utils/utils";
 import ArchivosExpediente from "../expediente/ArchivosExpediente";
 import SignaturePad from "./SignaturePad";
 import { showError, showSuccess } from "../../utils/alerts";
@@ -661,7 +661,7 @@ const VistaHistorial = () => {
                         <input
                           type={isEditing ? "date" : "text"}
                           className="input"
-                          value={formData.fechaNacimiento || ""}
+                          value={isEditing ? (formData.fechaNacimiento ? String(formData.fechaNacimiento).substring(0, 10) : "") : (formData.fechaNacimiento ? formatDateDDMMYYYY(formData.fechaNacimiento) : "")}
                           onChange={(e) => setFormData({ ...formData, fechaNacimiento: e.target.value })}
                           disabled={!isEditing}
                           placeholder={isEditing ? "" : "Sin especificar"}

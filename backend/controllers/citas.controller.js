@@ -108,7 +108,7 @@ export const crearCita = async (req, res) => {
     try {
       await Notification.create({
         title: "Nueva Cita Agendada (Pública)",
-        description: `El paciente ${nombres} ${apellidoPaterno} agendó una cita de ${area} para el ${fechaCitaStr} a las ${horaCita}.`,
+        description: `El paciente ${nombres} ${apellidoPaterno} agendó una cita de ${area} para el ${String(fechaCitaStr).replace(/^(\d{4})-(\d{2})-(\d{2})$/, "$3/$2/$1")} a las ${horaCita}.`,
         area: area === "fisioterapia" || area === "fisioterapeuta" ? "fisioterapeuta" : "nutriologa",
         type: "new_appointment",
         citaId: nuevaCita._id,
@@ -174,7 +174,7 @@ export const crearCitaManual = async (req, res) => {
     try {
       await Notification.create({
         title: "Nueva Cita Registrada (Manual)",
-        description: `Cita manual para ${paciente.nombres} ${paternal} agendada para el ${fechaCitaStr} a las ${horaCita}.`,
+        description: `Cita manual para ${paciente.nombres} ${paternal} agendada para el ${String(fechaCitaStr).replace(/^(\d{4})-(\d{2})-(\d{2})$/, "$3/$2/$1")} a las ${horaCita}.`,
         area: area === "fisioterapia" || area === "fisioterapeuta" ? "fisioterapeuta" : "nutriologa",
         type: "new_appointment",
         citaId: nuevaCita._id,

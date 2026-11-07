@@ -67,7 +67,7 @@ const ListaPlanesPaciente = () => {
             <p>No hay planes de tratamiento registrados para este paciente.</p>
           ) : (
             <div style={{ width: '100%', overflowX: 'auto' }}>
-              <table className="tabla-pacientes">
+              <table className="tabla-pacientes tabla-planes">
                 <thead>
                   <tr>
                     <th>Fecha de Creación</th>
@@ -82,8 +82,8 @@ const ListaPlanesPaciente = () => {
                     const rolePath = user?.role || user?.rol || 'fisioterapeuta';
                     return (
                       <tr key={item._id}>
-                        <td>{formatDateDDMMYYYY(item.fechaCreacion)}</td>
-                        <td>{item.ejercicios?.length || 0} ejercicios</td>
+                        <td data-label="Fecha: ">{formatDateDDMMYYYY(item.fechaCreacion)}</td>
+                        <td data-label="Total de ejercicios: ">{item.ejercicios?.length || 0} ejercicios</td>
                         <td>
                           <button
                             className="btn-eye"

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { formatDateDDMMYYYY } from "../../utils/utils";
 
 const SignaturePad = ({
   icon,
@@ -218,7 +219,7 @@ const SignaturePad = ({
         <div>
           <label className="form-label" style={{ fontSize: "0.8rem", marginBottom: "4px", fontWeight: "600" }}>Fecha firma</label>
           <input
-            type="date"
+            type={readOnly ? "text" : "date"}
             className="input"
             style={{
               padding: "0.45rem 0.75rem",
@@ -226,7 +227,7 @@ const SignaturePad = ({
               background: readOnly ? "rgba(226, 232, 240, 0.45)" : "inherit",
               fontWeight: "600"
             }}
-            value={dateValue || ""}
+            value={readOnly ? (dateValue ? formatDateDDMMYYYY(dateValue) : "") : (dateValue ? String(dateValue).substring(0, 10) : "")}
             onChange={(e) => !readOnly && onDateChange && onDateChange(e.target.value)}
             disabled={readOnly}
           />

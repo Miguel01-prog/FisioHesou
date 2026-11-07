@@ -431,7 +431,7 @@ export default function DashboardFisio() {
             <FaStethoscope /> Panel de Fisioterapia
           </h1>
           <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", margin: "4px 0 0 0" }}>
-            ¡Bienvenido/a, <strong style={{ color: "var(--text-main)" }}>{userName}</strong>! | {capitalizeWords(todayFormatted)}
+            ¡Bienvenido/a, <strong style={{ color: "var(--text-main)" }}>{userName}</strong>! | {formatDateDDMMYYYY(new Date())}
           </p>
         </div>
 

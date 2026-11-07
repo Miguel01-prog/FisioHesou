@@ -155,12 +155,12 @@ const Antecedentes = () => {
                 <tbody>
                   {categorias.map((c) => (
                     <tr key={c._id}>
-                      <td>
+                      <td data-label="Categoría: ">
                         <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>
                           {c.descripcion}
                         </span>
                       </td>
-                      <td style={{ textAlign: 'center' }}>
+                      <td data-label="" style={{ textAlign: 'center' }}>
                         <button
                           type="button"
                           className="patient-detail-action-btn btn-primary-action hover-grow"

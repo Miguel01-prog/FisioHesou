@@ -622,6 +622,36 @@ hr {
   }
 
   /* Label identification for touch cards */
+  .tabla-pacientes td[data-label]::before {
+    content: attr(data-label) !important;
+  }
+
+  .tabla-pacientes td[data-label=""]::before {
+    content: none !important;
+  }
+
+  .tabla-pacientes.tabla-planes td:nth-child(3) {
+    margin-top: 0.35rem;
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .tabla-pacientes.tabla-planes td:nth-child(3) .btn-eye {
+    width: 100%;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    gap: 0.5rem;
+  }
+
+  .tabla-pacientes.tabla-planes td:nth-child(3) .btn-eye::after {
+    content: " Ver Plan";
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .tabla-pacientes.tabla-planes td:last-child .btn-eye::after {
+    content: " Editar Plan" !important;
+  }
   .tabla-pacientes td:nth-child(1)::before {
     content: "Paciente: ";
     font-weight: 700;

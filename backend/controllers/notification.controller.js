@@ -126,6 +126,9 @@ const checkAndGenerateUpcomingNotifications = async (area, clientId) => {
           hasAppointmentPassed(cita.fechaCitaStr, cita.horaCita)
         ) {
           await Notification.deleteOne({ _id: notif._id });
+        } else if (/\b\d{4}-\d{2}-\d{2}\b/.test(notif.description || "")) {
+          notif.description = notif.description.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, "$3/$2/$1");
+          await notif.save();
         }
       } else {
         await Notification.deleteOne({ _id: notif._id });

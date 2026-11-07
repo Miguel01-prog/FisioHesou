@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import api from "../../api.js";
 import LoadingSpinner from "../../components/layout/LoadingSpinner.jsx";
 import { showError } from "../../utils/alerts.js";
+import { formatDateDDMMYYYY } from "../../utils/utils.js";
 import { 
   FiSettings, 
   FiUsers, 
@@ -359,7 +360,7 @@ export default function Dashboard() {
                       {c.nombres} {c.apellidoPaterno}
                     </span>
                     <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "4px" }}>
-                      <FiClock size={12} /> {c.fechaCitaStr} | {c.horaCita} hrs
+                      <FiClock size={12} /> {formatDateDDMMYYYY(c.fechaCitaStr)} | {c.horaCita} hrs
                     </span>
                   </div>
 

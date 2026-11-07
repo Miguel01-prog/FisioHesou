@@ -1,27 +1,36 @@
 export function formatDateDDMMYYYY(isoDate) {
   if (!isoDate) return "";
-  if (/\d{4}-\d{2}-\d{2}/.test(isoDate)) {
-    const [year, month, day] = isoDate.substring(0, 10).split("-");
+  if (isoDate instanceof Date) {
+    if (isNaN(isoDate.getTime())) return "";
+    const day = String(isoDate.getDate()).padStart(2, "0");
+    const month = String(isoDate.getMonth() + 1).padStart(2, "0");
+    const year = isoDate.getFullYear();
     return `${day}/${month}/${year}`;
   }
-  const match = isoDate.match(/(\d{2})T.*\/(\d{2})\/(\d{4})/);
-
+  const str = String(isoDate).trim();
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) {
+    return str;
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str) || /^\d{4}-\d{2}-\d{2}T00:00:00/.test(str)) {
+    const [year, month, day] = str.substring(0, 10).split("-");
+    return `${day}/${month}/${year}`;
+  }
+  const match = str.match(/(\d{2})T.*\/(\d{2})\/(\d{4})/);
   if (match) {
-    const day = match[1];
-    const month = match[2];
-    const year = match[3];
-    return `${day}/${month}/${year}`;
+    return `${match[1]}/${match[2]}/${match[3]}`;
   }
-
-  const parsed = new Date(isoDate);
+  const parsed = new Date(str);
   if (!isNaN(parsed.getTime())) {
-    const day = String(parsed.getUTCDate()).padStart(2, "0");
-    const month = String(parsed.getUTCMonth() + 1).padStart(2, "0");
-    const year = parsed.getUTCFullYear();
+    const day = String(parsed.getDate()).padStart(2, "0");
+    const month = String(parsed.getMonth() + 1).padStart(2, "0");
+    const year = parsed.getFullYear();
     return `${day}/${month}/${year}`;
   }
-
-  return isoDate;
+  if (/\d{4}-\d{2}-\d{2}/.test(str)) {
+    const [year, month, day] = str.substring(0, 10).split("-");
+    return `${day}/${month}/${year}`;
+  }
+  return str;
 }
 
 

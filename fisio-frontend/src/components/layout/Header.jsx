@@ -20,7 +20,7 @@ import {
 import { RxExit } from "react-icons/rx";
 import ModalCambiarContrasena from './ModalCambiarContrasena.jsx';
 import api from '../../api';
-import { obfuscateId } from '../../utils/utils.js';
+import { obfuscateId, formatDateDDMMYYYY, toLocalISODate } from '../../utils/utils.js';
 
 export default function Header({
   isCollapsed,
@@ -52,6 +52,28 @@ export default function Header({
     return hour * 60 + min;
   };
 
+  const getNotifDateISO = (notif) => {
+    const todayISO = toLocalISODate(new Date());
+    if (notif?.type === 'upcoming_appointment') return todayISO;
+    if (notif?.createdAt) {
+      const parsed = new Date(notif.createdAt);
+      if (!isNaN(parsed.getTime())) return toLocalISODate(parsed);
+    }
+    return todayISO;
+  };
+
+  const getDateSeparatorLabel = (dateISO) => {
+    const todayISO = toLocalISODate(new Date());
+    const yesterdayISO = toLocalISODate(new Date(Date.now() - 86400000));
+    const formatted = formatDateDDMMYYYY(dateISO);
+    if (dateISO === todayISO) return `Hoy • ${formatted}`;
+    if (dateISO === yesterdayISO) return `Ayer • ${formatted}`;
+    return formatted;
+  };
+
+  const formatDescriptionDates = (text = '') =>
+    String(text).replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, '$3/$2/$1');
+
   const sortNotifications = (list = []) => {
     const typePriority = (type) => {
       if (type === 'upcoming_appointment') return 0;
@@ -59,6 +81,12 @@ export default function Header({
       return 2;
     };
     return [...list].sort((a, b) => {
+      const dateA = getNotifDateISO(a);
+      const dateB = getNotifDateISO(b);
+      if (dateA !== dateB) {
+        return dateB.localeCompare(dateA);
+      }
+
       const prioA = typePriority(a.type);
       const prioB = typePriority(b.type);
       if (prioA !== prioB) return prioA - prioB;
@@ -375,44 +403,60 @@ export default function Header({
                     </span>
                   </div>
                 ) : (
-                  notifications.map((notif) => (
-                    <li 
-                      key={notif._id} 
-                      className={`bell-notification-item notif-type-${notif.type || 'info'}`}
-                      onClick={() => handleNotificationClick(notif)}
-                      title="Haz clic para abrir el expediente"
-                    >
-                      <div className="bell-item-icon-wrapper">
-                        {renderNotifIcon(notif.type)}
-                      </div>
+                  notifications.map((notif, idx) => {
+                    const currentDateISO = getNotifDateISO(notif);
+                    const prevDateISO = idx > 0 ? getNotifDateISO(notifications[idx - 1]) : null;
+                    const showDateSeparator = currentDateISO !== prevDateISO;
 
-                      <div className="bell-item-content">
-                        <div className="bell-item-header-meta">
-                          {renderNotifTag(notif.type)}
-                          <span className="bell-item-time">
-                            {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                        <span className="bell-item-title">
-                          {notif.title}
-                        </span>
-                        <span className="bell-item-desc">
-                          {notif.description}
-                        </span>
-                      </div>
-
-                      {!isFixedNotification(notif) && (
-                        <button
-                          className="bell-item-dismiss-btn"
-                          onClick={(e) => handleDismissSingle(e, notif)}
-                          title="Descartar notificación"
-                          aria-label="Descartar"
+                    return (
+                      <React.Fragment key={notif._id}>
+                        {showDateSeparator && (
+                          <li className="bell-date-separator">
+                            <span className="bell-date-separator-line" />
+                            <span className="bell-date-separator-badge">
+                              {getDateSeparatorLabel(currentDateISO)}
+                            </span>
+                            <span className="bell-date-separator-line" />
+                          </li>
+                        )}
+                        <li 
+                          className={`bell-notification-item notif-type-${notif.type || 'info'}`}
+                          onClick={() => handleNotificationClick(notif)}
+                          title="Haz clic para abrir el expediente"
                         >
-                          <FiX size={14} />
-                        </button>
-                      )}
-                    </li>
-                  ))
+                          <div className="bell-item-icon-wrapper">
+                            {renderNotifIcon(notif.type)}
+                          </div>
+
+                          <div className="bell-item-content">
+                            <div className="bell-item-header-meta">
+                              {renderNotifTag(notif.type)}
+                              <span className="bell-item-time">
+                                {formatDateDDMMYYYY(currentDateISO)} • {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <span className="bell-item-title">
+                              {notif.title}
+                            </span>
+                            <span className="bell-item-desc">
+                              {formatDescriptionDates(notif.description)}
+                            </span>
+                          </div>
+
+                          {!isFixedNotification(notif) && (
+                            <button
+                              className="bell-item-dismiss-btn"
+                              onClick={(e) => handleDismissSingle(e, notif)}
+                              title="Descartar notificación"
+                              aria-label="Descartar"
+                            >
+                              <FiX size={14} />
+                            </button>
+                          )}
+                        </li>
+                      </React.Fragment>
+                    );
+                  })
                 )}
               </ul>
 
