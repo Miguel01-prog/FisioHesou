@@ -41,11 +41,41 @@ export default function Header({
   const isFixedNotification = (notif) =>
     notif?.type === 'pending_soap' || notif?.type === 'pending_note';
 
+  const parseHourToMinutes = (text = '') => {
+    const match = String(text).match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (!match) return 9999;
+    let hour = parseInt(match[1], 10);
+    const min = parseInt(match[2], 10);
+    const period = (match[3] || '').toUpperCase();
+    if (period === 'PM' && hour < 12) hour += 12;
+    if (period === 'AM' && hour === 12) hour = 0;
+    return hour * 60 + min;
+  };
+
+  const sortNotifications = (list = []) => {
+    const typePriority = (type) => {
+      if (type === 'upcoming_appointment') return 0;
+      if (type === 'new_appointment') return 1;
+      return 2;
+    };
+    return [...list].sort((a, b) => {
+      const prioA = typePriority(a.type);
+      const prioB = typePriority(b.type);
+      if (prioA !== prioB) return prioA - prioB;
+
+      if (a.type === 'upcoming_appointment' && b.type === 'upcoming_appointment') {
+        return parseHourToMinutes(a.description) - parseHourToMinutes(b.description);
+      }
+
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+  };
+
   const fetchNotifications = async () => {
     if (!userRole) return;
     try {
       const { data } = await api.get(`/notifications/${userRole}`);
-      setNotifications(data.notifications || []);
+      setNotifications(sortNotifications(data.notifications || []));
     } catch (err) {
       console.error("Error al cargar notificaciones:", err);
     }

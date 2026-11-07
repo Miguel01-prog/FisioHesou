@@ -258,13 +258,44 @@ const checkAndGeneratePendingSoapNotifications = async (area, clientId) => {
   }
 };
 
+const parseHourToMinutes = (text = "") => {
+  const match = String(text).match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+  if (!match) return 9999;
+  let hour = parseInt(match[1], 10);
+  const min = parseInt(match[2], 10);
+  const period = (match[3] || "").toUpperCase();
+  if (period === "PM" && hour < 12) hour += 12;
+  if (period === "AM" && hour === 12) hour = 0;
+  return hour * 60 + min;
+};
+
 export const obtenerNotificaciones = async (req, res) => {
   const { area } = req.params;
   const clientId = req.user.clientId;
   try {
     await checkAndGenerateUpcomingNotifications(area, clientId);
     await checkAndGeneratePendingSoapNotifications(area, clientId);
-    const notifications = await Notification.find({ area, clientId }).sort({ createdAt: -1 });
+    const rawNotifications = await Notification.find({ area, clientId }).sort({ createdAt: -1 });
+
+    // Ordenar: primero las citas de hoy (upcoming_appointment) de la más cercana a la más lejana por hora
+    const typePriority = (type) => {
+      if (type === "upcoming_appointment") return 0;
+      if (type === "new_appointment") return 1;
+      return 2;
+    };
+
+    const notifications = [...rawNotifications].sort((a, b) => {
+      const prioA = typePriority(a.type);
+      const prioB = typePriority(b.type);
+      if (prioA !== prioB) return prioA - prioB;
+
+      if (a.type === "upcoming_appointment" && b.type === "upcoming_appointment") {
+        return parseHourToMinutes(a.description) - parseHourToMinutes(b.description);
+      }
+
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
     res.status(200).json({ ok: true, notifications });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
