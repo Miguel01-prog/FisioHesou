@@ -9,7 +9,7 @@ import {
   showInfo,
   showConfirm
 } from '../../utils/alerts.js';
-import { capitalizeWords, formatDateDDMMYYYY, obfuscateId } from '../../utils/utils.js';
+import { capitalizeWords, formatDateDDMMYYYY, obfuscateId, toLocalISODate, isHourPassed } from '../../utils/utils.js';
 import {
   FiUsers,
   FiCalendar,
@@ -101,7 +101,7 @@ export default function DashboardFisio() {
         console.warn("No se pudieron obtener las notas:", err.message);
       }
 
-      const hoyStr = new Date().toISOString().split('T')[0];
+      const hoyStr = toLocalISODate(new Date());
 
       // Filter today's sessions or upcoming active sessions
       const todaySessions = citasData.filter(c => c.fechaCitaStr === hoyStr || c.fechaCita === hoyStr);
@@ -209,7 +209,8 @@ export default function DashboardFisio() {
 
   // Next upcoming pending appointment
   const nextAppointment = useMemo(() => {
-    return patients.find(p => p.status !== 'Completado' && p.status !== 'Asistió' && p.status !== 'Cancelado');
+    const hoyStr = toLocalISODate(new Date());
+    return patients.find(p => p.status !== 'Completado' && p.status !== 'Asistió' && p.status !== 'Cancelado' && !isHourPassed(p.hour, hoyStr));
   }, [patients]);
 
   const deletePatient = async (id, name) => {

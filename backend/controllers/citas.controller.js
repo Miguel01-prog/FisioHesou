@@ -240,6 +240,7 @@ export const eliminarCita = async (req, res) => {
     const { id } = req.params;
     const citaEliminada = await Cita.findOneAndDelete({ _id: id, clientId: req.user.clientId });
     if (!citaEliminada) return res.status(404).json({ message: "Cita no encontrada" });
+    await Notification.deleteMany({ citaId: citaEliminada._id, clientId: req.user.clientId });
     res.json({ message: "Cita eliminada correctamente" });
   } catch (err) {
     console.error(" Error al eliminar cita:", err);
@@ -375,6 +376,10 @@ export const actualizarEstadoCita = async (req, res) => {
       return res.status(404).json({ message: "Cita no encontrada" });
     }
 
+    if (["Cancelado", "Completado", "Asistió"].includes(estado)) {
+      await Notification.deleteMany({ citaId: citaActualizada._id, clientId: req.user.clientId });
+    }
+
     res.json({ message: "Estado de cita actualizado correctamente", cita: citaActualizada });
   } catch (err) {
     console.error("Error al actualizar estado de cita:", err);
@@ -413,6 +418,8 @@ export const actualizarCita = async (req, res) => {
     if (!citaActualizada) {
       return res.status(404).json({ message: "Cita no encontrada" });
     }
+
+    await Notification.deleteMany({ citaId: citaActualizada._id, clientId: req.user.clientId });
 
     res.json({ message: "Cita reprogramada correctamente", cita: citaActualizada });
   } catch (err) {

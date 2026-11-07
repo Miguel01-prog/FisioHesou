@@ -121,6 +121,18 @@ export const actualizarNota = async (req, res) => {
         if (!notaActualizada)
             return res.status(404).json({ message: "Nota no encontrada" });
 
+        if (notaActualizada.identificadorPaciente) {
+            try {
+                const Notification = (await import("../models/notification.model.js")).default;
+                await Notification.deleteMany({
+                    identificadorPaciente: notaActualizada.identificadorPaciente,
+                    type: "pending_soap",
+                    clientId: req.user.clientId
+                });
+            } catch (e) {
+                console.error("Error al limpiar notificación pending_soap al actualizar nota:", e);
+            }
+        }
         res.json({ message: "Nota actualizada", nota: notaActualizada });
     } catch (err) {
         res.status(500).json({ message: "Error al actualizar nota", error: err.message });

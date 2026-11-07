@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import api from '../../api.js';
 import LoadingSpinner from '../../components/layout/LoadingSpinner.jsx';
-import { capitalizeWords, formatDateDDMMYYYY, obfuscateId } from '../../utils/utils.js';
+import { capitalizeWords, formatDateDDMMYYYY, obfuscateId, toLocalISODate, isHourPassed } from '../../utils/utils.js';
 import {
   showSuccess,
   showError,
@@ -91,7 +91,7 @@ export default function DashboardNutri() {
         console.warn("No se pudieron obtener los pacientes sin nota:", err.message);
       }
 
-      const hoyStr = new Date().toISOString().split('T')[0];
+      const hoyStr = toLocalISODate(new Date());
       const todaySessions = citasData.filter(c => c.fechaCitaStr === hoyStr || c.fechaCita === hoyStr);
       todaySessions.sort((a, b) => (a.horaCita > b.horaCita ? 1 : -1));
 
@@ -196,7 +196,8 @@ export default function DashboardNutri() {
 
   // Next upcoming pending appointment
   const nextAppointment = useMemo(() => {
-    return patients.find(p => p.status !== 'Completado' && p.status !== 'Asistió' && p.status !== 'Cancelado');
+    const hoyStr = toLocalISODate(new Date());
+    return patients.find(p => p.status !== 'Completado' && p.status !== 'Asistió' && p.status !== 'Cancelado' && !isHourPassed(p.hour, hoyStr));
   }, [patients]);
 
   const deletePatient = async (id, name) => {

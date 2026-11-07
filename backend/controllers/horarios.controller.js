@@ -4,13 +4,25 @@ import Cita from "../models/cita.model.js";
 // Convierte "YYYY-MM-DD" en Date sin errores de zona horaria
 const toDate = (fechaStr) => new Date(fechaStr + "T00:00:00.000Z");
 
-// Helper para determinar si una cita ya transcurrió según la hora local
+// Helper para determinar si una cita ya transcurrió según la hora local (America/Mexico_City)
 const hasAppointmentPassed = (fechaCitaStr, horaCita) => {
-  const d = new Date();
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const hoyStr = `${year}-${month}-${day}`;
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).formatToParts(now);
+
+  const map = {};
+  for (const p of parts) {
+    map[p.type] = p.value;
+  }
+  const hoyStr = `${map.year}-${map.month}-${map.day}`;
+  const currentMinutes = (parseInt(map.hour, 10) % 24) * 60 + parseInt(map.minute, 10);
 
   if (fechaCitaStr < hoyStr) return true;
   if (fechaCitaStr > hoyStr) return false;
@@ -25,7 +37,6 @@ const hasAppointmentPassed = (fechaCitaStr, horaCita) => {
   if (upper.includes("PM") && apptHour < 12) apptHour += 12;
   if (upper.includes("AM") && apptHour === 12) apptHour = 0;
 
-  const currentMinutes = d.getHours() * 60 + d.getMinutes();
   const apptMinutes = apptHour * 60 + apptMin;
   return currentMinutes >= apptMinutes;
 };

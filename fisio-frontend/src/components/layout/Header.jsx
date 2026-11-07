@@ -38,6 +38,9 @@ export default function Header({
 
   const userRole = user?.role || user?.rol || 'fisioterapeuta';
 
+  const isFixedNotification = (notif) =>
+    notif?.type === 'pending_soap' || notif?.type === 'pending_note';
+
   const fetchNotifications = async () => {
     if (!userRole) return;
     try {
@@ -52,7 +55,7 @@ export default function Header({
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 60000); // Poll every 60s
     return () => clearInterval(interval);
-  }, [user]);
+  }, [user, location.pathname]);
 
   // Fetch immediately when the bell dropdown is opened
   useEffect(() => {
@@ -74,35 +77,40 @@ export default function Header({
 
   const handleNotificationClick = async (notif) => {
     try {
-      await api.delete(`/notifications/${notif._id}`);
-      setNotifications(prev => prev.filter((n) => n._id !== notif._id));
       setBellOpen(false);
+
+      // Las notificaciones de Nota SOAP pendiente son fijas hasta que se llene la nota
+      if (!isFixedNotification(notif)) {
+        await api.delete(`/notifications/${notif._id}`);
+        setNotifications(prev => prev.filter((n) => n._id !== notif._id));
+      }
+
       if (notif.identificadorPaciente) {
         navigate(`/${userRole}/paciente/${obfuscateId(notif.identificadorPaciente)}`);
       }
     } catch (err) {
-      console.error("Error al borrar notificación:", err);
+      console.error("Error al procesar notificación:", err);
     }
   };
 
-  const handleDismissSingle = async (e, notifId) => {
+  const handleDismissSingle = async (e, notif) => {
     e.stopPropagation();
+    if (isFixedNotification(notif)) return;
     try {
-      await api.delete(`/notifications/${notifId}`);
-      setNotifications(prev => prev.filter((n) => n._id !== notifId));
+      await api.delete(`/notifications/${notif._id}`);
+      setNotifications(prev => prev.filter((n) => n._id !== notif._id));
     } catch (err) {
       console.error("Error al descartar notificación:", err);
     }
   };
 
   const handleClearAll = async () => {
+    const dismissible = notifications.filter(n => !isFixedNotification(n));
     try {
-      await Promise.all(notifications.map(n => api.delete(`/notifications/${n._id}`)));
-      setNotifications([]);
-      setBellOpen(false);
+      await Promise.all(dismissible.map(n => api.delete(`/notifications/${n._id}`)));
+      setNotifications(prev => prev.filter(n => isFixedNotification(n)));
     } catch (err) {
-      setNotifications([]);
-      setBellOpen(false);
+      setNotifications(prev => prev.filter(n => isFixedNotification(n)));
     }
   };
 
@@ -238,15 +246,19 @@ export default function Header({
     switch (type) {
       case 'upcoming_appointment':
         return <span className="bell-type-tag tag-appointment">Cita Hoy</span>;
+      case 'new_appointment':
+        return <span className="bell-type-tag tag-info">Nueva Cita</span>;
       case 'pending_soap':
       case 'pending_note':
-        return <span className="bell-type-tag tag-soap">Nota SOAP</span>;
+        return <span className="bell-type-tag tag-soap">Nota SOAP (Fija)</span>;
       case 'new_patient':
         return <span className="bell-type-tag tag-patient">Paciente</span>;
       default:
         return <span className="bell-type-tag tag-info">Aviso</span>;
     }
   };
+
+  const hasDismissibleNotifications = notifications.some(n => !isFixedNotification(n));
 
   return (
     <header className="header-container">
@@ -313,9 +325,9 @@ export default function Header({
                     <span className="bell-count-pill">{notifications.length}</span>
                   )}
                 </div>
-                {notifications.length > 0 && (
-                  <button className="bell-clear-btn" onClick={handleClearAll} title="Limpiar todas las notificaciones">
-                    Limpiar todo
+                {hasDismissibleNotifications && (
+                  <button className="bell-clear-btn" onClick={handleClearAll} title="Limpiar avisos de citas">
+                    Limpiar avisos
                   </button>
                 )}
               </div>
@@ -359,14 +371,16 @@ export default function Header({
                         </span>
                       </div>
 
-                      <button
-                        className="bell-item-dismiss-btn"
-                        onClick={(e) => handleDismissSingle(e, notif._id)}
-                        title="Descartar notificación"
-                        aria-label="Descartar"
-                      >
-                        <FiX size={14} />
-                      </button>
+                      {!isFixedNotification(notif) && (
+                        <button
+                          className="bell-item-dismiss-btn"
+                          onClick={(e) => handleDismissSingle(e, notif)}
+                          title="Descartar notificación"
+                          aria-label="Descartar"
+                        >
+                          <FiX size={14} />
+                        </button>
+                      )}
                     </li>
                   ))
                 )}
