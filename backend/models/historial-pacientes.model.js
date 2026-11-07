@@ -1,9 +1,14 @@
-﻿import mongoose from "mongoose";
+import mongoose from "mongoose";
 
 const historialPacienteSchema = new mongoose.Schema({
 
     identificadorPaciente: { type: String, required: true },
     idHistorial: { type: String, required: true },
+    nombres: { type: String, default: "" },
+    apellidos: { type: String, default: "" },
+    edad: { type: Number },
+    telefono: { type: String, default: "" },
+    tipoOtra: { type: String, default: "" },
     antecedentesFamiliares: { type: [String], default: [] },
     antecedentesMedicos: { type: [String], default: [] },
     antecedentesQuirurgicos: { type: String, default: "" },

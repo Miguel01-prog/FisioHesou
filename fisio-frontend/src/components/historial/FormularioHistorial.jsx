@@ -1121,7 +1121,10 @@ const FormularioHistorial = () => {
       const historialData = {
         identificadorPaciente: finalPacienteId,
         idHistorial: finalIdHistoricoFk,
-        edad: edadEditable ? Number(edadEditable) : undefined,
+        nombres: isNewPatient ? newPatientData.nombres : paciente?.nombres,
+        apellidos: isNewPatient ? `${newPatientData.apellidoPaterno || ""} ${newPatientData.apellidoMaterno || ""}`.trim() : paciente?.apellidos,
+        telefono: isNewPatient ? newPatientData.telefono : paciente?.telefono,
+        edad: edadEditable ? Number(edadEditable) : (paciente?.edad ? Number(paciente.edad) : undefined),
         antecedentesFamiliares: formData.antecedentesFamiliares,
         antecedentesMedicos: formData.antecedentesMedicos,
         antecedentesQuirurgicos: formData.antecedentesQuirurgicos,

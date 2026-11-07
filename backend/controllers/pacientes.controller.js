@@ -212,3 +212,81 @@ export const obtenerPacientePorId = async (req, res) => {
     res.status(500).json({ message: "Error al obtener paciente" });
   }
 };
+
+
+export const actualizarPaciente = async (req, res) => {
+  console.log("- Actualizando datos del paciente:", req.params.id);
+  try {
+    const { id } = req.params;
+    const { nombres, apellidos, apellidoPaterno, apellidoMaterno, edad, telefono, email } = req.body;
+
+    const isObjectId = mongoose.Types.ObjectId.isValid(id);
+    const matchConditions = [
+      { identificadorPaciente: id },
+      ...(isObjectId ? [{ _id: id }] : [])
+    ];
+
+    const filter =
+      req.user.role === "superadmin"
+        ? { $or: matchConditions }
+        : { clientId: req.user.clientId, $or: matchConditions };
+
+    const paciente = await Paciente.findOne(filter);
+    if (!paciente) {
+      return res.status(404).json({ message: "Paciente no encontrado" });
+    }
+
+    const updateFields = {};
+    if (typeof nombres === "string" && nombres.trim() !== "") {
+      updateFields.nombres = nombres.trim();
+    }
+
+    if (typeof apellidos === "string" && apellidos.trim() !== "") {
+      const cleanApellidos = apellidos.trim().replace(/\s+/g, " ");
+      const parts = cleanApellidos.split(" ");
+      updateFields.apellidoPaterno = (apellidoPaterno && String(apellidoPaterno).trim()) || parts[0] || "";
+      updateFields.apellidoMaterno =
+        apellidoMaterno !== undefined ? String(apellidoMaterno).trim() : parts.slice(1).join(" ") || "";
+      updateFields.apellidos = cleanApellidos;
+    } else if (typeof apellidoPaterno === "string" && apellidoPaterno.trim() !== "") {
+      updateFields.apellidoPaterno = apellidoPaterno.trim();
+      if (typeof apellidoMaterno === "string") {
+        updateFields.apellidoMaterno = apellidoMaterno.trim();
+      }
+      updateFields.apellidos = `${updateFields.apellidoPaterno} ${updateFields.apellidoMaterno || ""}`.trim();
+    }
+
+    if (edad !== undefined && edad !== null && String(edad).trim() !== "") {
+      const numEdad = Number(edad);
+      if (!isNaN(numEdad)) {
+        updateFields.edad = numEdad;
+      }
+    }
+
+    if (typeof telefono === "string" && telefono.trim() !== "") {
+      updateFields.telefono = telefono.trim();
+    }
+
+    if (typeof email === "string") {
+      updateFields.email = email.trim().toLowerCase();
+    }
+
+    Object.assign(paciente, updateFields);
+    await paciente.save();
+
+    // Sincronizar también en las citas asociadas a este paciente
+    if (Object.keys(updateFields).length > 0 && paciente.identificadorPaciente) {
+      const citaFilter =
+        req.user.role === "superadmin"
+          ? { identificadorPaciente: paciente.identificadorPaciente }
+          : { identificadorPaciente: paciente.identificadorPaciente, clientId: req.user.clientId };
+
+      await Cita.updateMany(citaFilter, { $set: updateFields });
+    }
+
+    res.json({ ok: true, message: "Paciente actualizado correctamente", paciente });
+  } catch (err) {
+    console.error("Error al actualizar paciente:", err);
+    res.status(500).json({ message: "Error al actualizar paciente", error: err.message });
+  }
+};
