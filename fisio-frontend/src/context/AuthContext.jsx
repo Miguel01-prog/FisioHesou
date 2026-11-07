@@ -55,8 +55,8 @@ export const AuthProvider = ({ children }) => {
         setToken(storedToken);
         localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
         const res = await api.get('/auth/me');
-        setUser({ name: res.data.name, role: res.data.role, client: res.data.client, signature: res.data.signature });
-        localStorage.setItem('user', JSON.stringify({ role: res.data.role, nombre: res.data.name, client: res.data.client, signature: res.data.signature }));
+        setUser({ name: res.data.name, role: res.data.role, rol: res.data.role, client: res.data.client, signature: res.data.signature });
+        localStorage.setItem('user', JSON.stringify({ role: res.data.role, rol: res.data.role, nombre: res.data.name, name: res.data.name, client: res.data.client, signature: res.data.signature }));
       } catch (err) {
         console.error("Error al autenticar sesión:", err);
         setUser(null);

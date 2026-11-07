@@ -432,8 +432,8 @@ export default function AppointmentForm() {
                     if (clinic?.blockSundays && date.getDay() === 0) return "sunday-blocked";
                     if (iso < hoy) return "past-day";
 
-                    if (blockedDatesAdmin.includes(iso)) return "blocked-admin";
                     if (blockedDatesPaciente.includes(iso)) return "blocked-paciente";
+                    if (blockedDatesAdmin.includes(iso)) return "blocked-admin";
                     return null;
                   }}
                 />

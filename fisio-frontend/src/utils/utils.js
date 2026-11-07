@@ -26,9 +26,10 @@ export function formatDateDDMMYYYY(isoDate) {
 
 
 export function getUsuarioRol(user) {
-    if (user?.rol === "fisioterapeuta") return "fisioterapia";
-    if (user?.rol === "nutriologa") return "nutricion";
-    return user?.rol || null;
+    const rawRole = user?.rol || user?.role || null;
+    if (rawRole === "fisioterapeuta" || rawRole === "fisioterapia") return "fisioterapia";
+    if (rawRole === "nutriologa" || rawRole === "nutricion" || rawRole === "nutriología") return "nutricion";
+    return rawRole;
 };
 
 export function toLocalISODate(date) {

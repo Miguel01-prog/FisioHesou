@@ -85,7 +85,23 @@ export const crearOBloquear = async (req, res) => {
 
 export const obtenerBloqueos = async (req, res) => {
   const { area } = req.params;
-  const clientId = req.user?.clientId || req.query.clientId;
+  let clientId = req.user?.clientId || req.query.clientId;
+
+  if (!clientId) {
+    try {
+      const authHeader = req.headers.authorization;
+      const token =
+        (authHeader && authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : null) ||
+        req.cookies?.token;
+      if (token) {
+        const jwt = (await import("jsonwebtoken")).default;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || "mi_secreto_superseguro");
+        clientId = decoded?.clientId;
+      }
+    } catch (err) {
+      // ignore
+    }
+  }
 
   if (!clientId) {
     return res.status(400).json({ error: "clientId es requerido para esta consulta" });

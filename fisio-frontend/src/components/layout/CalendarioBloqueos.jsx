@@ -6,7 +6,7 @@ import "../../styles/calendary.css";
 import LoadingSpinner from "./LoadingSpinner";
 import CalendarLegend from "./CalendarLegend.jsx";
 import { showSuccess, showError } from "../../utils/alerts";
-import { formatDateDDMMYYYY } from "../../utils/utils";
+import { formatDateDDMMYYYY, toLocalISODate } from "../../utils/utils";
 import { FaLock, FaClock, FaStickyNote, FaTrashAlt } from "react-icons/fa";
 
 const WORK_HOURS = [
@@ -59,10 +59,9 @@ const CalendarioBloqueo = ({ role }) => {
 
   // Clic en día
   const handleDayClick = (date) => {
-    const fechaStr = date.toISOString().split("T")[0];
-    const hoyStr = new Date().toISOString().split("T")[0];
+    const fechaStr = toLocalISODate(date);
+    const hoyStr = toLocalISODate(new Date());
     if (fechaStr < hoyStr) return; // no días pasados
-    if (isDayFullyBlocked(fechaStr)) return; // día lleno
 
     setSelectedDay(fechaStr);
     setSelectedHours(blockedHoursAdmin[fechaStr] || []);
@@ -151,25 +150,25 @@ const CalendarioBloqueo = ({ role }) => {
 
   // ---- Clases visuales del calendario ----
   const tileClassName = ({ date }) => {
-    const fechaStr = date.toISOString().split("T")[0];
-    const hoyStr = new Date().toISOString().split("T")[0];
+    const fechaStr = toLocalISODate(date);
+    const hoyStr = toLocalISODate(new Date());
 
     if (blockSundays && date.getDay() === 0) return "sunday-blocked";
 
     // Días pasados → gris
     if (fechaStr < hoyStr) return "past-day";
 
+    if (blockedDatesPaciente.includes(fechaStr)) return "blocked-paciente";
     if (isDayFullyBlocked(fechaStr)) return "blocked-admin";
     if (blockedDatesAdmin.includes(fechaStr)) return "blocked-admin";
-    if (blockedDatesPaciente.includes(fechaStr)) return "blocked-paciente";
     return "";
   };
 
   const tileDisabled = ({ date }) => {
-    const fechaStr = date.toISOString().split("T")[0];
-    const hoyStr = new Date().toISOString().split("T")[0];
+    const fechaStr = toLocalISODate(date);
+    const hoyStr = toLocalISODate(new Date());
     if (blockSundays && date.getDay() === 0) return true;
-    return fechaStr < hoyStr || isDayFullyBlocked(fechaStr);
+    return fechaStr < hoyStr;
   };
 
   return (
@@ -212,7 +211,7 @@ const CalendarioBloqueo = ({ role }) => {
 
               <div className="hours-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '1.5rem' }}>
                 {WORK_HOURS.map((hour) => {
-                  const hoyStr = new Date().toISOString().split("T")[0];
+                  const hoyStr = toLocalISODate(new Date());
                   const bloqueadasPorPaciente = blockedHoursCitas[selectedDay]?.includes(hour);
                   const bloqueadasPorAdmin = selectedHours.includes(hour);
 
@@ -308,7 +307,7 @@ const CalendarioBloqueo = ({ role }) => {
           {/* Blocked Days Summary Card */}
           <div className="auth-card" style={{ marginTop: 0, padding: '2rem', flex: 1 }}>
             {(() => {
-              const hoyStr = new Date().toISOString().split("T")[0];
+              const hoyStr = toLocalISODate(new Date());
               const activeBlockedDates = blockedDatesAdmin
                 .filter((dateStr) => dateStr >= hoyStr)
                 .sort();

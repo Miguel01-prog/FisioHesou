@@ -112,11 +112,18 @@
 }
 
 /* Day Blocked by Admin (Tomado por citas / Bloqueos) */
-.react-calendar__tile.blocked-admin {
-  background: rgba(239, 68, 68, 0.15) !important;
-  color: var(--danger) !important;
+.react-calendar__tile.blocked-admin,
+.react-calendar__tile.blocked-admin:disabled {
+  background: rgba(239, 68, 68, 0.18) !important;
+  color: var(--danger, #ef4444) !important;
   font-weight: 700 !important;
-  border: 1px solid rgba(239, 68, 68, 0.25) !important;
+  border: 1.5px solid rgba(239, 68, 68, 0.4) !important;
+  opacity: 1 !important;
+}
+
+.react-calendar__tile.blocked-admin:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.28) !important;
+  color: var(--danger, #ef4444) !important;
 }
 
 /* Day with Patients Booked */

@@ -1,29 +1,39 @@
 import { getUsuarioRol, formatDateDDMMYYYY, toLocalISODate, isHourPassed } from "../../utils/utils";
 import { useNavigate } from "react-router-dom";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import "react-calendar/dist/Calendar.css";
 import Calendar from "react-calendar";
 import "../../styles/calendary.css";
 import api from "../../api";
-import { FaPlus, FaClock, FaStar } from "react-icons/fa";
+import { useAuth } from "../../context/AuthContext.jsx";
+import { FaPlus, FaClock, FaStar, FaStickyNote, FaLock } from "react-icons/fa";
 
 import ModalAgendarManual from "./ModalAgendarManual.jsx";
 import CalendarLegend from "./CalendarLegend.jsx";
 
 export default function AgendaCitas() {
+  const { user: authUser } = useAuth();
   const [citas, setCitas] = useState([]);
   const [selectedDay, setSelectedDay] = useState(null);
   const [citasDelDia, setCitasDelDia] = useState([]);
   const [blockedDatesAdmin, setBlockedDatesAdmin] = useState([]);
+  const [blockedHoursAdmin, setBlockedHoursAdmin] = useState({});
+  const [blockedNotesAdmin, setBlockedNotesAdmin] = useState({});
   const [blockedDatesPaciente, setBlockedDatesPaciente] = useState([]);
   const [showAgendarManualModal, setShowAgendarManualModal] = useState(false);
-  const user = JSON.parse(localStorage.getItem("user"));
+
+  const storedUser = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("user"));
+    } catch {
+      return null;
+    }
+  })();
+  const user = authUser || storedUser;
   const rolUsuario = getUsuarioRol(user);
+  const clientId = user?.client?._id || (typeof user?.client === "string" ? user.client : "");
   const hoyStr = toLocalISODate(new Date());
   const navigate = useNavigate();
-
-  const normalizar = (str) =>
-    (str || "").trim().toLowerCase().replace(/\s+/g, " ");
 
   const fetchCitas = async () => {
     try {
@@ -31,28 +41,33 @@ export default function AgendaCitas() {
       const { data } = await api.get(endpoint);
       setCitas(data || []);
 
-      const clientId = user?.client?._id || (typeof user?.client === "string" ? user.client : "");
       const query = clientId ? `?clientId=${clientId}` : "";
 
       let adminDays = [];
+      let adminHours = {};
+      let adminNotes = {};
       let pacienteDays = [
-        ...new Set(data.filter(c => c.area !== "administrador").map(c => c.fechaCitaStr))
+        ...new Set((data || []).filter(c => c.area !== "administrador" && c.estado !== "Cancelado").map(c => c.fechaCitaStr))
       ];
 
       if (rolUsuario) {
         try {
           const { data: horariosData } = await api.get(`/horarios/${rolUsuario}${query}`);
           adminDays = horariosData.blockedDatesAdmin || [];
+          adminHours = horariosData.blockedHoursAdmin || {};
+          adminNotes = horariosData.blockedNotesAdmin || {};
         } catch (errHorarios) {
           console.error("Error al obtener bloqueos de horario en agenda:", errHorarios);
         }
       }
 
       setBlockedDatesAdmin(adminDays);
+      setBlockedHoursAdmin(adminHours);
+      setBlockedNotesAdmin(adminNotes);
       setBlockedDatesPaciente(pacienteDays);
 
       const targetDay = selectedDay || hoyStr;
-      let citasDia = data.filter(c => c.fechaCitaStr === targetDay);
+      let citasDia = (data || []).filter(c => c.fechaCitaStr === targetDay && c.estado !== "Cancelado");
 
       // Quitar de la lista las citas de hoy cuya hora ya transcurrió
       if (targetDay === hoyStr) {
@@ -70,12 +85,10 @@ export default function AgendaCitas() {
     }
   };
 
-
-  // Cargar citas por rol o cambio de día
+  // Cargar citas por rol, clínica o cambio de día
   useEffect(() => {
     fetchCitas();
-  }, [rolUsuario, selectedDay]);
-
+  }, [rolUsuario, clientId, selectedDay]);
 
   const handleDayClick = (date) => {
     const iso = toLocalISODate(date);
@@ -85,12 +98,14 @@ export default function AgendaCitas() {
     setSelectedDay(iso);
   };
 
+  const selectedDayBlockedHours = selectedDay ? (blockedHoursAdmin[selectedDay] || []) : [];
+  const selectedDayBlockNote = selectedDay ? (blockedNotesAdmin[selectedDay] || "") : "";
+
   return (
     <div className="auth-wrapper-content">
       <div className="auth-card">
 
         <h2 className="logo-agendar mb-4">Agenda de citas</h2>
-
 
         <div className="agenda-columns">
           {/* Calendario */}
@@ -108,8 +123,8 @@ export default function AgendaCitas() {
                 const hoy = toLocalISODate(new Date());
                 if (user?.client?.blockSundays && date.getDay() === 0) return "sunday-blocked";
                 if (iso < hoy) return "past-day";
-                if (blockedDatesAdmin.includes(iso)) return "blocked-admin";
                 if (blockedDatesPaciente.includes(iso)) return "blocked-paciente";
+                if (blockedDatesAdmin.includes(iso)) return "blocked-admin";
                 return null;
               }}
             />
@@ -126,6 +141,42 @@ export default function AgendaCitas() {
                     : `Citas para ${formatDateDDMMYYYY(selectedDay)}`
                   : "Selecciona un día"}
               </h4>
+
+              {(selectedDayBlockedHours.length > 0 || selectedDayBlockNote) && (
+                <div
+                  style={{
+                    width: "100%",
+                    background: "rgba(239, 68, 68, 0.08)",
+                    border: "1px solid rgba(239, 68, 68, 0.25)",
+                    borderRadius: "8px",
+                    padding: "0.65rem 0.85rem",
+                    color: "var(--danger, #ef4444)",
+                    fontSize: "0.82rem",
+                    textAlign: "left",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "4px"
+                  }}
+                >
+                  {selectedDayBlockedHours.length > 0 && (
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 600 }}>
+                      <FaLock size={12} />
+                      <span>
+                        {selectedDayBlockedHours.length >= 12
+                          ? "Día completo bloqueado"
+                          : `Horas bloqueadas: ${selectedDayBlockedHours.join(", ")}`}
+                      </span>
+                    </div>
+                  )}
+                  {selectedDayBlockNote && (
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--text-main)" }}>
+                      <FaStickyNote size={12} style={{ color: "var(--danger, #ef4444)" }} />
+                      <span><strong>Nota:</strong> {selectedDayBlockNote}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {selectedDay && (
                 <button
                   type="button"
