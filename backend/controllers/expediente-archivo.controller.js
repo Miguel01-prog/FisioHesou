@@ -21,15 +21,10 @@ export const subirArchivosExpediente = async (req, res) => {
 
     for (let i = 0; i < req.files.length; i++) {
       const file = req.files[i];
-      let url = `/uploads/expedientes/${file.filename}`;
-      try {
-        if (file.path && fs.existsSync(file.path)) {
-          const buf = fs.readFileSync(file.path);
-          url = `data:${file.mimetype || "image/jpeg"};base64,${buf.toString("base64")}`;
-        }
-      } catch (readErr) {
-        console.warn("No se pudo convertir archivo de expediente a Base64:", readErr.message);
-      }
+      // Guardar la URL pública estática servida por Express (/uploads/expedientes/...)
+      // Esto evita saturar el documento BSON de MongoDB (límite de 16MB) con cadenas Base64 gigantescas
+      // permitiendo subir PDFs multipágina y radiografías de alta resolución sin errores.
+      const url = `/uploads/expedientes/${file.filename}`;
 
       // Si categoria o descripcion fueron enviadas como arreglos por archivo o individual
       let cat = categoria;

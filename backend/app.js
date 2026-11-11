@@ -25,10 +25,19 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 
 if (process.env.NODE_ENV === "production") {
-  app.use(helmet({ crossOriginResourcePolicy: false }));
+  app.use(helmet({
+    crossOriginResourcePolicy: false,
+    crossOriginEmbedderPolicy: false,
+    frameguard: false
+  }));
 } else {
-  // Relaxed development security to allow cross-origin assets and images
-  app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false }));
+  // Relaxed development security to allow cross-origin assets, iframes and images
+  app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: false,
+    crossOriginEmbedderPolicy: false,
+    frameguard: false
+  }));
 }
 
 const limiter = rateLimit({
@@ -86,8 +95,17 @@ app.use((req, res, next) => {
 });
 app.use(cookieParser());
 
-// Servir archivos estáticos para las imágenes
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+// Servir archivos estáticos para las imágenes y documentos PDF
+app.use(
+  "/uploads",
+  (req, res, next) => {
+    res.removeHeader("X-Frame-Options");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    next();
+  },
+  express.static(path.join(process.cwd(), "uploads"))
+);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/citas", citasRoutes);

@@ -188,3 +188,14 @@ export function compressImageToBase64(file, maxWidth = 600, quality = 0.82) {
     reader.readAsDataURL(file);
   });
 }
+
+export function getHoursUntilAppointment(fechaCitaStr, horaCita) {
+  if (!fechaCitaStr || !horaCita) return 9999;
+  const [y, m, d] = String(fechaCitaStr).substring(0, 10).split("-").map(Number);
+  const timeMatch = String(horaCita).match(/(\d{1,2}):(\d{2})/);
+  const h = timeMatch ? Number(timeMatch[1]) : 0;
+  const min = timeMatch ? Number(timeMatch[2]) : 0;
+  const apptDate = new Date(y, (m || 1) - 1, d || 1, h, min, 0);
+  const now = new Date();
+  return (apptDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+}

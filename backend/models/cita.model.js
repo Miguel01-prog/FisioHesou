@@ -18,6 +18,18 @@ const citaSchema = new mongoose.Schema({
   identificadorPaciente: { type: String, required: true },
   esNuevoPaciente: { type: Boolean, default: false },
   estado: { type: String, default: "Programado" },
+  fechaCancelacion: { type: Date, default: null },
+  motivoCancelacion: { type: String, default: "" },
+  canceladoPor: { type: String, default: "" },
+  fechaAnteriorStr: { type: String, default: "" },
+  horaAnterior: { type: String, default: "" },
+  // Adeudo por cancelación tardía (< 24 hrs): se cobra en la siguiente cita del paciente
+  tieneAdeudo: { type: Boolean, default: false },
+  adeudoPagado: { type: Boolean, default: false },
+  adeudoFechaCitaStr: { type: String, default: "" }, // Fecha de la cita cancelada que generó el adeudo
+  adeudoHoraCita: { type: String, default: "" },
+  adeudoHorasAnticipacion: { type: Number, default: null }, // Horas de anticipación con las que se canceló
+  fechaPagoAdeudo: { type: Date, default: null },
   clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', required: true }
 });
 

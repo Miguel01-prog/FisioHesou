@@ -1,12 +1,15 @@
 import express from "express";
 import { crearCita, crearCitaManual, crearCitaManualCompleta, obtenerCitas, obtenerCitaPorId, eliminarCita, obtenerCitasPorRol,
-         validarPacientesNoRegistrados, ObtenerDetallesPaciente, actualizarEstadoCita, actualizarCita} from "../controllers/citas.controller.js";
+         validarPacientesNoRegistrados, ObtenerDetallesPaciente, actualizarEstadoCita, actualizarCita, consultarCitasPublicas, cancelarCitaPublica, reagendarCitaPublica, marcarAdeudoPagado} from "../controllers/citas.controller.js";
 import { verifyToken } from "../libs/auth.middleware.js";
 
 const router = express.Router();
 
 // Public route for patients booking from the public landing page
 router.post("/", crearCita);
+router.get("/publica/consultar", consultarCitasPublicas);
+router.put("/publica/:id/cancelar", cancelarCitaPublica);
+router.put("/publica/:id/reagendar", reagendarCitaPublica);
 
 // Protected clinic management routes
 router.get("/validar-pacientes", verifyToken, validarPacientesNoRegistrados);
@@ -17,6 +20,7 @@ router.get("/rol/:rol", verifyToken, obtenerCitasPorRol);
 router.get("/detalles-paciente/:id", verifyToken, ObtenerDetallesPaciente);
 router.get("/:id", verifyToken, obtenerCitaPorId);
 router.put("/:id/estado", verifyToken, actualizarEstadoCita);
+router.put("/:id/adeudo/pagar", verifyToken, marcarAdeudoPagado);
 router.put("/:id", verifyToken, actualizarCita);
 router.delete("/:id", verifyToken, eliminarCita);
 

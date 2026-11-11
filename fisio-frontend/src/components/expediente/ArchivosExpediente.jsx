@@ -372,7 +372,7 @@ export default function ArchivosExpediente({ identificadorPaciente, readOnly = f
             const meta = getCategoryMeta(archivo.categoria);
             const Icon = meta.icon;
             const fileUrl = archivo.url?.startsWith("data:") || archivo.url?.startsWith("http") ? archivo.url : `${SERVER_URL}${archivo.url}`;
-            const isImage = !archivo.mimetype?.includes("pdf") && !archivo.url.endsWith(".pdf");
+            const isImage = !archivo.mimetype?.includes("pdf") && !archivo.url?.toLowerCase().endsWith(".pdf") && !archivo.nombreOriginal?.toLowerCase().endsWith(".pdf");
 
             return (
               <div
@@ -985,10 +985,10 @@ export default function ArchivosExpediente({ identificadorPaciente, readOnly = f
 
           {/* Área principal del visor con zoom y rotación */}
           <div className="archivos-lightbox-body">
-            {lightboxFile.mimetype?.includes("pdf") || lightboxFile.url.endsWith(".pdf") ? (
-              <iframe
-                src={lightboxFile.url?.startsWith("data:") || lightboxFile.url?.startsWith("http") ? lightboxFile.url : `${SERVER_URL}${lightboxFile.url}`}
-                title={lightboxFile.nombreOriginal}
+            {lightboxFile.mimetype?.includes("pdf") || lightboxFile.url?.toLowerCase().endsWith(".pdf") || lightboxFile.nombreOriginal?.toLowerCase().endsWith(".pdf") ? (
+              <object
+                data={lightboxFile.url?.startsWith("data:") || lightboxFile.url?.startsWith("http") ? lightboxFile.url : `${SERVER_URL}${lightboxFile.url}`}
+                type="application/pdf"
                 style={{
                   width: "95%",
                   height: "85vh",
@@ -996,7 +996,20 @@ export default function ArchivosExpediente({ identificadorPaciente, readOnly = f
                   borderRadius: "12px",
                   background: "#fff"
                 }}
-              />
+              >
+                <div style={{ textAlign: "center", padding: "2rem", color: "#fff", background: "rgba(0,0,0,0.6)", borderRadius: "12px" }}>
+                  <p style={{ margin: "0 0 1rem 0" }}>Tu navegador no soporta la vista previa directa de este documento PDF.</p>
+                  <a
+                    href={lightboxFile.url?.startsWith("data:") || lightboxFile.url?.startsWith("http") ? lightboxFile.url : `${SERVER_URL}${lightboxFile.url}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn btn-primary"
+                    style={{ padding: "8px 16px", textDecoration: "none" }}
+                  >
+                    Abrir PDF en pestaña nueva
+                  </a>
+                </div>
+              </object>
             ) : (
               <img
                 src={lightboxFile.url?.startsWith("data:") || lightboxFile.url?.startsWith("http") ? lightboxFile.url : `${SERVER_URL}${lightboxFile.url}`}

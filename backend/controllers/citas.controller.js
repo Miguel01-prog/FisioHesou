@@ -4,6 +4,38 @@ import crypto from "crypto";
 import Notification from "../models/notification.model.js";
 
 
+function getHoursUntilAppointment(fechaCitaStr, horaCita) {
+  if (!fechaCitaStr || !horaCita) return 9999;
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  }).formatToParts(new Date());
+  const map = {};
+  parts.forEach((p) => { map[p.type] = p.value; });
+  const nowUtcEquiv = Date.UTC(
+    Number(map.year),
+    Number(map.month) - 1,
+    Number(map.day),
+    Number(map.hour === "24" ? 0 : map.hour),
+    Number(map.minute),
+    Number(map.second || 0)
+  );
+
+  const [y, m, d] = String(fechaCitaStr).substring(0, 10).split("-").map(Number);
+  const timeMatch = String(horaCita).match(/(\d{1,2}):(\d{2})/);
+  const h = timeMatch ? Number(timeMatch[1]) : 0;
+  const min = timeMatch ? Number(timeMatch[2]) : 0;
+  const apptUtcEquiv = Date.UTC(y, (m || 1) - 1, d || 1, h, min, 0);
+
+  return (apptUtcEquiv - nowUtcEquiv) / (1000 * 60 * 60);
+}
+
 function generarIdentificadorPaciente(nombres, apellidos, telefono) {
   const base = `${nombres.trim().toLowerCase()}-${apellidos.trim().toLowerCase()}-${telefono}`;
   return crypto.createHash("sha256").update(base).digest("hex").slice(0, 10);
@@ -360,7 +392,37 @@ export const actualizarEstadoCita = async (req, res) => {
   console.log("Actualizando estado de cita...");
   try {
     const { id } = req.params;
-    const { estado } = req.body;
+    const { estado, motivoCancelacion, canceladoPor, forzar } = req.body;
+    const citaExistente = await Cita.findOne({ _id: id, clientId: req.user.clientId });
+    if (!citaExistente) {
+      return res.status(404).json({ message: "Cita no encontrada" });
+    }
+    if (estado === "Cancelado") {
+      const hoursRemaining = getHoursUntilAppointment(citaExistente.fechaCitaStr, citaExistente.horaCita);
+      if (hoursRemaining < 24 && !forzar) {
+        return res.status(400).json({
+          code: "LESS_THAN_24H",
+          hoursRemaining: Math.max(0, Math.round(hoursRemaining * 10) / 10),
+          message: "Las cancelaciones requieren al menos 24 horas de anticipación respecto a la hora de la cita."
+        });
+      }
+      citaExistente.estado = "Cancelado";
+      citaExistente.fechaCancelacion = new Date();
+      citaExistente.motivoCancelacion = (motivoCancelacion || "Cancelada desde el sistema").trim();
+      citaExistente.canceladoPor = canceladoPor || req.user?.role || "especialista";
+      // Cancelación tardía (< 24 hrs): se registra adeudo para cobrarlo en la siguiente cita
+      if (hoursRemaining < 24) {
+        citaExistente.tieneAdeudo = true;
+        citaExistente.adeudoPagado = false;
+        citaExistente.adeudoFechaCitaStr = citaExistente.fechaCitaStr;
+        citaExistente.adeudoHoraCita = citaExistente.horaCita;
+        citaExistente.adeudoHorasAnticipacion = Math.max(0, Math.round(hoursRemaining * 10) / 10);
+        citaExistente.fechaPagoAdeudo = null;
+      }
+      await citaExistente.save();
+      await Notification.deleteMany({ citaId: citaExistente._id, clientId: req.user.clientId });
+      return res.json({ message: "Cita cancelada correctamente", cita: citaExistente });
+    }
     
     if (!estado) {
       return res.status(400).json({ message: "El campo 'estado' es requerido" });
@@ -391,7 +453,21 @@ export const actualizarCita = async (req, res) => {
   console.log("- Actualizando/Reagendando cita...");
   try {
     const { id } = req.params;
-    const { fechaCitaStr, horaCita, area } = req.body;
+    const { fechaCitaStr, horaCita, area, forzar } = req.body;
+    const citaExistente = await Cita.findOne({ _id: id, clientId: req.user.clientId });
+    if (!citaExistente) {
+      return res.status(404).json({ message: "Cita no encontrada" });
+    }
+    if (citaExistente.estado !== "Cancelado") {
+      const hoursRemaining = getHoursUntilAppointment(citaExistente.fechaCitaStr, citaExistente.horaCita);
+      if (hoursRemaining < 24 && !forzar) {
+        return res.status(400).json({
+          code: "LESS_THAN_24H",
+          hoursRemaining: Math.max(0, Math.round(hoursRemaining * 10) / 10),
+          message: "Las reprogramaciones requieren al menos 24 horas de anticipación respecto a la hora original de la cita."
+        });
+      }
+    }
 
     if (!fechaCitaStr || !horaCita) {
       return res.status(400).json({ message: "La fecha y la hora son requeridas" });
@@ -403,7 +479,12 @@ export const actualizarCita = async (req, res) => {
       fechaCita,
       fechaCitaStr,
       horaCita,
-      estado: "Programado"
+      estado: "Programado",
+      fechaAnteriorStr: citaExistente.fechaCitaStr || "",
+      horaAnterior: citaExistente.horaCita || "",
+      fechaCancelacion: null,
+      motivoCancelacion: "",
+      canceladoPor: ""
     };
     if (area) {
       updateFields.area = area;
@@ -564,5 +645,177 @@ export const crearCitaManualCompleta = async (req, res) => {
   } catch (error) {
     console.error("Error al crear cita manual completa:", error);
     res.status(500).json({ message: "Error al crear la cita manual", error: error.message });
+  }
+};
+
+export const consultarCitasPublicas = async (req, res) => {
+  try {
+    const { telefono, clientId } = req.query;
+    if (!telefono || !clientId) {
+      return res.status(400).json({ message: "Teléfono y clínica son requeridos" });
+    }
+    const cleanPhone = String(telefono).replace(/\D/g, "");
+    const citas = await Cita.find({
+      clientId,
+      telefono: cleanPhone
+    }).sort({ fechaCitaStr: -1, horaCita: 1 });
+
+    const resultado = citas.map((c) => {
+      const hoursRemaining = getHoursUntilAppointment(c.fechaCitaStr, c.horaCita);
+      return {
+        ...c.toObject(),
+        hoursRemaining: Math.round(hoursRemaining * 10) / 10,
+        canModify: hoursRemaining >= 24 && c.estado === "Programado"
+      };
+    });
+
+    res.json({ citas: resultado });
+  } catch (err) {
+    console.error("Error al consultar citas públicas:", err);
+    res.status(500).json({ message: "Error al consultar citas", error: err.message });
+  }
+};
+
+export const cancelarCitaPublica = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { telefono, clientId, motivoCancelacion } = req.body;
+    if (!telefono || !clientId) {
+      return res.status(400).json({ message: "Teléfono y clínica son requeridos para cancelar" });
+    }
+    const cleanPhone = String(telefono).replace(/\D/g, "");
+    const cita = await Cita.findOne({ _id: id, clientId, telefono: cleanPhone });
+    if (!cita) {
+      return res.status(404).json({ message: "Cita no encontrada" });
+    }
+    if (cita.estado === "Cancelado") {
+      return res.status(400).json({ message: "Esta cita ya se encuentra cancelada" });
+    }
+
+    const hoursRemaining = getHoursUntilAppointment(cita.fechaCitaStr, cita.horaCita);
+    if (hoursRemaining < 24) {
+      return res.status(400).json({
+        code: "LESS_THAN_24H",
+        hoursRemaining: Math.max(0, Math.round(hoursRemaining * 10) / 10),
+        message: "Las cancelaciones requieren al menos 24 horas de anticipación respecto a la fecha y hora de tu cita."
+      });
+    }
+
+    cita.estado = "Cancelado";
+    cita.fechaCancelacion = new Date();
+    cita.motivoCancelacion = (motivoCancelacion || "Cancelada por el paciente desde el portal público").trim();
+    cita.canceladoPor = "paciente";
+    await cita.save();
+
+    await Notification.deleteMany({ citaId: cita._id, clientId });
+
+    try {
+      const fechaFormateada = String(cita.fechaCitaStr).replace(/^(\d{4})-(\d{2})-(\d{2})$/, "$3/$2/$1");
+      await Notification.create({
+        title: "Cita Cancelada por Paciente",
+        description: `El paciente ${cita.nombres} ${cita.apellidoPaterno} canceló su cita del ${fechaFormateada} a las ${cita.horaCita}. Motivo: ${cita.motivoCancelacion}`,
+        area: cita.area === "fisioterapia" || cita.area === "fisioterapeuta" ? "fisioterapeuta" : "nutriologa",
+        type: "info",
+        citaId: cita._id,
+        identificadorPaciente: cita.identificadorPaciente,
+        clientId
+      });
+    } catch (e) {
+      console.error("Error al crear notificación de cancelación:", e);
+    }
+
+    res.json({ message: "Cita cancelada exitosamente", cita });
+  } catch (err) {
+    console.error("Error al cancelar cita pública:", err);
+    res.status(500).json({ message: "Error al cancelar la cita", error: err.message });
+  }
+};
+
+export const reagendarCitaPublica = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { telefono, clientId, fechaCitaStr, horaCita } = req.body;
+    if (!telefono || !clientId || !fechaCitaStr || !horaCita) {
+      return res.status(400).json({ message: "Todos los datos son requeridos para reprogramar" });
+    }
+    const cleanPhone = String(telefono).replace(/\D/g, "");
+    const cita = await Cita.findOne({ _id: id, clientId, telefono: cleanPhone });
+    if (!cita) {
+      return res.status(404).json({ message: "Cita no encontrada" });
+    }
+
+    if (cita.estado !== "Cancelado") {
+      const hoursRemaining = getHoursUntilAppointment(cita.fechaCitaStr, cita.horaCita);
+      if (hoursRemaining < 24) {
+        return res.status(400).json({
+          code: "LESS_THAN_24H",
+          hoursRemaining: Math.max(0, Math.round(hoursRemaining * 10) / 10),
+          message: "Las reprogramaciones requieren al menos 24 horas de anticipación respecto a la hora original de tu cita."
+        });
+      }
+    }
+
+    const fechaAnterior = cita.fechaCitaStr;
+    const horaAnterior = cita.horaCita;
+
+    cita.fechaAnteriorStr = fechaAnterior;
+    cita.horaAnterior = horaAnterior;
+    cita.fechaCita = new Date(fechaCitaStr);
+    cita.fechaCitaStr = fechaCitaStr;
+    cita.horaCita = horaCita;
+    cita.estado = "Programado";
+    cita.fechaCancelacion = null;
+    cita.motivoCancelacion = "";
+    cita.canceladoPor = "";
+    await cita.save();
+
+    await Notification.deleteMany({ citaId: cita._id, clientId });
+
+    try {
+      const fechaNuevaFmt = String(fechaCitaStr).replace(/^(\d{4})-(\d{2})-(\d{2})$/, "$3/$2/$1");
+      await Notification.create({
+        title: "Cita Reprogramada (Pública)",
+        description: `El paciente ${cita.nombres} ${cita.apellidoPaterno} reprogramó su cita para el ${fechaNuevaFmt} a las ${horaCita}.`,
+        area: cita.area === "fisioterapia" || cita.area === "fisioterapeuta" ? "fisioterapeuta" : "nutriologa",
+        type: "new_appointment",
+        citaId: cita._id,
+        identificadorPaciente: cita.identificadorPaciente,
+        clientId
+      });
+    } catch (e) {
+      console.error("Error al crear notificación de reagendado:", e);
+    }
+
+    res.json({ message: "Cita reprogramada exitosamente", cita });
+  } catch (err) {
+    console.error("Error al reagendar cita pública:", err);
+    res.status(500).json({ message: "Error al reprogramar la cita", error: err.message });
+  }
+};
+
+
+// Marca como cobrado el adeudo generado por una cancelación tardía (< 24 hrs)
+export const marcarAdeudoPagado = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const cita = await Cita.findOne({ _id: id, clientId: req.user.clientId });
+    if (!cita) {
+      return res.status(404).json({ message: "Cita no encontrada" });
+    }
+    if (!cita.tieneAdeudo) {
+      return res.status(400).json({ message: "Esta cita no tiene un adeudo registrado" });
+    }
+    if (cita.adeudoPagado) {
+      return res.status(400).json({ message: "El adeudo de esta cita ya fue cobrado" });
+    }
+
+    cita.adeudoPagado = true;
+    cita.fechaPagoAdeudo = new Date();
+    await cita.save();
+
+    res.json({ message: "Adeudo marcado como cobrado", cita });
+  } catch (err) {
+    console.error("Error al marcar adeudo como pagado:", err);
+    res.status(500).json({ message: "Error al registrar el cobro del adeudo", error: err.message });
   }
 };

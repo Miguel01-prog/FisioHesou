@@ -187,6 +187,9 @@ export default function ModalAgendarManual({ selectedDateInitial, onClose, onSav
     try {
       const { data } = await api.post("/citas/manual-completa", payload);
 
+      if (onSaveSuccess) onSaveSuccess();
+      onClose();
+
       if (modo === "registrado") {
         const nom = selectedPaciente.nombres || "el paciente";
         showSuccess("Cita agendada", `Se agendó la cita con éxito para ${nom}.`);
@@ -198,9 +201,6 @@ export default function ModalAgendarManual({ selectedDateInitial, onClose, onSav
       } else {
         showSuccess("Cita manual agendada", `Se agendó la cita con éxito.`);
       }
-
-      if (onSaveSuccess) onSaveSuccess();
-      onClose();
     } catch (err) {
       console.error(err);
       const errMsg = err.response?.data?.message || "No se pudo agendar la cita manual.";
@@ -211,7 +211,7 @@ export default function ModalAgendarManual({ selectedDateInitial, onClose, onSav
   };
 
   return createPortal(
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onClick={(e) => e.stopPropagation()}>
       <div
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
@@ -661,11 +661,6 @@ export default function ModalAgendarManual({ selectedDateInitial, onClose, onSav
             </p>
           )}
 
-          {modo === "registrado" && !selectedPaciente && (
-            <p style={{ color: "var(--text-muted)", fontSize: "0.75rem", margin: "0.15rem 0", fontWeight: "500", display: "flex", alignItems: "center", gap: "4px" }}>
-              ℹ️ Selecciona un paciente de la lista para continuar con la cita.
-            </p>
-          )}
 
         </div>
 

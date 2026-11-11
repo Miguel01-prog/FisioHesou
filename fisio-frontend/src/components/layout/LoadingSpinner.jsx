@@ -1,7 +1,8 @@
 import React from 'react';
 import './LoadingSpinner.css';
 
-const LoadingSpinner = ({ size = 'medium', text = '', fullScreen = false }) => {
+const LoadingSpinner = ({ size = 'medium', text = '', message = '', fullScreen = false }) => {
+  const displayText = text || message;
   const content = (
     <div className={`spinner-container ${size}`}>
       <div className="spinner-dot-ring">
@@ -14,7 +15,7 @@ const LoadingSpinner = ({ size = 'medium', text = '', fullScreen = false }) => {
         <div className="dot-holder dot-7"><div className="ring-dot"></div></div>
         <div className="dot-holder dot-8"><div className="ring-dot"></div></div>
       </div>
-      {text && <span className="spinner-text">{text}</span>}
+      {displayText && <span className="spinner-text">{displayText}</span>}
     </div>
   );
 

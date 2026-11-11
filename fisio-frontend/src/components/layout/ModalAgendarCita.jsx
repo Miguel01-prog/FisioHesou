@@ -5,11 +5,11 @@ import "react-calendar/dist/Calendar.css";
 import api from "../../api.js";
 import { showSuccess, showError } from "../../utils/alerts.js";
 import { useAuth } from "../../context/AuthContext";
-import { isHourPassed } from "../../utils/utils.js";
-import { FaStickyNote } from "react-icons/fa";
+import { isHourPassed, getHoursUntilAppointment } from "../../utils/utils.js";
+import { FaStickyNote, FaExclamationTriangle, FaExclamationCircle } from "react-icons/fa";
 import CalendarLegend from "./CalendarLegend.jsx";
 
-export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = null }) {
+export default function ModalAgendarCita({ paciente, onClose, onSaveSuccess = null, citaAReagendar = null }) {
   const { user } = useAuth();
   const [blockedDatesAdmin, setBlockedDatesAdmin] = useState([]);
   const [blockedHoursAdmin, setBlockedHoursAdmin] = useState({});
@@ -17,7 +17,17 @@ export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = n
   const [blockedDatesPaciente, setBlockedDatesPaciente] = useState([]);
   const [blockedHoursCitas, setBlockedHoursCitas] = useState({});
   
-  const [selectedDate, setSelectedDate] = useState(citaAReagendar ? citaAReagendar.fechaCitaStr : null);
+  const initialDate = (() => {
+    if (!citaAReagendar || !citaAReagendar.fechaCitaStr) return null;
+    const hoyIso = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0];
+    return citaAReagendar.fechaCitaStr >= hoyIso ? citaAReagendar.fechaCitaStr : null;
+  })();
+  const [selectedDate, setSelectedDate] = useState(initialDate);
+  const [forzarReagendado, setForzarReagendado] = useState(false);
+  const hoursRemainingOriginal = citaAReagendar && citaAReagendar.estado !== "Cancelado"
+    ? getHoursUntilAppointment(citaAReagendar.fechaCitaStr, citaAReagendar.horaCita)
+    : 9999;
+  const isOriginalLessThan24h = hoursRemainingOriginal < 24;
   const [selectedHour, setSelectedHour] = useState(citaAReagendar ? citaAReagendar.horaCita : null);
   const [availableHours, setAvailableHours] = useState([]);
   const [showHours, setShowHours] = useState(!!citaAReagendar);
@@ -114,13 +124,20 @@ export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = n
 
     try {
       if (citaAReagendar) {
+        if (isOriginalLessThan24h && !forzarReagendado) {
+          return showError("Política de 24 horas", "Debes autorizar la excepción de menos de 24 horas para reprogramar esta cita.");
+        }
         const payload = {
           fechaCitaStr: selectedDate,
           horaCita: selectedHour,
-          area: paciente.area
+          area: paciente.area,
+          forzar: isOriginalLessThan24h ? forzarReagendado : false
         };
         await api.put(`/citas/${citaAReagendar._id}`, payload);
+        if (onSaveSuccess) onSaveSuccess();
+        onClose();
         showSuccess("Cita reprogramada", `Se reagendó la cita para el ${formatDateDDMMYYYY(selectedDate)} a las ${selectedHour}.`);
+        return;
       } else if (paciente.identificadorPaciente) {
         // Usar la nueva función manual para evitar duplicar pacientes existentes
         const payload = {
@@ -130,7 +147,10 @@ export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = n
           area: paciente.area
         };
         await api.post("/citas/manual", payload);
+        if (onSaveSuccess) onSaveSuccess();
+        onClose();
         showSuccess("Cita guardada", `Se agendó la cita para el ${formatDateDDMMYYYY(selectedDate)} a las ${selectedHour}.`);
+        return;
       } else {
         const parts = (paciente.apellidos || "").trim().split(/\s+/);
         const paternal = paciente.apellidoPaterno || parts[0] || "";
@@ -149,7 +169,10 @@ export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = n
           area: paciente.area
         };
         await api.post("/citas", payload);
+        if (onSaveSuccess) onSaveSuccess();
+        onClose();
         showSuccess("Cita guardada", `Se agendó la cita para el ${formatDateDDMMYYYY(selectedDate)} a las ${selectedHour}.`);
+        return;
       }
 
       onClose();
@@ -160,7 +183,7 @@ export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = n
   };
 
   return createPortal(
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onClick={(e) => e.stopPropagation()}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "550px", width: "100%" }}>
         <button 
           className="close-btn" 
@@ -181,6 +204,72 @@ export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = n
         </p>
         <hr style={{ marginBottom: "1.5rem" }} />
 
+        {/* Notificación de Adeudo Pendiente si la cita a reagendar tiene adeudo no pagado */}
+        {citaAReagendar && citaAReagendar.tieneAdeudo && !citaAReagendar.adeudoPagado && (
+          <div
+            style={{
+              background: "rgba(239, 68, 68, 0.09)",
+              border: "1.5px solid rgba(239, 68, 68, 0.35)",
+              borderRadius: "10px",
+              padding: "0.85rem 1rem",
+              marginBottom: "1.25rem",
+              textAlign: "left"
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#dc2626", fontWeight: 800, fontSize: "0.88rem", marginBottom: "4px" }}>
+              <FaExclamationCircle size={15} />
+              <span>Adeudo Pendiente por Cancelación Tardía</span>
+            </div>
+            <p style={{ margin: 0, fontSize: "0.82rem", color: "var(--text-main)", lineHeight: 1.45 }}>
+              Esta cita fue cancelada con menos de 24 horas de anticipación ({citaAReagendar.adeudoHorasAnticipacion != null ? `${citaAReagendar.adeudoHorasAnticipacion} hrs antes` : "<24 hrs"}).
+              <strong> Recuerda cobrar la sesión de esta cita al recibir al paciente.</strong>
+            </p>
+          </div>
+        )}
+
+        {citaAReagendar && isOriginalLessThan24h && (
+          <div
+            style={{
+              background: "rgba(245, 158, 11, 0.1)",
+              border: "1px solid rgba(245, 158, 11, 0.35)",
+              borderRadius: "10px",
+              padding: "0.75rem 0.9rem",
+              marginBottom: "1.25rem",
+              textAlign: "left"
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#d97706", fontWeight: 700, fontSize: "0.85rem", marginBottom: "4px" }}>
+              <FaExclamationTriangle size={14} />
+              <span>Política de 24 horas ({Math.max(0, Math.round(hoursRemainingOriginal * 10) / 10)} hrs restantes)</span>
+            </div>
+            <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--text-main)", lineHeight: 1.4 }}>
+              La cita original ({formatDateDDMMYYYY(citaAReagendar.fechaCitaStr)} a las {citaAReagendar.horaCita}) está a menos de 24 horas.
+            </p>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                marginTop: "0.5rem",
+                paddingTop: "0.45rem",
+                borderTop: "1px dashed rgba(245, 158, 11, 0.3)",
+                fontSize: "0.8rem",
+                fontWeight: 600,
+                color: "#b45309",
+                cursor: "pointer"
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={forzarReagendado}
+                onChange={(e) => setForzarReagendado(e.target.checked)}
+                style={{ width: "16px", height: "16px", cursor: "pointer" }}
+              />
+              Autorizar reprogramación excepcional (menos de 24 hrs)
+            </label>
+          </div>
+        )}
+
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
           <Calendar
             onClickDay={handleDateSelect}
@@ -196,14 +285,16 @@ export default function ModalAgendarCita({ paciente, onClose, citaAReagendar = n
               const hoy = toLocalISODate(new Date());
               if (user?.client?.blockSundays && date.getDay() === 0) return "sunday-blocked";
               if (iso < hoy) return "past-day";
-              if (blockedDatesAdmin.includes(iso)) return "blocked-admin";
               if (blockedDatesPaciente.includes(iso)) return "blocked-paciente";
+              if (blockedDatesAdmin.includes(iso)) return "blocked-admin";
               return null;
             }}
           />
         </div>
 
-        <CalendarLegend showSundays={!!user?.client?.blockSundays} style={{ maxWidth: '440px', margin: '0 auto 1.5rem auto' }} />
+        {!citaAReagendar && (
+          <CalendarLegend showSundays={!!user?.client?.blockSundays} style={{ maxWidth: '440px', margin: '0 auto 1.5rem auto' }} />
+        )}
 
         {showHours && selectedDate && (
           <div style={{ marginTop: "20px", textAlign: "center" }}>

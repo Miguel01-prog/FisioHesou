@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import api from '../../api.js';
 import LoadingSpinner from '../../components/layout/LoadingSpinner.jsx';
+import ModalCancelarCita from '../../components/layout/ModalCancelarCita.jsx';
 import {
   showSuccess,
   showError,
@@ -41,6 +42,7 @@ export default function DashboardFisio() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todas'); // 'todas', 'pendientes', 'completadas'
   const [pendingNotes, setPendingNotes] = useState([]);
+  const [citaParaCancelar, setCitaParaCancelar] = useState(null);
   const [stats, setStats] = useState({
     pacientesTotales: 0,
     citasTotales: 0,
@@ -104,7 +106,7 @@ export default function DashboardFisio() {
       const hoyStr = toLocalISODate(new Date());
 
       // Filter today's sessions or upcoming active sessions
-      const todaySessions = citasData.filter(c => c.fechaCitaStr === hoyStr || c.fechaCita === hoyStr);
+      const todaySessions = citasData.filter(c => (c.fechaCitaStr === hoyStr || c.fechaCita === hoyStr) && c.estado !== 'Cancelado');
       todaySessions.sort((a, b) => (a.horaCita > b.horaCita ? 1 : -1));
 
       // Calculate weekly appointments distribution
@@ -150,6 +152,10 @@ export default function DashboardFisio() {
 
         return {
           id: c.id || c._id || index + 1,
+          _id: c._id || c.id,
+          fechaCitaStr: c.fechaCitaStr || c.fechaCita || hoyStr,
+          horaCita: c.horaCita || '09:00',
+          area: c.area || 'fisioterapia',
           name: `${c.nombres} ${c.apellidoPaterno || c.apellidos || ''}`.trim(),
           treatment: c.motivo || 'Fisioterapia & Rehabilitación',
           hour: c.horaCita || '09:00 AM',
@@ -213,7 +219,15 @@ export default function DashboardFisio() {
     return patients.find(p => p.status !== 'Completado' && p.status !== 'Asistió' && p.status !== 'Cancelado' && !isHourPassed(p.hour, hoyStr));
   }, [patients]);
 
-  const deletePatient = async (id, name) => {
+  const deletePatient = (id, name) => {
+    const target = patients.find(p => p.id === id || p._id === id);
+    if (target) {
+      setCitaParaCancelar(target);
+      return;
+    }
+    setCitaParaCancelar({ id, _id: id, name, fechaCitaStr: toLocalISODate(new Date()), horaCita: '09:00', area: 'fisioterapia' });
+  };
+  const _legacyDeletePatient = async (id, name) => {
     const isConfirm = await showConfirm(
       '¿Cancelar Cita?',
       `Esta acción removerá la cita de ${name} de la base de datos.`
@@ -356,6 +370,14 @@ export default function DashboardFisio() {
         </div>
 
         <div className="mobile-card-details">
+          {patient.telefono && (
+            <div className="detail-row">
+              <span className="detail-label">Teléfono:</span>
+              <span className="detail-value" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                <FiPhone size={12} /> {patient.telefono}
+              </span>
+            </div>
+          )}
           <div className="detail-row">
             <span className="detail-label">Tratamiento:</span>
             <span className="detail-value">{patient.treatment}</span>
@@ -423,6 +445,16 @@ export default function DashboardFisio() {
 
   return (
     <div className="dashboard-main-view auth-wrapper-content fade-in-up">
+      {citaParaCancelar && (
+        <ModalCancelarCita
+          cita={citaParaCancelar}
+          onClose={() => setCitaParaCancelar(null)}
+          onCancelSuccess={(updated) => {
+            const targetId = updated?._id || citaParaCancelar.id;
+            setPatients(prev => prev.filter(p => p.id !== targetId && p._id !== targetId));
+          }}
+        />
+      )}
 
       {/* 🚀 Welcome Header Banner */}
       <header style={{ marginBottom: "1.75rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>

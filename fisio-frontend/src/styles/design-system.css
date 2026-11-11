@@ -2335,6 +2335,22 @@ tr:hover .patient-list-avatar-circle {
    🔮 PREMIUM CLINIC MODAL & BACKDROP SYSTEM
    ========================================================================== */
 
+html:has(.modal-backdrop, .mobile-day-modal-overlay),
+body:has(.modal-backdrop, .mobile-day-modal-overlay) {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+
+body:has(.modal-backdrop, .mobile-day-modal-overlay) #root {
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+.mobile-day-modal-overlay {
+  pointer-events: auto !important;
+  overscroll-behavior: contain;
+}
+
 .modal-backdrop {
   position: fixed;
   top: 0;
@@ -2355,6 +2371,8 @@ tr:hover .patient-list-avatar-circle {
   /* Add safety margins for scrollable content */
   z-index: 9999;
   /* Highest priority to be on top of everything! */
+  overscroll-behavior: contain;
+  pointer-events: auto !important;
   animation: fadeInModal 0.25s ease-out;
 }
 
