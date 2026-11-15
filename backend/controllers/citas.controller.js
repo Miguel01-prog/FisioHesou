@@ -460,11 +460,11 @@ export const actualizarCita = async (req, res) => {
     }
     if (citaExistente.estado !== "Cancelado") {
       const hoursRemaining = getHoursUntilAppointment(citaExistente.fechaCitaStr, citaExistente.horaCita);
-      if (hoursRemaining < 24 && !forzar) {
+      if (hoursRemaining < 24) {
         return res.status(400).json({
           code: "LESS_THAN_24H",
           hoursRemaining: Math.max(0, Math.round(hoursRemaining * 10) / 10),
-          message: "Las reprogramaciones requieren al menos 24 horas de anticipación respecto a la hora original de la cita."
+          message: "Las citas con menos de 24 horas no pueden reprogramarse directamente. Primero deben cancelarse registrando el cobro / adeudo correspondiente."
         });
       }
     }

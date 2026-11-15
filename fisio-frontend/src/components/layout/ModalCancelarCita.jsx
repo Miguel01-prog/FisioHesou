@@ -29,11 +29,16 @@ export default function ModalCancelarCita({
   onReagendar = null,
   isPublic = false,
   clientId = null,
-  telefonoPublico = ""
+  telefonoPublico = "",
+  intentoReagendar = false
 }) {
-  const [motivo, setMotivo] = useState("Solicitud del paciente");
-  const [detalleExtra, setDetalleExtra] = useState("");
-  const [forzarExcepcion, setForzarExcepcion] = useState(false);
+  const [motivo, setMotivo] = useState(
+    intentoReagendar ? "Solicitud del paciente" : "Solicitud del paciente"
+  );
+  const [detalleExtra, setDetalleExtra] = useState(
+    intentoReagendar ? "Reagendado tardío (<24 hrs) - se genera adeudo" : ""
+  );
+  const [forzarExcepcion, setForzarExcepcion] = useState(intentoReagendar);
   const [submitting, setSubmitting] = useState(false);
   const [citaCanceladaData, setCitaCanceladaData] = useState(null);
 
@@ -52,7 +57,10 @@ export default function ModalCancelarCita({
   const isLessThan24h = hoursRemaining < 24;
   const hoursFormatted = Math.max(0, Math.round(hoursRemaining * 10) / 10);
 
-  const canSubmit = !submitting && motivo.trim().length > 0 && (!isLessThan24h || (!isPublic && forzarExcepcion));
+  const canSubmit =
+    !submitting &&
+    motivo.trim().length > 0 &&
+    (!isLessThan24h || (!isPublic && (intentoReagendar ? true : forzarExcepcion)));
 
   const handleConfirmarCancelacion = async (e) => {
     e.preventDefault();
@@ -64,6 +72,7 @@ export default function ModalCancelarCita({
 
     try {
       setSubmitting(true);
+      const forzarFinal = isLessThan24h ? (intentoReagendar ? true : forzarExcepcion) : false;
       let res;
       if (isPublic) {
         res = await api.put(`/citas/publica/${citaId}/cancelar`, {
@@ -75,7 +84,7 @@ export default function ModalCancelarCita({
         res = await api.put(`/citas/${citaId}/estado`, {
           estado: "Cancelado",
           motivoCancelacion: motivoFinal,
-          forzar: isLessThan24h ? forzarExcepcion : false
+          forzar: forzarFinal
         });
       }
 
@@ -85,15 +94,17 @@ export default function ModalCancelarCita({
         estado: "Cancelado",
         fechaCancelacion: new Date().toISOString(),
         motivoCancelacion: motivoFinal,
-        canceladoPor: isPublic ? "paciente" : "especialista"
+        canceladoPor: isPublic ? "paciente" : "especialista",
+        tieneAdeudo: forzarFinal,
+        adeudoCancelacion: forzarFinal,
+        adeudoHorasAnticipacion: isLessThan24h ? hoursFormatted : null
       };
 
       if (onCancelSuccess) {
         onCancelSuccess(updatedCita);
       }
-      if (onClose) {
-        onClose();
-      }
+      setCitaCanceladaData(updatedCita);
+
       if (isLessThan24h) {
         showSuccess(
           "Cita Cancelada con Adeudo",
@@ -224,7 +235,7 @@ export default function ModalCancelarCita({
                     onReagendar(citaCanceladaData);
                   }}
                 >
-                  <FaRedoAlt size={13} /> Reagendar Cita
+                  <FaRedoAlt size={13} /> Agendar Nueva Fecha Ahora
                 </button>
               )}
               <button
@@ -258,10 +269,12 @@ export default function ModalCancelarCita({
               </div>
               <div>
                 <h4 className="logo-agendar" style={{ margin: 0, textAlign: "left" }}>
-                  Cancelar Cita
+                  {intentoReagendar ? "Cancelar y Marcar Cobro para Reagendar" : "Cancelar Cita"}
                 </h4>
                 <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                  Política de cancelación con 24 horas de anticipación
+                  {intentoReagendar
+                    ? "Política: si reagenda con menos de 24 hrs solo podrá cancelar y marcar como cobro"
+                    : "Política de cancelación con 24 horas de anticipación"}
                 </span>
               </div>
             </div>
@@ -321,12 +334,18 @@ export default function ModalCancelarCita({
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#ef4444", fontWeight: 700, fontSize: "0.86rem", marginBottom: "4px" }}>
                   <FaExclamationTriangle size={14} />
-                  <span>Anticipación menor a 24 horas ({hoursFormatted} hrs restantes)</span>
+                  <span>
+                    {intentoReagendar
+                      ? `Reagendado con menos de 24 horas (${hoursFormatted} hrs restantes)`
+                      : `Anticipación menor a 24 horas (${hoursFormatted} hrs restantes)`}
+                  </span>
                 </div>
                 <p style={{ margin: 0, fontSize: "0.8rem", color: "var(--text-main)", lineHeight: 1.45 }}>
-                  {isPublic
-                    ? "Las cancelaciones en línea requieren al menos 24 horas de anticipación respecto a la hora de la cita. Para cualquier emergencia, comunícate directamente con la clínica."
-                    : ""}
+                  {intentoReagendar
+                    ? "Por política de la clínica, toda solicitud de reprogramación con menos de 24 horas de anticipación requiere cancelar la cita original y registrar el cobro / adeudo de la sesión. Una vez registrada la cancelación con cobro, podrás asignarle su nuevo horario."
+                    : (isPublic
+                        ? "Las cancelaciones en línea requieren al menos 24 horas de anticipación respecto a la hora de la cita. Para cualquier emergencia, comunícate directamente con la clínica."
+                        : "Esta cita se encuentra dentro de las 24 horas previas a su inicio.")}
                 </p>
 
                 {!isPublic && (
@@ -341,16 +360,19 @@ export default function ModalCancelarCita({
                       fontSize: "0.82rem",
                       fontWeight: 600,
                       color: "#dc2626",
-                      cursor: "pointer"
+                      cursor: intentoReagendar ? "default" : "pointer"
                     }}
                   >
                     <input
                       type="checkbox"
-                      checked={forzarExcepcion}
-                      onChange={(e) => setForzarExcepcion(e.target.checked)}
-                      style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                      checked={intentoReagendar ? true : forzarExcepcion}
+                      disabled={intentoReagendar}
+                      onChange={(e) => !intentoReagendar && setForzarExcepcion(e.target.checked)}
+                      style={{ width: "16px", height: "16px", cursor: intentoReagendar ? "default" : "pointer" }}
                     />
-                    Autorizar cancelación con cargo (generar adeudo para la siguiente cita)
+                    {intentoReagendar
+                      ? "Marcar como cobro / adeudo obligatorio para la próxima cita (Política de 24 hrs)"
+                      : "Autorizar cancelación con cargo (generar adeudo para la siguiente cita)"}
                   </label>
                 )}
               </div>
@@ -454,7 +476,11 @@ export default function ModalCancelarCita({
                     flex: 1
                   }}
                 >
-                  {submitting ? "Cancelando..." : "Confirmar Cancelación"}
+                  {submitting
+                    ? "Procesando..."
+                    : intentoReagendar
+                    ? "Cancelar y Marcar Cobro"
+                    : "Confirmar Cancelación"}
                 </button>
               )}
             </div>

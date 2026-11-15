@@ -6,10 +6,10 @@ import api from "../../api.js";
 import { showSuccess, showError } from "../../utils/alerts.js";
 import { useAuth } from "../../context/AuthContext";
 import { isHourPassed, getHoursUntilAppointment } from "../../utils/utils.js";
-import { FaStickyNote, FaExclamationTriangle, FaExclamationCircle } from "react-icons/fa";
+import { FaStickyNote, FaExclamationTriangle, FaExclamationCircle, FaTimesCircle } from "react-icons/fa";
 import CalendarLegend from "./CalendarLegend.jsx";
 
-export default function ModalAgendarCita({ paciente, onClose, onSaveSuccess = null, citaAReagendar = null }) {
+export default function ModalAgendarCita({ paciente, onClose, onSaveSuccess = null, citaAReagendar = null, onCancelarYCobrar = null }) {
   const { user } = useAuth();
   const [blockedDatesAdmin, setBlockedDatesAdmin] = useState([]);
   const [blockedHoursAdmin, setBlockedHoursAdmin] = useState({});
@@ -28,6 +28,7 @@ export default function ModalAgendarCita({ paciente, onClose, onSaveSuccess = nu
     ? getHoursUntilAppointment(citaAReagendar.fechaCitaStr, citaAReagendar.horaCita)
     : 9999;
   const isOriginalLessThan24h = hoursRemainingOriginal < 24;
+  const esActivaMenor24h = !!(citaAReagendar && citaAReagendar.estado !== "Cancelado" && isOriginalLessThan24h);
   const [selectedHour, setSelectedHour] = useState(citaAReagendar ? citaAReagendar.horaCita : null);
   const [availableHours, setAvailableHours] = useState([]);
   const [showHours, setShowHours] = useState(!!citaAReagendar);
@@ -124,14 +125,16 @@ export default function ModalAgendarCita({ paciente, onClose, onSaveSuccess = nu
 
     try {
       if (citaAReagendar) {
-        if (isOriginalLessThan24h && !forzarReagendado) {
-          return showError("Política de 24 horas", "Debes autorizar la excepción de menos de 24 horas para reprogramar esta cita.");
+        if (esActivaMenor24h) {
+          return showError(
+            "Política de 24 horas",
+            "Esta cita tiene menos de 24 horas y no puede reprogramarse directamente: solo podrá cancelar y marcar como cobro."
+          );
         }
         const payload = {
           fechaCitaStr: selectedDate,
           horaCita: selectedHour,
-          area: paciente.area,
-          forzar: isOriginalLessThan24h ? forzarReagendado : false
+          area: paciente.area
         };
         await api.put(`/citas/${citaAReagendar._id}`, payload);
         if (onSaveSuccess) onSaveSuccess();
@@ -227,48 +230,65 @@ export default function ModalAgendarCita({ paciente, onClose, onSaveSuccess = nu
           </div>
         )}
 
-        {citaAReagendar && isOriginalLessThan24h && (
+        {esActivaMenor24h && (
           <div
             style={{
-              background: "rgba(245, 158, 11, 0.1)",
-              border: "1px solid rgba(245, 158, 11, 0.35)",
+              background: "rgba(239, 68, 68, 0.08)",
+              border: "1.5px solid rgba(239, 68, 68, 0.35)",
               borderRadius: "10px",
-              padding: "0.75rem 0.9rem",
-              marginBottom: "1.25rem",
+              padding: "1rem 1.15rem",
+              marginBottom: "1.5rem",
               textAlign: "left"
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#d97706", fontWeight: 700, fontSize: "0.85rem", marginBottom: "4px" }}>
-              <FaExclamationTriangle size={14} />
-              <span>Política de 24 horas ({Math.max(0, Math.round(hoursRemainingOriginal * 10) / 10)} hrs restantes)</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#dc2626", fontWeight: 800, fontSize: "0.9rem", marginBottom: "6px" }}>
+              <FaExclamationTriangle size={16} />
+              <span>Política de Cancelación y Reagendado (&lt; 24 hrs)</span>
             </div>
-            <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--text-main)", lineHeight: 1.4 }}>
-              La cita original ({formatDateDDMMYYYY(citaAReagendar.fechaCitaStr)} a las {citaAReagendar.horaCita}) está a menos de 24 horas.
+            <p style={{ margin: "0 0 0.85rem 0", fontSize: "0.82rem", color: "var(--text-main)", lineHeight: 1.5 }}>
+              La cita original de <strong>{paciente?.nombres || "el paciente"}</strong> ({formatDateDDMMYYYY(citaAReagendar.fechaCitaStr)} a las {citaAReagendar.horaCita}) tiene menos de 24 horas de anticipación ({Math.max(0, Math.round(hoursRemainingOriginal * 10) / 10)} hrs restantes).
+              <br />
+              <strong>Por política de la clínica, no es posible reprogramar directamente:</strong> solo se puede cancelar registrando el cobro / adeudo correspondiente para su próxima consulta.
             </p>
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                marginTop: "0.5rem",
-                paddingTop: "0.45rem",
-                borderTop: "1px dashed rgba(245, 158, 11, 0.3)",
-                fontSize: "0.8rem",
-                fontWeight: 600,
-                color: "#b45309",
-                cursor: "pointer"
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={forzarReagendado}
-                onChange={(e) => setForzarReagendado(e.target.checked)}
-                style={{ width: "16px", height: "16px", cursor: "pointer" }}
-              />
-              Autorizar reprogramación excepcional (menos de 24 hrs)
-            </label>
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              {onCancelarYCobrar && (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  style={{
+                    background: "#dc2626",
+                    borderColor: "#dc2626",
+                    flex: 1,
+                    minWidth: "220px",
+                    height: "40px",
+                    fontSize: "0.82rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px"
+                  }}
+                  onClick={() => {
+                    onClose();
+                    onCancelarYCobrar(citaAReagendar);
+                  }}
+                >
+                  <FaTimesCircle size={13} /> Cancelar Cita y Marcar Cobro
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ flex: 1, height: "40px", justifyContent: "center" }}
+                onClick={onClose}
+              >
+                Volver
+              </button>
+            </div>
           </div>
         )}
+
+        {!esActivaMenor24h && (
+          <>
 
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
           <Calendar
@@ -375,6 +395,8 @@ export default function ModalAgendarCita({ paciente, onClose, onSaveSuccess = nu
               {citaAReagendar ? "Confirmar Reprogramación" : "Confirmar Cita"}
             </button>
           </div>
+        )}
+          </>
         )}
       </div>
     </div>,
