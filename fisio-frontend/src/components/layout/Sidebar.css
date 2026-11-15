@@ -250,12 +250,14 @@
 .submenu-list-item.active .submenu-link-anchor {
   color: var(--primary);
   font-weight: 700;
-  background-color: rgba(99, 102, 241, 0.04);
+  background-color: var(--primary-light, rgba(99, 102, 241, 0.12));
+  border-radius: var(--radius-sm, 8px);
+  box-shadow: inset 3px 0 0 var(--primary);
 }
 
 .submenu-link-anchor:hover {
   color: var(--primary);
-  background-color: rgba(99, 102, 241, 0.02);
+  background-color: rgba(99, 102, 241, 0.06);
 }
 
 /* 3. Footer (Practitioner Profile) */

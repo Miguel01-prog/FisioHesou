@@ -17,6 +17,7 @@ import notificationRoutes from "./routes/notification.routes.js";
 import clientRoutes from "./routes/client.routes.js";
 import moduleRoutes from "./routes/module.routes.js";
 import expedienteArchivosRoutes from "./routes/expediente-archivo.routes.js";
+import costosPlanesRoutes from "./routes/costos-planes.routes.js";
 import path from "path";
 
 const app = express();
@@ -66,11 +67,11 @@ if (process.env.FRONTEND_URL) {
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    
+
     if (allowedOrigins.indexOf(origin) !== -1) {
       return callback(null, true);
     }
-    
+
     // Automatically allow Vercel domains
     try {
       const hostname = new URL(origin).hostname;
@@ -80,7 +81,7 @@ app.use(cors({
     } catch (e) {
       // Invalid URL format
     }
-    
+
     callback(new Error("No permitido por la política de CORS de la aplicación"));
   },
   credentials: true
@@ -119,6 +120,7 @@ app.use("/api/planes", planesRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/clients", clientRoutes);
 app.use("/api/modules", moduleRoutes);
+app.use("/api/costos-planes", costosPlanesRoutes);
 app.use("/api/expediente-archivos", expedienteArchivosRoutes);
 
 export default app;

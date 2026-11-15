@@ -81,7 +81,7 @@ export default function Sidebar({
           { key: "configuracion", label: "Configuración", path: "#", icon: "FiSettings", active: true, parentKey: null },
           { key: "bloquear", label: "Bloquear días", path: "bloquear", icon: "FiClock", active: true, parentKey: "configuracion" },
           { key: "ejercicios", label: "Ejercicios", path: "ejercicios", icon: "FiActivity", active: true, parentKey: "configuracion" },
-          { key: "planes", label: "Planes Alimenticios", path: "planes", icon: "FiActivity", active: true, parentKey: "configuracion" },
+          { key: "planesycostos", label: "Planes y Costos", path: "planes", icon: "FiDollarSign", active: true, parentKey: "configuracion" },
           { key: "antecedentes", label: "Antecedentes", path: "antecedentes", icon: "FiBookOpen", active: true, parentKey: "configuracion" }
         ];
 
@@ -102,12 +102,24 @@ export default function Sidebar({
                 
                 let label = m.label;
                 if (m.key === "pacientes") label = patientLabel;
+                let targetPath = m.path;
+                if (m.key === "planes" || m.key === "planesycostos" || m.key === "planes_costos" || (m.path && m.path.includes("plan"))) {
+                  label = "Planes y Costos";
+                  targetPath = "planes";
+                }
 
-                childrenMap[m.parentKey].push({
-                  label,
-                  icon: renderIcon(m.icon),
-                  path: `/${role}/${m.path}`
-                });
+                // Evitar duplicados si existen múltiples keys para planes
+                const alreadyExists = childrenMap[m.parentKey].some(
+                  (item) => item.label === label || item.path === `/${role}/${targetPath}`
+                );
+
+                if (!alreadyExists) {
+                  childrenMap[m.parentKey].push({
+                    label,
+                    icon: renderIcon(m.icon || "FiDollarSign"),
+                    path: `/${role}/${targetPath}`
+                  });
+                }
               }
             }
           }
@@ -172,17 +184,36 @@ export default function Sidebar({
       return location.pathname === path;
     }
 
-    // Keep "Pacientes" highlighted when browsing patient details
-    if (path.endsWith('/pacientes') && (
-      location.pathname.includes('/paciente') ||
-      location.pathname.includes('/historial') ||
-      location.pathname.includes('/nota') ||
-      location.pathname.includes('/plan')
-    )) {
-      return true;
+    // Explicit check for Planes y Costos module routes
+    const isPlanesRoute =
+      location.pathname.includes('/planes') ||
+      location.pathname.includes('/planes-cobros') ||
+      location.pathname.includes('/planes-y-costos') ||
+      location.pathname.includes('/planes_y_costos') ||
+      location.pathname.includes('/planes_y_cosotos');
+
+    if (path.endsWith('/planes') || path.includes('planes')) {
+      return isPlanesRoute;
     }
 
-    return location.pathname.startsWith(path);
+    // Keep "Pacientes" highlighted ONLY when browsing patient details (NEVER on clinic-wide Planes y Costos)
+    if (path.endsWith('/pacientes')) {
+      if (isPlanesRoute) {
+        return false;
+      }
+      return (
+        location.pathname === path ||
+        location.pathname.includes('/paciente') ||
+        location.pathname.includes('/historial') ||
+        location.pathname.includes('/nota') ||
+        location.pathname.includes('/planes-paciente') ||
+        location.pathname.includes('/crear-plan') ||
+        location.pathname.includes('/editar-plan') ||
+        location.pathname.includes('/plan-documento')
+      );
+    }
+
+    return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
   // Aplicar colores del tema del cliente de forma dinámica

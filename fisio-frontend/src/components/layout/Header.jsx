@@ -276,6 +276,15 @@ export default function Header({
         list.push({ label: getPatientName(), path: `/${pathParts[0]}/paciente/${obfuscateId(patientId)}` });
       }
       list.push({ label: 'Detalle de Nota SOAP', path: location.pathname });
+    } else if (
+      page === 'planes' ||
+      page === 'planes-cobros' ||
+      page === 'planes_y_cosotos' ||
+      page === 'planes_y_costos' ||
+      page === 'planes-y-costos' ||
+      page === 'planesycostos'
+    ) {
+      list.push({ label: 'Planes y Costos', path: location.pathname });
     } else {
       list.push({ label: page ? page.charAt(0).toUpperCase() + page.slice(1) : 'Resumen' });
     }
